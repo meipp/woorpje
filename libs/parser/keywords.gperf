@@ -1,0 +1,29 @@
+%{
+ #include <stdexcept>
+ #include "parser/tokens.hpp"
+%}
+%includes
+struct KeywordInfo;
+%%
+Variables, STRING, Variables,
+Terminals, STRING, Terminals,
+Equation, STRING, Equation,
+Length, STRING, Length
+%%
+
+bool KeywordChecker::isKeyword (std::string str) {
+ return Perfect_Hash::in_word_set (str.c_str(),str.length ());
+}
+
+Keywords KeywordChecker::getKeyword (std::string name) {
+	auto key = Perfect_Hash::in_word_set (name.c_str(),name.length ());
+    if (key)
+	   return key->keyword;
+	 throw (std::runtime_error("Not a keyword"));
+}
+
+
+const char* KeywordChecker::keywordText (size_t i) {
+	  return wordlist[i].name;
+}
+	

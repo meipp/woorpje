@@ -1,0 +1,79 @@
+#include <unordered_map>
+#include <vector>
+#include <memory>
+#include <iostream>
+
+
+#include "words/words.hpp"
+#include "words/exceptions.hpp"
+
+
+
+namespace Words {
+
+  using Variable_ptr = std::unique_ptr<Variable>;
+  using Terminal_ptr = std::unique_ptr<Terminal>;
+
+  
+  struct Context::Internals {
+	std::unordered_map<char,IEntry*> reprToEntry;
+	std::vector<Variable*> vars;
+	std::vector<Terminal*> terminals;
+  };
+  
+  Context::Context () {
+	_internal = std::make_unique<Internals> ();
+	addTerminal ('_');
+  }
+
+  Context::~Context () {
+	for (auto v : _internal->vars)
+	  delete v;
+	for (auto v : _internal->terminals)
+	  delete v;
+  }
+  
+  IEntry* Context::addVariable (char c) {
+	if (_internal->reprToEntry.count (c)) {
+	  return _internal->reprToEntry[c];
+	}
+	_internal->vars.push_back(new Variable (c,_internal->vars.size()));
+	_internal->reprToEntry[c] = _internal->vars.back();
+	return _internal->vars.back();
+  }
+
+  IEntry* Context::addTerminal (char c) {
+	if (_internal->reprToEntry.count (c)) {
+	  return _internal->reprToEntry[c];
+	}
+	_internal->terminals.push_back(new Terminal(c,_internal->terminals.size()));
+	_internal->reprToEntry[c] = _internal->terminals.back();
+	return _internal->terminals.back();
+	
+  }
+  
+  IEntry* Context::findSymbol (char c) {
+	auto it = _internal->reprToEntry.find(c);
+	if (it != _internal->reprToEntry.end ())
+	  return it->second;
+	return nullptr;
+  }
+
+  Terminal* Context::getEpsilon () {
+	return _internal->terminals[0];
+  }
+  
+  WordBuilder& WordBuilder::operator<< (char c) {
+	word.append (ctxt.findSymbol (c));
+	return *this;
+  }
+
+  std::ostream& operator<< (std::ostream& os, const Word& w) {
+	for (auto c : w) {
+	  os << c->getRepr ();
+	}
+	return os;
+  }
+  
+  
+}
