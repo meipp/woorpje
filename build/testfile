@@ -1,0 +1,7 @@
+Variables {ABD}
+Terminals {bc}
+Length : 10
+Equation: bA = bbB
+Equation: bD = bbB
+
+SatGlucose
