@@ -66,7 +66,6 @@ bool terminal(char c){
 bool variable(char c){
   return c >= 'A' && c <= 'Z';
 }
-static BoolOption opt_newEncoding("MAIN", "newEncoding", "Use the encoding which does not depend in matching variables", true);
 
 //=================================================================================================
 map<pair<pair<int, int>, int>, Var> variableVars;
@@ -355,114 +354,137 @@ bool addSizeEqualityConstraint(Solver & s, string & str_lhs, string & str_rhs,st
   return true;
 }
 
-// TODO: Sets of equations (-> thus, functions for each equation)
-
-// localOptimisation: add clauses s(i,j) -> (s(i+1, j) \/ s(i+1, j+1) \/ s(i,j+1))
-void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool localOptimisation, bool fillUntilSquare,std::ostream* out){
-  map<pair<int, int>, Var> w1, w2;
-  int szLHS = 0;
-  int szRHS = 0;
-  int column = 0;
-  for(int i = 0 ; i < input_w1.size() ; i++){
-	if(terminal(input_w1[i])){
-	  for(int j = 0 ; j <= sigmaSize ; j++){
-		w1[make_pair(column, j)] = constantsVars[make_pair(terminalIndices[input_w1[i]], j)];
-	  }
-	  column++;
-	}
-	else{
-	  assert(variable(input_w1[i]));
-	  //cout << "c Looking for variable " << input_w1[i] << endl;
-	  assert(maxPadding.count(variableIndices[input_w1[i]]));
-	  for(int j = 0 ; j < maxPadding[variableIndices[input_w1[i]]] ; j++){
-		for(int k = 0 ; k <= sigmaSize ; k++){
-		  assert(variableVars.count(make_pair(make_pair(variableIndices[input_w1[i]], j), k)));
-		  w1[make_pair(column, k)] = variableVars[make_pair(make_pair(variableIndices[input_w1[i]], j), k)];
+void oldEncoding (Solver& S, int szLHS, int szRHS,vector<Var>& stateVars,map<pair<int, int>, Var>& w1,map<pair<int, int>, Var>& w2,std::ostream* out,bool localOptimisation) {
+  //int equationSizes = szRHS;
+	//cout << "now have equationSize " << equationSizes << endl;
+	// TODO:
+	// equality-predicates
+	map<pair<int, int>, Var> wordsMatch;
+	for(int i = 0 ; i <= szLHS ; i++){
+	  for(int j = 0 ; j <= szRHS ; j++){
+		if(i == szLHS || j == szRHS){
+		  Var v = S.newVar();
+		  S.addClause(~mkLit(v));
+		  wordsMatch[make_pair(i,j)] = v;
 		}
-		column++;
-	  }
-	}
-  }
-  szLHS = column;
-  if (out) {
-	Words::Solvers::Formatter formatter ("Done with first part, have %1% many columns")  ; 
-	*out << (formatter % column). str() << std::endl;
-  }
-  column = 0;
-  for(int i = 0 ; i < input_w2.size() ; i++){
-	if(terminal(input_w2[i])){
-	  for(int j = 0 ; j <= sigmaSize ; j++){
-		w2[make_pair(column, j)] = constantsVars[make_pair(terminalIndices[input_w2[i]], j)];
-	  }
-	  column++;
-	}
-	else{
-	  assert(variable(input_w2[i]));
-	  assert(maxPadding.count(variableIndices[input_w2[i]]));
+		else{
+		  vec<Lit> atoms;
+		  for(int k = 0 ; k <= sigmaSize ; k++){
+			Var v = S.newVar();
+			atoms.push(mkLit(v));
+			// v <-> w1[i]=k /\ w2[j] = k
+			vec<Lit> ps;
+			ps.push(mkLit(w1[make_pair(i, k)]));
+			ps.push(mkLit(w2[make_pair(j, k)]));
+			reify_and(S, mkLit(v), ps);
 
-	  for(int j = 0 ; j < maxPadding[variableIndices[input_w2[i]]] ; j++){
-		for(int k = 0 ; k <= sigmaSize ; k++){
-		  assert(variableVars.count(make_pair(make_pair(variableIndices[input_w2[i]], j), k)));
-		  w2[make_pair(column, k)] = variableVars[make_pair(make_pair(variableIndices[input_w2[i]], j), k)];
-		}
-		column++;
-	  }
-	}
-  }
-  szRHS = column;
-  bool ignorePadding = false;
-  //bool fillUntilSquare = false;
-  if(ignorePadding){
-	if(szLHS < szRHS)
-	  szRHS = szLHS;
-	if(szRHS < szLHS)
-	  szLHS = szRHS;
-  }
-  if(fillUntilSquare){
-	if(szLHS < szRHS){
-	  if (out)
-		*out << "c Padding left-hand side: " << endl;
-	  for( ; szLHS < szRHS ; szLHS++){
-		for(int j = 0 ; j <= sigmaSize ; j++){
-		  assert(w1.count(make_pair(szLHS, j)) == false);
-		  w1[make_pair(szLHS, j)] = constantsVars[make_pair(sigmaSize, j)];
+		  }
+		  Var v = S.newVar();
+		  wordsMatch[make_pair(i,j)] = v;
+		  // wordsMatch[i,j] = \/ atoms
+		  reify_or(S, mkLit(v), atoms);
 		}
 	  }
 	}
-	if(szLHS > szRHS){
-	  if (out)
-		*out << "c Padding right-hand side: " << endl;
-	  for( ; szRHS < szLHS ; szRHS++){
-		for(int j = 0 ; j <= sigmaSize ; j++){
-		  w2[make_pair(szRHS, j)] = constantsVars[make_pair(sigmaSize, j)];
+	// automaton:
+	// s[i,j] is true <-> left hand side and ride hand side matched up to indices (i-1, j-1)
+	// thus, s[0,0] is always true
+
+
+	// Empty prefixes match
+	S.addClause(mkLit(stateVars[getIndex(szRHS+1,0,0)]));
+	// Final state is active
+	S.addClause(mkLit(stateVars[getIndex(szRHS+1,szLHS,szRHS)]));
+
+	if (out) {
+	  Words::Solvers::Formatter ff ("Have automaton size %1% times %2% and created %3% many state variables");
+	  *out << (ff %szLHS %szRHS %stateVars.size ()).str() << std::endl;
+	}
+	for(int i = 0 ; i <= szLHS ; i++){
+	  for(int j = 0 ; j <= szRHS; j++){
+		vec<Lit> or_rhs;
+		// Case 1: state (i-1, j-1) was active and match at position (i-1,j-1)
+		if(i > 0 && j > 0){
+		  Var v = S.newVar();
+		  vec<Lit> ps;
+		  assert(wordsMatch.count(make_pair(i-1, j-1)));
+		  ps.push(mkLit(stateVars[getIndex(szRHS+1,i-1, j-1)]));
+		  ps.push(mkLit(wordsMatch[make_pair(i-1,j-1)]));
+		  reify_and(S,mkLit(v), ps);
+		  or_rhs.push(mkLit(v));
+		}
+
+		///////////////////////
+		/// \brief v2
+		///
+
+		if(i > 0){
+		  // v2 <-> S(i-1, j) /\ !match /\ w1[i-1] = epsilon
+		  Var v = S.newVar();
+		  vec<Lit> ps;
+		  ps.push(mkLit(stateVars[getIndex(szRHS+1,i-1, j)]));
+		  assert(wordsMatch.count(make_pair(i-1, j)));
+		  ps.push(~mkLit(wordsMatch[make_pair(i-1,j)]));
+		  ps.push(mkLit(w1[make_pair(i-1,sigmaSize)]));
+
+		  reify_and(S,mkLit(v), ps);
+		  or_rhs.push(mkLit(v));
+		}
+
+		/////////////////////
+		/// \brief v3
+		///
+
+		if(j > 0){
+		  // v3 <-> S(i, j-1) /\ !match /\ w2[j-1] = epsilon
+		  Var v = S.newVar();
+		  vec<Lit> ps;
+		  ps.push(mkLit(stateVars[getIndex(szRHS+1,i, j-1)]));
+		  assert(wordsMatch.count(make_pair(i, j-1)));
+		  ps.push(~mkLit(wordsMatch[make_pair(i,j-1)]));
+		  ps.push(mkLit(w2[make_pair(j-1,sigmaSize)]));
+
+		  reify_and(S,mkLit(v), ps);
+		  or_rhs.push(mkLit(v));
+		}
+
+		// S(i,j) <-> v1 \/ v2 \/ v3 (if all of them exist)
+
+		if(or_rhs.size() == 0){
+		  assert(i == 0 && j == 0);
+		}
+		else if(or_rhs.size() < 3){
+		  assert(or_rhs.size() == 1 && (i == 0 || j == 0));
+		}
+
+		if(or_rhs.size() > 0){
+		  reify_or(S, mkLit(stateVars[getIndex(szRHS+1,i,j)]), or_rhs);
 		}
 	  }
 	}
-	assert(szRHS == szLHS);
-  }
-  if (out) {
-	*out << (Words::Solvers::Formatter ("creating table of size %1% x %2%") % szLHS % szRHS).str () << std::endl; 
-  }
-  
-  //map<pair<int, int>, Var> stateVars;
-  vector<Var> stateVars((szLHS+1) * (szRHS+1), var_Undef);
-  int lastIndex = -1;
-  for(int i = 0 ; i <= szLHS ; i++){
-	for(int j = 0 ; j <= szRHS ; j++){
-	  assert(getIndex(szRHS+1, i, j) == lastIndex+1);
-	  lastIndex = getIndex(szRHS+1, i, j);
-	  assert(stateVars[getIndex(szRHS+1, i, j)] == var_Undef);
-	  stateVars[getIndex(szRHS+1,i, j)] = S.newVar();
+	if(localOptimisation){
+	  for(int i = 0 ; i < szLHS ; i++){
+		for(int j = 0 ; j < szRHS ; j++){
+		  assert(stateVars[getIndex(szRHS+1,i,j)] != var_Undef);
+		  assert(stateVars[getIndex(szRHS+1,i+1,j)] != var_Undef);
+		  assert(stateVars[getIndex(szRHS+1,i,j+1)] != var_Undef);
+		  assert(stateVars[getIndex(szRHS+1,i+1,j+1)] != var_Undef);
+		  vec<Lit> ps;
+		  ps.push(~mkLit(stateVars[getIndex(szRHS+1,i,j)]));
+		  ps.push(mkLit(stateVars[getIndex(szRHS+1,i+1,j)]));
+		  ps.push(mkLit(stateVars[getIndex(szRHS+1,i,j+1)]));
+		  ps.push(mkLit(stateVars[getIndex(szRHS+1,i+1,j+1)]));
+		  S.addClause(ps);
+		}
+	  }
 	}
-  }
+	for(map<pair<int, int>, Var>::iterator it = wordsMatch.begin() ; it != wordsMatch.end();it++){
+	  S.setDecisionVar(it->second, false);
+	}
+}
 
-  // Empty prefixes match
-  S.addClause(mkLit(stateVars[getIndex(szRHS+1,0,0)]));
-  // Final state is active
-  S.addClause(mkLit(stateVars[getIndex(szRHS+1,szLHS,szRHS)]));
-
-  if(opt_newEncoding){
-	for(int i = 0 ; i < szLHS ; i++){
+void newEncoding (Solver& S, int szLHS, int szRHS,vector<Var>& stateVars,map<pair<int, int>, Var>& w1,map<pair<int, int>, Var>& w2 ) {
+  for(int i = 0 ; i < szLHS ; i++){
 	  for(int j = 0 ; j < szRHS ; j++){
 		//assert(S.okay());
 		// s(i,j) active -> exactly one of the successors is active
@@ -592,135 +614,120 @@ void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool local
 		  ps.clear();
 		}
 	  }
+  }
+}
+// TODO: Sets of equations (-> thus, functions for each equation)
+
+// localOptimisation: add clauses s(i,j) -> (s(i+1, j) \/ s(i+1, j+1) \/ s(i,j+1))
+template<bool newEncode = true>
+void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool localOptimisation, bool fillUntilSquare,std::ostream* out){
+  map<pair<int, int>, Var> w1, w2;
+  int szLHS = 0;
+  int szRHS = 0;
+  int column = 0;
+  for(int i = 0 ; i < input_w1.size() ; i++){
+	if(terminal(input_w1[i])){
+	  for(int j = 0 ; j <= sigmaSize ; j++){
+		w1[make_pair(column, j)] = constantsVars[make_pair(terminalIndices[input_w1[i]], j)];
+	  }
+	  column++;
+	}
+	else{
+	  assert(variable(input_w1[i]));
+	  //cout << "c Looking for variable " << input_w1[i] << endl;
+	  assert(maxPadding.count(variableIndices[input_w1[i]]));
+	  for(int j = 0 ; j < maxPadding[variableIndices[input_w1[i]]] ; j++){
+		for(int k = 0 ; k <= sigmaSize ; k++){
+		  assert(variableVars.count(make_pair(make_pair(variableIndices[input_w1[i]], j), k)));
+		  w1[make_pair(column, k)] = variableVars[make_pair(make_pair(variableIndices[input_w1[i]], j), k)];
+		}
+		column++;
+	  }
 	}
   }
+  szLHS = column;
+  if (out) {
+	Words::Solvers::Formatter formatter ("Done with first part, have %1% many columns")  ; 
+	*out << (formatter % column). str() << std::endl;
+  }
+  column = 0;
+  for(int i = 0 ; i < input_w2.size() ; i++){
+	if(terminal(input_w2[i])){
+	  for(int j = 0 ; j <= sigmaSize ; j++){
+		w2[make_pair(column, j)] = constantsVars[make_pair(terminalIndices[input_w2[i]], j)];
+	  }
+	  column++;
+	}
+	else{
+	  assert(variable(input_w2[i]));
+	  assert(maxPadding.count(variableIndices[input_w2[i]]));
+
+	  for(int j = 0 ; j < maxPadding[variableIndices[input_w2[i]]] ; j++){
+		for(int k = 0 ; k <= sigmaSize ; k++){
+		  assert(variableVars.count(make_pair(make_pair(variableIndices[input_w2[i]], j), k)));
+		  w2[make_pair(column, k)] = variableVars[make_pair(make_pair(variableIndices[input_w2[i]], j), k)];
+		}
+		column++;
+	  }
+	}
+  }
+  szRHS = column;
+  bool ignorePadding = false;
+  //bool fillUntilSquare = false;
+  if(ignorePadding){
+	if(szLHS < szRHS)
+	  szRHS = szLHS;
+	if(szRHS < szLHS)
+	  szLHS = szRHS;
+  }
+  if(fillUntilSquare){
+	if(szLHS < szRHS){
+	  if (out)
+		*out << "c Padding left-hand side: " << endl;
+	  for( ; szLHS < szRHS ; szLHS++){
+		for(int j = 0 ; j <= sigmaSize ; j++){
+		  assert(w1.count(make_pair(szLHS, j)) == false);
+		  w1[make_pair(szLHS, j)] = constantsVars[make_pair(sigmaSize, j)];
+		}
+	  }
+	}
+	if(szLHS > szRHS){
+	  if (out)
+		*out << "c Padding right-hand side: " << endl;
+	  for( ; szRHS < szLHS ; szRHS++){
+		for(int j = 0 ; j <= sigmaSize ; j++){
+		  w2[make_pair(szRHS, j)] = constantsVars[make_pair(sigmaSize, j)];
+		}
+	  }
+	}
+	assert(szRHS == szLHS);
+  }
+  if (out) {
+	*out << (Words::Solvers::Formatter ("creating table of size %1% x %2%") % szLHS % szRHS).str () << std::endl; 
+  }
+  
+  //map<pair<int, int>, Var> stateVars;
+  vector<Var> stateVars((szLHS+1) * (szRHS+1), var_Undef);
+  int lastIndex = -1;
+  for(int i = 0 ; i <= szLHS ; i++){
+	for(int j = 0 ; j <= szRHS ; j++){
+	  assert(getIndex(szRHS+1, i, j) == lastIndex+1);
+	  lastIndex = getIndex(szRHS+1, i, j);
+	  assert(stateVars[getIndex(szRHS+1, i, j)] == var_Undef);
+	  stateVars[getIndex(szRHS+1,i, j)] = S.newVar();
+	}
+  }
+
+  // Empty prefixes match
+  S.addClause(mkLit(stateVars[getIndex(szRHS+1,0,0)]));
+  // Final state is active
+  S.addClause(mkLit(stateVars[getIndex(szRHS+1,szLHS,szRHS)]));
+  
+  if(newEncode){
+	newEncoding (S,szLHS,szRHS,stateVars,w1,w2);
+  }
   else{
-	//int equationSizes = szRHS;
-	//cout << "now have equationSize " << equationSizes << endl;
-	// TODO:
-	// equality-predicates
-	map<pair<int, int>, Var> wordsMatch;
-	for(int i = 0 ; i <= szLHS ; i++){
-	  for(int j = 0 ; j <= szRHS ; j++){
-		if(i == szLHS || j == szRHS){
-		  Var v = S.newVar();
-		  S.addClause(~mkLit(v));
-		  wordsMatch[make_pair(i,j)] = v;
-		}
-		else{
-		  vec<Lit> atoms;
-		  for(int k = 0 ; k <= sigmaSize ; k++){
-			Var v = S.newVar();
-			atoms.push(mkLit(v));
-			// v <-> w1[i]=k /\ w2[j] = k
-			vec<Lit> ps;
-			ps.push(mkLit(w1[make_pair(i, k)]));
-			ps.push(mkLit(w2[make_pair(j, k)]));
-			reify_and(S, mkLit(v), ps);
-
-		  }
-		  Var v = S.newVar();
-		  wordsMatch[make_pair(i,j)] = v;
-		  // wordsMatch[i,j] = \/ atoms
-		  reify_or(S, mkLit(v), atoms);
-		}
-	  }
-	}
-	// automaton:
-	// s[i,j] is true <-> left hand side and ride hand side matched up to indices (i-1, j-1)
-	// thus, s[0,0] is always true
-
-
-	// Empty prefixes match
-	S.addClause(mkLit(stateVars[getIndex(szRHS+1,0,0)]));
-	// Final state is active
-	S.addClause(mkLit(stateVars[getIndex(szRHS+1,szLHS,szRHS)]));
-
-	if (out) {
-	  Words::Solvers::Formatter ff ("Have automaton size %1% times %2% and created %3% many state variables");
-	  *out << (ff %szLHS %szRHS %stateVars.size ()).str() << std::endl;
-	}
-	for(int i = 0 ; i <= szLHS ; i++){
-	  for(int j = 0 ; j <= szRHS; j++){
-		vec<Lit> or_rhs;
-		// Case 1: state (i-1, j-1) was active and match at position (i-1,j-1)
-		if(i > 0 && j > 0){
-		  Var v = S.newVar();
-		  vec<Lit> ps;
-		  assert(wordsMatch.count(make_pair(i-1, j-1)));
-		  ps.push(mkLit(stateVars[getIndex(szRHS+1,i-1, j-1)]));
-		  ps.push(mkLit(wordsMatch[make_pair(i-1,j-1)]));
-		  reify_and(S,mkLit(v), ps);
-		  or_rhs.push(mkLit(v));
-		}
-
-		///////////////////////
-		/// \brief v2
-		///
-
-		if(i > 0){
-		  // v2 <-> S(i-1, j) /\ !match /\ w1[i-1] = epsilon
-		  Var v = S.newVar();
-		  vec<Lit> ps;
-		  ps.push(mkLit(stateVars[getIndex(szRHS+1,i-1, j)]));
-		  assert(wordsMatch.count(make_pair(i-1, j)));
-		  ps.push(~mkLit(wordsMatch[make_pair(i-1,j)]));
-		  ps.push(mkLit(w1[make_pair(i-1,sigmaSize)]));
-
-		  reify_and(S,mkLit(v), ps);
-		  or_rhs.push(mkLit(v));
-		}
-
-		/////////////////////
-		/// \brief v3
-		///
-
-		if(j > 0){
-		  // v3 <-> S(i, j-1) /\ !match /\ w2[j-1] = epsilon
-		  Var v = S.newVar();
-		  vec<Lit> ps;
-		  ps.push(mkLit(stateVars[getIndex(szRHS+1,i, j-1)]));
-		  assert(wordsMatch.count(make_pair(i, j-1)));
-		  ps.push(~mkLit(wordsMatch[make_pair(i,j-1)]));
-		  ps.push(mkLit(w2[make_pair(j-1,sigmaSize)]));
-
-		  reify_and(S,mkLit(v), ps);
-		  or_rhs.push(mkLit(v));
-		}
-
-		// S(i,j) <-> v1 \/ v2 \/ v3 (if all of them exist)
-
-		if(or_rhs.size() == 0){
-		  assert(i == 0 && j == 0);
-		}
-		else if(or_rhs.size() < 3){
-		  assert(or_rhs.size() == 1 && (i == 0 || j == 0));
-		}
-
-		if(or_rhs.size() > 0){
-		  reify_or(S, mkLit(stateVars[getIndex(szRHS+1,i,j)]), or_rhs);
-		}
-	  }
-	}
-	if(localOptimisation){
-	  for(int i = 0 ; i < szLHS ; i++){
-		for(int j = 0 ; j < szRHS ; j++){
-		  assert(stateVars[getIndex(szRHS+1,i,j)] != var_Undef);
-		  assert(stateVars[getIndex(szRHS+1,i+1,j)] != var_Undef);
-		  assert(stateVars[getIndex(szRHS+1,i,j+1)] != var_Undef);
-		  assert(stateVars[getIndex(szRHS+1,i+1,j+1)] != var_Undef);
-		  vec<Lit> ps;
-		  ps.push(~mkLit(stateVars[getIndex(szRHS+1,i,j)]));
-		  ps.push(mkLit(stateVars[getIndex(szRHS+1,i+1,j)]));
-		  ps.push(mkLit(stateVars[getIndex(szRHS+1,i,j+1)]));
-		  ps.push(mkLit(stateVars[getIndex(szRHS+1,i+1,j+1)]));
-		  S.addClause(ps);
-		}
-	  }
-	}
-	for(map<pair<int, int>, Var>::iterator it = wordsMatch.begin() ; it != wordsMatch.end();it++){
-	  S.setDecisionVar(it->second, false);
-	}
+	oldEncoding (S,szLHS,szRHS,stateVars,w1,w2,out,localOptimisation);
   }
 
 
@@ -781,7 +788,7 @@ void sharpenBounds(Solver & s, string & lhs, string & rhs,std::ostream* out = nu
   int c = 0;
   getCoefficients(lhs, rhs, coefficients, c);
   if (out) {
-	*out << "c Got equation ";
+	*out << "Got equation ";
 	for(map<int, int>::iterator it = coefficients.begin() ; it != coefficients.end();it++){
 	  *out << it->second << " * " << index2Varible[it->first] << " ";
 	}
@@ -797,7 +804,7 @@ void sharpenBounds(Solver & s, string & lhs, string & rhs,std::ostream* out = nu
 		}
 	  }
 	  if (out) {
-		*out << "c Can infer bound " << index2Varible[it->first] << " <= " << rhs << "/" << it->second << " = " << (rhs / it->second) << endl;
+		*out << "Can infer bound " << index2Varible[it->first] << " <= " << rhs << "/" << it->second << " = " << (rhs / it->second) << endl;
 	  }
 	  rhs /= it->second;
 	  if(rhs < maxPadding[it->first])
@@ -824,7 +831,7 @@ void encodeLinConstraint(Solver & s, vec<int> & ai, vector<vector<pair<int, Lit>
 
 // Variables from regular language
 
-void printStats(Solver& solver)
+/*void printStats(Solver& solver)
 {
   double cpu_time = cpuTime();
   double mem_used = 0;//memUsedPeak();
@@ -846,7 +853,7 @@ void printStats(Solver& solver)
   if (mem_used != 0) printf("Memory used           : %.2f MB\n", mem_used);
   printf("c CPU time              : %g s\n", cpu_time);
 }
-
+*/
 
 /*
 static Solver* solver;
@@ -876,6 +883,7 @@ void setupSolverMain (std::vector<std::string>& mlhs, std::vector<std::string>& 
   globalMaxPadding = static_cast<int> (global);
 }
 
+template<bool newencode = true>
 ::Words::Solvers::Result runSolver (const bool squareAuto,  const Words::Context& context, Words::Substitution& substitution,
 									Words::Solvers::Timing::Keeper& tkeeper, std::ostream* odiag = nullptr) {
   Words::Solvers::Timing::Timer overalltimer (tkeeper,"Overall Solving Time");
@@ -975,7 +983,7 @@ void setupSolverMain (std::vector<std::string>& mlhs, std::vector<std::string>& 
   
   
   for(int i = 0 ; i < input_equations_lhs.size();i++){
-	encodeEquation(S, input_equations_lhs[i], input_equations_rhs[i], true, squareAuto,odiag);
+	encodeEquation<newencode>(S, input_equations_lhs[i], input_equations_rhs[i], true, squareAuto,odiag);
   }
 
 
@@ -1014,9 +1022,9 @@ void setupSolverMain (std::vector<std::string>& mlhs, std::vector<std::string>& 
   //printf("c time for setting up everything: %lf\n", cpuTime());
   //printf("c okay=%d\n", S.okay());
   lbool ret = S.solveLimited(dummy);
-  if (S.verbosity > 0){
+  /*if (S.verbosity > 0){
 	printStats(S);
-	printf("\n"); }
+	printf("\n"); }*/
 
   int stateVarsSeen = 0;
   int stateVarsOverall = 0;
@@ -1228,4 +1236,12 @@ int main(int argc, char** argv)
         }
 
 }
+
+
 */
+
+template
+::Words::Solvers::Result runSolver<true> (const bool squareAuto, const Words::Context&,Words::Substitution&,Words::Solvers::Timing::Keeper&,std::ostream*);
+
+template
+::Words::Solvers::Result runSolver<false> (const bool squareAuto, const Words::Context&,Words::Substitution&,Words::Solvers::Timing::Keeper&,std::ostream*);

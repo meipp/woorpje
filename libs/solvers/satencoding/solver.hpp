@@ -10,6 +10,7 @@
 namespace Words {
   namespace Solvers {
 	namespace SatEncoding {
+	  template<bool encoding>
 	  class Solver : public ::Words::Solvers::Solver {
 	  public:
 		Result Solve (Words::Options&,Words::Solvers::MessageRelay&) override;

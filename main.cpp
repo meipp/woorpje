@@ -14,6 +14,7 @@ namespace po = boost::program_options;
 
 class CoutResultGatherer : public Words::Solvers::DummyResultGatherer {
 public:
+  CoutResultGatherer (std::vector<Words::Equation>& eqs) : eqs(eqs) {}
   void setSubstitution (Words::Substitution& w) {
 	std::cout << "Substitution: " << std::endl;
 	for (auto& it : w) {
@@ -23,6 +24,16 @@ public:
 	  }
 	  std::cout << std::endl;
 	}
+	std::cout << std::endl;
+
+	std::cout << "Equations after substition" <<std::endl;
+	for (auto& eq : eqs) {
+	  printWordWithSubstitution (eq.lhs,w);
+	  std::cout << " == ";
+	  printWordWithSubstitution (eq.rhs,w);
+	  std::cout <<std::endl;
+	}
+	std::cout << std::endl;
   }
 
   void diagnosticString (const std::string& s) override {
@@ -35,8 +46,24 @@ public:
 	for (const auto& entry : keep) {
 	  std::cout << entry.name << " : " << entry.time << " milliseconds" <<std::endl;
 	}
+	std::cout << std::endl;
   }
   
+private:  
+  void printWordWithSubstitution (Words::Word& word, Words::Substitution& w) {
+	for (auto c : word) {
+	  if (c->isTerminal ())
+		std::cout << c->getRepr ();
+	  else {
+		auto sub = w[c];
+		for (auto s : sub) {
+		  std::cout << s->getRepr ();
+		}
+	  }
+	}
+  }
+  
+  std::vector<Words::Equation> eqs;
 };
 
 void printContactDetails (std::ostream& os) {
@@ -99,38 +126,42 @@ int main (int argc, char** argv) {
   }
   Words::Options opt;
   bool parsesucc = false;
+  Words::Solvers::Solver_ptr solver = nullptr;
   try {
 	std::fstream inp;
 	inp.open (conffile);
 	auto parser = Words::Parser::Create (inp);
-	parsesucc = parser->Parse (opt,std::cout);
+	solver = parser->Parse (opt,std::cout);
 	inp.close ();
   }catch (Words::WordException& e) {
 	std::cerr << e.what () << std::endl;
 	return -1;
   }
 
-  if (parsesucc) {
-	auto solver = Words::Solvers::makeSolver<Words::Solvers::Types::SatEncoding> ();
+  if (solver) {
 	if (diagnostic)
 	  solver->enableDiagnosticOutput ();
 	Words::Solvers::StreamRelay relay (std::cout);
 	auto ret =  solver->Solve (opt,relay);
-	if (ret == Words::Solvers::Result::HasSolution) {
-	  std::cout << "Got Solution " << std::endl;
-	  CoutResultGatherer gatherer;
+	switch (ret) {
+	  
+	  
+	case Words::Solvers::Result::HasSolution: {
+	  std::cout << "Got Solution " << std::endl << std::endl;;
+	  CoutResultGatherer gatherer (opt.equations);
 	  solver->getResults (gatherer);
 	  return 0;
 	}
-	else if ( ret == Words::Solvers::Result::NoSolution) {
+	case Words::Solvers::Result::NoSolution: {
 	  std::cout << "No solution" << std::endl;;
 	  return 20;
 	}
-	
-	else {
+	  
+	default:
 	  std::cout << "No Idea" << std::endl;;
 	  return 10;
 	}
   }
-  std::cout << "Parse error" << std::endl;
+  else 
+	std::cout << "Parse error" << std::endl;
 }

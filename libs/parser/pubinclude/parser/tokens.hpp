@@ -26,7 +26,8 @@ enum  Keywords{
 					Terminals,
 					Equation,
 					Length,
-					SatGlucose
+					SatGlucose,
+					SatGlucoseOld
 };
 
 

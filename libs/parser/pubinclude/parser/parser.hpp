@@ -5,7 +5,9 @@
 #include <ostream>
 
 #include "words/words.hpp"
+#include "solvers/solvers.hpp"
 #include "parser/tokens.hpp"
+
 
 std::unique_ptr<FlexLexer> makeFlexer (std::istream& is);
 
@@ -23,16 +25,22 @@ namespace Words {
 	  return std::unique_ptr<Parser> (new Parser (makeFlexer (is)));
 	}
 	
-	bool Parse (Words::Options& opt,std::ostream& err) {
+	Solvers::Solver_ptr Parse (Words::Options& opt,std::ostream& err) {
 	  this->err = &err; 
 	  options = &opt;
 	  if (parseVariablesDecl () && 
 		  parseTerminalsDecl () && 
 		  parseLength ()) {
 		while(parseEquation ()) {}
-		return acceptKeyword (SatGlucose);
+		if (tryacceptKeyword (SatGlucose)) {
+		  return Solvers::makeSolver<Solvers::Types::SatEncoding> ();
+		}
+		if (tryacceptKeyword (SatGlucoseOld)) {
+		  return Solvers::makeSolver<Solvers::Types::SatEncodingOld> ();
+		}
+		
 	  }
-	  return false;
+	  return nullptr;
 	}
 	
   private:

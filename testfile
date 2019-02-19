@@ -1,7 +1,7 @@
 Variables {ABD}
-Terminals {bc}
+Terminals {bca}
 Length : 10
-Equation: bA = bbB
-Equation: bD = bbB
+Equation: bAA = baB
+Equation: Da = bbB
 
 SatGlucose

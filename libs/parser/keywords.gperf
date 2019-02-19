@@ -10,6 +10,7 @@ Terminals, STRING, Terminals,
 Equation, STRING, Equation,
 Length, STRING, Length,
 SatGlucose, STRING, SatGlucose
+SatGlucoseOld, STRING, SatGlucoseOld
 %%
 
 bool KeywordChecker::isKeyword (std::string str) {

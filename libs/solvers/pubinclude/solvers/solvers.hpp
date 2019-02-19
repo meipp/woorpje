@@ -12,7 +12,8 @@
 namespace Words {
   namespace Solvers {
 	enum class Types {
-					  SatEncoding
+					  SatEncoding,
+					  SatEncodingOld
 	};
 
 	enum class Result {
@@ -59,7 +60,7 @@ namespace Words {
 	  virtual void diagnosticString (const std::string& s) = 0;
 	  virtual void timingInfo (const Timing::Keeper& s) = 0;
 	};
-
+	
 	class DummyResultGatherer : public ResultGatherer {
 	public:
 	  virtual void setSubstitution (Words::Substitution&) {}
