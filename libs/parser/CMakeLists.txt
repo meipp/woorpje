@@ -36,5 +36,5 @@ gperf_generate_new(${CMAKE_CURRENT_SOURCE_DIR}/keywords.gperf ${CMAKE_CURRENT_BI
 lex_generate_new(${CMAKE_CURRENT_SOURCE_DIR}/lexer.lex ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.cc)
 
 add_library (parser parser.cpp ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.cc ${CMAKE_CURRENT_BINARY_DIR}/key.cpp)
-target_include_directories(parser PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/pubinclude PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../words/pubinclude)
+target_include_directories(parser PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/pubinclude PRIVATE $<TARGET_PROPERTY:words,INTERFACE_INCLUDE_DIRECTORIES>)
 
