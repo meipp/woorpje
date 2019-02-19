@@ -8,7 +8,8 @@ struct KeywordInfo;
 Variables, STRING, Variables,
 Terminals, STRING, Terminals,
 Equation, STRING, Equation,
-Length, STRING, Length
+Length, STRING, Length,
+SatGlucose, STRING, SatGlucose
 %%
 
 bool KeywordChecker::isKeyword (std::string str) {

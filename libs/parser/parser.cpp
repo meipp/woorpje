@@ -21,7 +21,7 @@ bool Words::Parser::parseTerminalsDecl (){
   if (acceptKeyword (Keywords::Terminals) && accept (LBRACE) && accept (STRING,t),accept (RBRACE)) {
 	
 	for (auto c : t) 
-	  options->context.addVariable (c);
+	  options->context.addTerminal (c);
 	return true;
   }
   return false;
@@ -29,10 +29,11 @@ bool Words::Parser::parseTerminalsDecl (){
 
 
 bool Words::Parser::parseEquation (){
-  Equation& eq = options->equation;
   std::string word1;
   std::string word2;
-  if (acceptKeyword (Keywords::Equation) && accept (Tokens::COLON) && accept (STRING,word1) && accept (Tokens::EQUAL) &&  accept (STRING,word2) ) {
+  if (tryacceptKeyword (Keywords::Equation) && accept (Tokens::COLON) && accept (STRING,word1) && accept (Tokens::EQUAL) &&  accept (STRING,word2) ) {
+	options->equations.emplace_back ();
+	auto& eq = options->equations.back();
 	auto wb1 = options->context.makeWordBuilder (eq.lhs);	
 	for (auto c : word1)
 	  *wb1 << c;
@@ -54,13 +55,8 @@ bool Words::Parser::parseLength () {
 }
 
 bool Words::Parser::accept (Tokens t) {
-  if (lexobject.token == t) {
-	lexobject.token = static_cast<Tokens> (lexer->yylex());
-	lexobject.text = lexer->YYText ();
-	
-	  return true;
-  }
-  return false;
+  std::string s;
+  return accept (t,s);
 }
 
 bool Words::Parser::accept (Tokens t, std::string& text) {
@@ -73,9 +69,18 @@ bool Words::Parser::accept (Tokens t, std::string& text) {
 	
 	return true;
   }
-	return false;
+  unexpected();
+  return false;
 }
 bool Words::Parser::acceptKeyword (Keywords k) {
+  if (!tryacceptKeyword (k)) {
+	unexpected();
+	return false;
+  }
+  return true;
+}
+
+bool Words::Parser::tryacceptKeyword (Keywords k) {
   if (lexobject.token == KEYWORD  && k == kw.getKeyword (lexobject.text)) {
 	lexobject.token = static_cast<Tokens> (lexer->yylex());
 	lexobject.text  = lexer->YYText ();
@@ -85,4 +90,7 @@ bool Words::Parser::acceptKeyword (Keywords k) {
   }
   return false;
 }
-	
+
+void Words::Parser::unexpected () {
+  *err << "On " << lexobject.lineno << "." << lexobject.colStart <<": " << " unexpected " << lexobject.text << std::endl;  
+}

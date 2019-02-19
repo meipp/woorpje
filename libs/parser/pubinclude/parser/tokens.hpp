@@ -25,7 +25,8 @@ enum  Keywords{
 					Variables,
 					Terminals,
 					Equation,
-					Length
+					Length,
+					SatGlucose
 };
 
 

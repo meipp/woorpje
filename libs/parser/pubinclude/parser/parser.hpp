@@ -2,6 +2,7 @@
 #include <istream>
 #include <FlexLexer.h>
 #include <string>
+#include <ostream>
 
 #include "words/words.hpp"
 #include "parser/tokens.hpp"
@@ -22,12 +23,16 @@ namespace Words {
 	  return std::unique_ptr<Parser> (new Parser (makeFlexer (is)));
 	}
 	
-	void Parse (Words::Options& opt) {
+	bool Parse (Words::Options& opt,std::ostream& err) {
+	  this->err = &err; 
 	  options = &opt;
-	  parseVariablesDecl ();
-	  parseTerminalsDecl ();
-	  parseLength ();
-	  parseEquation ();
+	  if (parseVariablesDecl () && 
+		  parseTerminalsDecl () && 
+		  parseLength ()) {
+		while(parseEquation ()) {}
+		return acceptKeyword (SatGlucose);
+	  }
+	  return false;
 	}
 	
   private:
@@ -47,9 +52,12 @@ namespace Words {
 	bool accept (Tokens t);
 	bool accept (Tokens, std::string&);
 	bool acceptKeyword (Keywords);
+	bool tryacceptKeyword (Keywords);
+	void unexpected ();
 	KeywordChecker kw;
 	LexObject lexobject;
 	std::unique_ptr<FlexLexer> lexer;
 	Words::Options* options = nullptr;
+	std::ostream* err;
   };
 }

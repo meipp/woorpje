@@ -38,7 +38,7 @@ num1    {dig}+
 
 {num1}  return NUMBER;
 
-\n        { mylineno++;}
+\n        { mylineno++;column = 0;}
 
 {string}   { return kw.isKeyword (yytext) ? KEYWORD : STRING;}
 

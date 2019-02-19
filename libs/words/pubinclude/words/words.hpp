@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <ostream>
+#include <map>
 #include <initializer_list>
 
 namespace Words {
@@ -60,7 +61,6 @@ namespace Words {
 	size_t characters () const {return word.size();}
 	auto begin () const {return word.begin();}
 	auto end () const {return word.end();}
-	
   protected:
 	void append (IEntry* e) {word.push_back(e);}
 	void clear () {word.clear ();}
@@ -87,9 +87,10 @@ namespace Words {
 	~Context ();
 	IEntry* addVariable (char c);
 	IEntry* addTerminal (char c);
-	IEntry* findSymbol (char c);
+	IEntry* findSymbol (char c) const;
 	Terminal* getEpsilon ();
 	std::unique_ptr<WordBuilder> makeWordBuilder (Word& w) {return std::make_unique<WordBuilder> (*this,w);}
+	bool conformsToConventions () const;
   private:
 	struct Internals;
 	std::unique_ptr<Internals> _internal;
@@ -104,8 +105,10 @@ namespace Words {
 	size_t wordMaxLength = 0;
 	size_t varMaxPadding = 0;
 	Context context;
-	Equation equation;
+	std::vector<Equation> equations;
   };
+
+  using Substitution = std::map<IEntry*, std::vector<IEntry*> >;
 
   std::ostream& operator<< (std::ostream&, const Word& w);
   

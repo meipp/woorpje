@@ -2,6 +2,7 @@
 #include <vector>
 #include <memory>
 #include <iostream>
+#include <sstream>
 
 
 #include "words/words.hpp"
@@ -51,11 +52,32 @@ namespace Words {
 	return _internal->terminals.back();
 	
   }
+
+  bool Context::conformsToConventions () const {
+	for (auto v : _internal->vars) {
+	  if (!std::isupper (v->getRepr ())) {
+		std::cerr << v->getRepr ()<< std::endl;
+		return false;
+	  }
+	}
+
+	for (auto v : _internal->terminals) {
+	  if (std::isupper (v->getRepr ())) {
+		std::cerr << v->getRepr ()<< std::endl;
+		return false;
+	  }
+	}
+	return true;
+  }
+
   
-  IEntry* Context::findSymbol (char c) {
+  IEntry* Context::findSymbol (char c) const {
 	auto it = _internal->reprToEntry.find(c);
 	if (it != _internal->reprToEntry.end ())
 	  return it->second;
+	std::stringstream  str;
+	str << "Symbol '" << c <<"' not in context";
+	throw WordException (str.str());
 	return nullptr;
   }
 
@@ -68,6 +90,7 @@ namespace Words {
 	return *this;
   }
 
+  
   std::ostream& operator<< (std::ostream& os, const Word& w) {
 	for (auto c : w) {
 	  os << c->getRepr ();
