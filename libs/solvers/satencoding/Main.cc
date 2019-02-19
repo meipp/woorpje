@@ -895,7 +895,6 @@ template<bool newencode = true>
   falseConst = S.newVar();
   S.addClause(~mkLit(falseConst));
   
-  
   assert(lin == 0 && "No linears yet! ");
   assert(reg == 0 && "No regulars yet! ");
   
@@ -913,98 +912,84 @@ template<bool newencode = true>
 	// TODO: Derive bounds on lengths here?
 	sharpenBounds(S, input_equations_lhs[i], input_equations_rhs[i],odiag);
   }
-  
-  
-  
   int numVars;
-  index2Terminal[sigmaSize] = '_';
-  numVars = variableIndices.size();
-  
-  for(int i = 0 ; i < numVars ; i++){
-	if (odiag)
-	  *odiag << "bound for " << index2Varible[i] << ": " << maxPadding[i] << endl;
+  {
+	Words::Solvers::Timing::Timer overalltimer (tkeeper,"Encoding ");
+	
+
+	index2Terminal[sigmaSize] = '_';
+	numVars = variableIndices.size();
+	
+	for(int i = 0 ; i < numVars ; i++){
+	  if (odiag)
+		*odiag << "bound for " << index2Varible[i] << ": " << maxPadding[i] << endl;
   }
-  // Encode variables for terminal symbols
-  
-  for(int i = 0 ; i <= sigmaSize ; i++){
-	for(int j = 0 ; j <= sigmaSize ; j++){
-	  Var v = S.newVar();
-	  constantsVars[make_pair(i,j)] = v;
-	  // Make variable "true" if i=j, and false otherwise
-	  if(i == j)
-		S.addClause(mkLit(v));
-	  else
-		S.addClause(~mkLit(v));
-	}
-  }
-  
-  // Take a variable, and index and a sigma, and return if the variable at index "i" equals sigma
-  // g:  x, i, sigma -> BV
-  
-  for(int i = 0 ; i < numVars ; i++){
-	assert(maxPadding.count(i));
-	for(int j = 0 ; j < maxPadding[i] ; j++){
-	  for(int k = 0 ; k <= sigmaSize ; k++){
+	// Encode variables for terminal symbols
+	
+	for(int i = 0 ; i <= sigmaSize ; i++){
+	  for(int j = 0 ; j <= sigmaSize ; j++){
 		Var v = S.newVar();
-		variableVars[make_pair(make_pair(i, j), k)] = v;
+		constantsVars[make_pair(i,j)] = v;
+		// Make variable "true" if i=j, and false otherwise
+		if(i == j)
+		  S.addClause(mkLit(v));
+		else
+		  S.addClause(~mkLit(v));
 	  }
 	}
-	// Assert that epsilons occur at the end of a substitution
-	for(int j = 0 ; j + 1 < maxPadding[i] ; j++){
-	  S.addClause(~mkLit(variableVars[make_pair(make_pair(i, j), sigmaSize)]), mkLit(variableVars[make_pair(make_pair(i, j+1), sigmaSize)]) );
-	}
-  }
-  
-  // Alldifferent: Make sure that each variable is assigned to exactly one letter from Sigma (or epsilon)
-  // TODO: Do this with linear number of clauses (!!!)
-  for(int i = 0 ; i < numVars ; i++){
-	assert(maxPadding.count(i));
-	for(int j = 0 ; j < maxPadding[i] ; j++){
-	  vec<Lit> ps;
-	  for(int k = 0 ; k <= sigmaSize ; k++){
-		assert(variableVars.count(make_pair(make_pair(i, j), k)));
-		ps.push(mkLit(variableVars[make_pair(make_pair(i, j), k)]));
-		for(int l = k+1 ; l <= sigmaSize; l++){
-		  assert(variableVars.count(make_pair(make_pair(i, j), l)));
-		  S.addClause(~mkLit(variableVars[make_pair(make_pair(i, j), k)]),~mkLit(variableVars[make_pair(make_pair(i, j), l)]));
+	
+	// Take a variable, and index and a sigma, and return if the variable at index "i" equals sigma
+	// g:  x, i, sigma -> BV
+	
+	for(int i = 0 ; i < numVars ; i++){
+	  assert(maxPadding.count(i));
+	  for(int j = 0 ; j < maxPadding[i] ; j++){
+		for(int k = 0 ; k <= sigmaSize ; k++){
+		  Var v = S.newVar();
+		  variableVars[make_pair(make_pair(i, j), k)] = v;
 		}
 	  }
-	  S.addClause(ps);
+	  // Assert that epsilons occur at the end of a substitution
+	  for(int j = 0 ; j + 1 < maxPadding[i] ; j++){
+		S.addClause(~mkLit(variableVars[make_pair(make_pair(i, j), sigmaSize)]), mkLit(variableVars[make_pair(make_pair(i, j+1), sigmaSize)]) );
+	  }
 	}
-  }
-  addOneHotEncoding(S);
+	
+	// Alldifferent: Make sure that each variable is assigned to exactly one letter from Sigma (or epsilon)
+	// TODO: Do this with linear number of clauses (!!!)
+	for(int i = 0 ; i < numVars ; i++){
+	  assert(maxPadding.count(i));
+	  for(int j = 0 ; j < maxPadding[i] ; j++){
+		vec<Lit> ps;
+		for(int k = 0 ; k <= sigmaSize ; k++){
+		  assert(variableVars.count(make_pair(make_pair(i, j), k)));
+		  ps.push(mkLit(variableVars[make_pair(make_pair(i, j), k)]));
+		  for(int l = k+1 ; l <= sigmaSize; l++){
+			assert(variableVars.count(make_pair(make_pair(i, j), l)));
+			S.addClause(~mkLit(variableVars[make_pair(make_pair(i, j), k)]),~mkLit(variableVars[make_pair(make_pair(i, j), l)]));
+		  }
+		}
+		S.addClause(ps);
+	  }
+	}
+	addOneHotEncoding(S);
   
-  for(int i = 0 ; i < input_equations_lhs.size();i++){
-	bool succ = addSizeEqualityConstraint(S, input_equations_lhs[i], input_equations_rhs[i],odiag);
-	if(!succ){
-	  return Words::Solvers::Result::NoSolution;
+	for(int i = 0 ; i < input_equations_lhs.size();i++){
+	  bool succ = addSizeEqualityConstraint(S, input_equations_lhs[i], input_equations_rhs[i],odiag);
+	  if(!succ){
+		return Words::Solvers::Result::NoSolution;
+	  }
 	}
+	
+	
+	for(int i = 0 ; i < input_equations_lhs.size();i++){
+	  encodeEquation<newencode>(S, input_equations_lhs[i], input_equations_rhs[i], true, squareAuto,odiag);
+	}
+
   }
+
+
   
-  
-  for(int i = 0 ; i < input_equations_lhs.size();i++){
-	encodeEquation<newencode>(S, input_equations_lhs[i], input_equations_rhs[i], true, squareAuto,odiag);
-  }
-
-
-
-
-  /*if (S.verbosity > 0){
-	printf("c |  Number of variables:  %12d                                                                   |\n", S.nVars());
-	printf("c |  Number of clauses:    %12d                                                                   |\n", S.nClauses());
-	}
-
-  double parsed_time = cpuTime();
-  if (S.verbosity > 0){
-	printf("c |  Parse time:           %12.2f s                                                                 |\n", parsed_time - initial_time);
-	printf("c |                                                                                                       |\n"); 
-	}
-  */
-  // Change to signal-handlers that will only notify the solver and allow it to terminate
-  // voluntarily:
-  //signal(SIGINT, SIGINT_interrupt);
-  //signal(SIGXCPU,SIGINT_interrupt);
-
   if (!S.simplify()){
 	//if (S.certifiedOutput != NULL) fprintf(S.certifiedOutput, "0\n"), fclose(S.certifiedOutput);
 	if (S.verbosity > 0){
@@ -1017,15 +1002,16 @@ template<bool newencode = true>
 	//printf("s UNSATISFIABLE\n");
             
   }
-
+  
   vec<Lit> dummy;
   //printf("c time for setting up everything: %lf\n", cpuTime());
   //printf("c okay=%d\n", S.okay());
-  lbool ret = S.solveLimited(dummy);
-  /*if (S.verbosity > 0){
-	printStats(S);
-	printf("\n"); }*/
-
+  lbool ret;
+  {
+	Words::Solvers::Timing::Timer (tkeeper,"Solving");
+	ret = S.solveLimited(dummy);
+  }
+  
   int stateVarsSeen = 0;
   int stateVarsOverall = 0;
   if(odiag){
