@@ -3,17 +3,26 @@
 #include <string>
 
 
-#define LISTOFTOKENS							\
-  X(FIRST)										\
-  X(STRING)										\
-  X(LBRACE)										\
-  X(RBRACE)										\
-  X(COLON)										\
-  X(EQUAL)										\
-  X(NUMBER)										\
-  X(KEYWORD)									\
-  X(COMMA)										\
-  X(LAST)
+#define LISTOFTOKENS								\
+  X(FIRST)											\
+  X(STRING)											\
+  X(LBRACE)											\
+  X(RBRACE)											\
+  X(COLON)											\
+  X(EQUAL)											\
+  X(NUMBER)											\
+  X(KEYWORD)										\
+  X(COMMA)											\
+  X(LBRACK)										\
+  X(RBRACK)											\
+  X(PLUS)											\
+  X(MINUS)											\
+  X(BAR)											\
+  X(LEQ)											\
+  X(GEQ)											\
+  X(LT)											\
+  X(GT)											\
+  X(LAST) 
 
 enum  Tokens {
 #define X(x) x,
@@ -26,6 +35,7 @@ enum  Keywords{
 					Terminals,
 					Equation,
 					Length,
+					LinConstraint,
 					SatGlucose,
 					SatGlucoseOld
 };

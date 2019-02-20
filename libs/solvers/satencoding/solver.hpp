@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "words/words.hpp"
+#include "words/constraints.hpp"
 #include "solvers/solvers.hpp"
 #include "solvers/timing.hpp"
 
@@ -20,6 +21,7 @@ namespace Words {
 		  diagnostic= true;
 		}
 	  private:
+		bool handleConstraint (Words::Constraints::Constraint&, ::Words::Solvers::MessageRelay&,Words::IEntry* = nullptr);
 		Words::Substitution sub;
 		std::stringstream diagStr;
 		bool diagnostic = false;

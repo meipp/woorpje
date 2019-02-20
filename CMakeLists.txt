@@ -38,7 +38,7 @@ FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
 
 
 add_executable (${ToolName} main.cpp)
-target_link_libraries (${ToolName}  words parser solvers glucose ${Boost_LIBRARIES} )
+target_link_libraries (${ToolName}   parser words solvers glucose ${Boost_LIBRARIES} )
 target_include_directories(${ToolName} PRIVATE ${PROJECT_BINARY_DIR})
 
 SET(CPACK_GENERATOR "ZIP")									   

@@ -7,10 +7,11 @@
 #include <map>
 #include <initializer_list>
 
+#include "words/constraints.hpp"
+
 namespace Words {
   class Variable;
-  class Terminal;
-
+  class Terminal;	
   class IEntry {
   public:
 	IEntry (char repr,size_t i) : index(i),repr(repr) {}
@@ -91,6 +92,7 @@ namespace Words {
 	Terminal* getEpsilon ();
 	std::unique_ptr<WordBuilder> makeWordBuilder (Word& w) {return std::make_unique<WordBuilder> (*this,w);}
 	bool conformsToConventions () const;
+	size_t nbVars () const;
   private:
 	struct Internals;
 	std::unique_ptr<Internals> _internal;
@@ -106,6 +108,7 @@ namespace Words {
 	size_t varMaxPadding = 0;
 	Context context;
 	std::vector<Equation> equations;
+	std::vector<Constraints::Constraint_ptr> constraints;
   };
 
   using Substitution = std::map<IEntry*, std::vector<IEntry*> >;

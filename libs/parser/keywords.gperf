@@ -9,6 +9,7 @@ Variables, STRING, Variables,
 Terminals, STRING, Terminals,
 Equation, STRING, Equation,
 Length, STRING, Length,
+LinConstraint,STRING,LinConstraint
 SatGlucose, STRING, SatGlucose
 SatGlucoseOld, STRING, SatGlucoseOld
 %%

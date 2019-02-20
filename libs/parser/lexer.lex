@@ -35,6 +35,16 @@ num1    {dig}+
 ":" return COLON;
 "=" return EQUAL;
 "," return COMMA;
+"[" return LBRACK;
+"]" return RBRACK;
+"+" return PLUS;
+"-" return MINUS;
+"|" return BAR;
+"<=" return LEQ;
+"<" return LT;
+">=" return GEQ;
+">" return GT;
+
 
 {num1}  return NUMBER;
 

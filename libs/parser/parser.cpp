@@ -1,4 +1,5 @@
 #include "words/words.hpp"
+#include "words/linconstraint.hpp"
 #include "parser/parser.hpp"
 
 
@@ -45,6 +46,94 @@ bool Words::Parser::parseEquation (){
   return false;
 }
 
+
+
+bool Words::Parser::parseLinConstraint () {
+  if (tryacceptKeyword (Keywords::LinConstraint) && accept (Tokens::COLON) && accept (Tokens::LBRACK)) {
+	std::unique_ptr<Words::Constraints::LinearConstraintBuilder> builder = nullptr;
+	if (tryaccept (Tokens::LEQ)) {
+	  builder = Words::Constraints::makeLinConstraintBuilder (Words::Constraints::Cmp::LEq);
+	}
+	else if (tryaccept (Tokens::GEQ)) {
+	  builder = Words::Constraints::makeLinConstraintBuilder (Words::Constraints::Cmp::GEq);
+	}
+	else if (tryaccept (Tokens::LT)) {
+	  builder = Words::Constraints::makeLinConstraintBuilder (Words::Constraints::Cmp::Lt);
+	}
+
+	else if (accept (Tokens::GT)) {
+	  builder = Words::Constraints::makeLinConstraintBuilder (Words::Constraints::Cmp::Gt);
+	}
+	else {
+	  return false;
+	}
+	
+	
+	while (!tryaccept (Tokens::COMMA)) {
+	  auto val = parsePMNumber ();
+	  auto var = parseVarLength ();
+	  if (var) {
+		builder->addLHS (var,val);
+	  }
+	  else {
+		builder->addLHS (val);
+	  }
+	}
+
+	while (!tryaccept (Tokens::RBRACK)) {
+	  auto val = parsePMNumber ();
+	  auto var = parseVarLength ();
+	  if (var) {
+		builder->addRHS (var,val);
+	  }
+	  else {
+		builder->addRHS (val);
+	  }
+	}
+	options->constraints.push_back (builder->makeConstraint ());
+	return true;
+	
+  }
+  return false;
+}
+
+int64_t Words::Parser::parsePMNumber () {
+  bool neg = false;
+  if (tryaccept (Tokens::MINUS)) {
+	neg = true;
+  }
+  else {
+	accept (Tokens::PLUS);
+  }
+  std::string text;
+  accept (Tokens::NUMBER,text);
+  auto val = std::atoi (text.c_str());
+  return neg ? -val : val;
+}
+
+Words::IEntry* Words::Parser::parseVarLength () {
+  if (tryaccept (Tokens::BAR)) {
+	std::string text;
+	accept (Tokens::STRING,text);
+	accept (Tokens::BAR);
+	if (text.length () == 1) {
+	  auto var = options->context.findSymbol (text[0]);
+	  if (var->isVariable())
+		return var;
+	  else {
+		*err << " Entity " <<  text << "is not a variable" << std::endl;
+		return nullptr;
+	  }
+	}
+	else {
+	  *err << " ERROR for variable " <<  text<< std::endl;
+	  return nullptr;
+	}
+  }
+  return nullptr;
+}
+
+
 bool Words::Parser::parseLength () {
   std::string text;
   if (acceptKeyword (Keywords::Length) && accept(Tokens::COLON) && accept (Tokens::NUMBER,text) ) {
@@ -54,12 +143,24 @@ bool Words::Parser::parseLength () {
   return false;
 }
 
+bool Words::Parser::tryaccept (Tokens t) {
+  std::string s;
+  return tryaccept (t,s);
+}
+
 bool Words::Parser::accept (Tokens t) {
   std::string s;
   return accept (t,s);
 }
 
 bool Words::Parser::accept (Tokens t, std::string& text) {
+  if (tryaccept(t,text))
+	return true;
+  unexpected();
+  return false;	
+}
+
+bool Words::Parser::tryaccept (Tokens t, std::string& text) {
   if (lexobject.token == t) {
 	lexobject.token = static_cast<Tokens> (lexer->yylex());
 	text = lexobject.text;
@@ -69,9 +170,9 @@ bool Words::Parser::accept (Tokens t, std::string& text) {
 	
 	return true;
   }
-  unexpected();
   return false;
 }
+
 bool Words::Parser::acceptKeyword (Keywords k) {
   if (!tryacceptKeyword (k)) {
 	unexpected();

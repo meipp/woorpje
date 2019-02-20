@@ -32,6 +32,7 @@ namespace Words {
 		  parseTerminalsDecl () && 
 		  parseLength ()) {
 		while(parseEquation ()) {}
+		while(parseLinConstraint ()) {}
 		if (tryacceptKeyword (SatGlucose)) {
 		  return Solvers::makeSolver<Solvers::Types::SatEncoding> ();
 		}
@@ -55,12 +56,19 @@ namespace Words {
 	bool parseVariablesDecl ();
 	bool parseTerminalsDecl ();
 	bool parseEquation ();
+	bool parseLinConstraint ();
 	bool parseLength ();
+	int64_t parsePMNumber ();
+	Words::IEntry* parseVarLength ();
+	
 	
 	bool accept (Tokens t);
+	bool tryaccept (Tokens t);
+	bool tryaccept (Tokens, std::string&);
 	bool accept (Tokens, std::string&);
 	bool acceptKeyword (Keywords);
 	bool tryacceptKeyword (Keywords);
+	
 	void unexpected ();
 	KeywordChecker kw;
 	LexObject lexobject;

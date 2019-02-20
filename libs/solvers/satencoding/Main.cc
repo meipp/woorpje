@@ -67,6 +67,32 @@ bool variable(char c){
   return c >= 'A' && c <= 'Z';
 }
 
+	
+	 
+class StreamWrapper {
+public:
+  StreamWrapper (std::ostream* os) : out(os) {}
+  
+  template<typename T>
+  StreamWrapper& operator<< (const T& t) {
+	if (out)
+	  *out << t;
+	return *this;  
+  }
+
+  operator bool() {
+	return out;
+  }
+
+  void endl () {
+	if (out)
+	  *out << std::endl;
+  }
+  
+private:
+  std::ostream* out;
+};
+
 //=================================================================================================
 map<pair<pair<int, int>, int>, Var> variableVars;
 map<char, int> terminalIndices, variableIndices;
@@ -79,7 +105,7 @@ int globalMaxPadding;
 
 vector<vector<Var> > stateTables;
 vector<int> stateTableColumns, stateTableRows;
-
+vector<string> input_linears_lhs, input_linears_rhs;
 int getIndex(int numCols, int row, int col){
   return row*numCols + col;
 }
@@ -181,35 +207,53 @@ void addOneHotEncoding(Solver & s){
   }
 }
 
-void getCoefficients(string & lhs, string & rhs, map<int, int> & coefficients, int & c){
-  assert(c == 0);
-  for(int j = 0 ; j < lhs.size();j++){
-	if(terminal(lhs[j])){
-	  c++;
-	}
-	else {
-	  assert(variableIndices.count(lhs[j]) != 0);
-	  coefficients[variableIndices[lhs[j]]]--;
-	}
-  }
-  for(int j = 0 ; j < rhs.size();j++){
-	if(terminal(rhs[j])){
-	  c--;
-	}
-	else {
-	  assert(variableIndices.count(rhs[j]) != 0);
-	  coefficients[variableIndices[rhs[j]]]++;
-	}
-  }
+void getCoefficients(string & lhs, string & rhs, map<int, int> & coefficients, int & c, map<int,int> & letter_coefficients){
+    assert(c == 0);
+    for(int j = 0 ; j < lhs.size();j++){
+        if(terminal(lhs[j])){
+			letter_coefficients[terminalIndices[lhs[j]]]++;
+            c++;
+        }
+        else {
+            assert(variableIndices.count(lhs[j]) != 0);
+            coefficients[variableIndices[lhs[j]]]--;
+        }
+    }
+    for(int j = 0 ; j < rhs.size();j++){
+        if(terminal(rhs[j])){
+			letter_coefficients[terminalIndices[lhs[j]]]--;
+            c--;
+        }
+        else {
+		  assert(variableIndices.count(rhs[j]) != 0);
+		  coefficients[variableIndices[rhs[j]]]++;
+        }
+    }
 }
 
 // TODO: Lin-Constraint (via MDDs)
 
-bool addSizeEqualityConstraint(Solver & s, string & str_lhs, string & str_rhs,std::ostream* out){
+bool addSizeEqualityConstraint(Solver & s, string & str_lhs, string & str_rhs,StreamWrapper& out){
+  map<int, int>  coefficients,letter_coefficients;
+  int rhs=0; // amount of terminal symbols if we substract rhs count from lhs count
+  getCoefficients(str_lhs, str_rhs, coefficients, rhs,letter_coefficients);
+  
+  // quick parikh unsat for testing ;)
+  bool allZero = true;
 
-  map<int, int>  coefficients;
-  int rhs=0;
-  getCoefficients(str_lhs, str_rhs, coefficients, rhs);
+  for (auto const& e : coefficients) {
+	allZero = allZero and (e.second == 0);
+  }
+  if (allZero){
+	for (auto const& e : letter_coefficients) {
+	  cout << index2Terminal[e.first] <<" " << e.second << endl;
+	  if (e.second != 0){
+		cout << "c Unsat due to parikh image mismatch!" << endl;
+		return false;
+	  }
+	}
+  }
+
 
   set<pair<int, int> > states;
   int numVars = variableIndices.size();
@@ -233,12 +277,14 @@ bool addSizeEqualityConstraint(Solver & s, string & str_lhs, string & str_rhs,st
 	currentRow.insert(currentRow.end(), nextRow.begin(), nextRow.end());
 	nextRow.clear();
   }
-  if (out)
-	*out << (Words::Solvers::Formatter ("Created %d states for MDD! ") % states.size ()).str() << std::endl;
-  
-  if(states.count(make_pair(numVars-1, rhs)) == 0 ){
-	if (out)
-	  *out << "c linear equality is unsatisfiable??? " << endl;
+  if (out) {
+	(out << (Words::Solvers::Formatter ("Created %d states for MDD! ") % states.size ()).str()).endl ();
+  }
+  //printf("c created %d states for MDD! \n", states.size());
+  /*for(set<pair<int, int> >::iterator it = states.begin() ; it != states.end();it++){
+	cout << "initial state: " << it->first << " " << it->second << endl;
+    }*/
+  if(states.count(make_pair(numVars-1, rhs)) == 0){
 	return false;
   }
 
@@ -271,11 +317,9 @@ bool addSizeEqualityConstraint(Solver & s, string & str_lhs, string & str_rhs,st
 	  }
 	}
   }
-
-  if (out) {
-	*out << (Words::Solvers::Formatter ("Have %1% marked states!") % markedStates.size()).str() << std::endl;
-	
-  }
+  Words::Solvers::Formatter ff ("have %1% marked states!");
+  (out << (ff % markedStates.size ()).str()).endl ();  
+  //printf("c have %d marked states! \n", markedStates.size());
   map<pair<int, int>, Var> partialSumVariables;
   for(set<pair<int, int> >::iterator it = markedStates.begin() ; it != markedStates.end();it++){
 	partialSumVariables[*it] = s.newVar();
@@ -293,8 +337,7 @@ bool addSizeEqualityConstraint(Solver & s, string & str_lhs, string & str_rhs,st
 	if(this_var >= numVars){
 	  assert(this_var == numVars);
 	  assert(it->second == rhs);
-	  if (out)
-		*out << "adding unit clause! " << endl;
+	  (out << "adding unit clause! ").endl ();
 	  s.addClause(mkLit(partialSumVariables[*it]));
 	}
 	else{
@@ -308,8 +351,8 @@ bool addSizeEqualityConstraint(Solver & s, string & str_lhs, string & str_rhs,st
 		vec<Lit> ps;
 		assert(partialSumVariables.count(*it));
 		ps.push(~mkLit(partialSumVariables[*it])); // A[this_var-1,j]
-		if(oneHotEncoding.count(make_pair(this_var, i)) == 0 && out){
-		  *out << "Cannot find oneHot for variable " << this_var << " and value " << i << endl;
+		if(oneHotEncoding.count(make_pair(this_var, i)) == 0){
+		  cout << "Cannot find oneHot for variable " << this_var << " and value " << i << endl;
 		}
 		assert(oneHotEncoding.count(make_pair(this_var, i)));
 		ps.push(~oneHotEncoding[make_pair(this_var, i)]);           // this_var=i
@@ -322,8 +365,8 @@ bool addSizeEqualityConstraint(Solver & s, string & str_lhs, string & str_rhs,st
 		  ps.push(mkLit(partialSumVariables[make_pair(this_var, new_sum)]));
 		  lastVarAssignmentThatFit = i;
 		}
-		if(!s.addClause(ps) && out){
-		  *out << "got false while adding a clause! " << endl;
+		if(!s.addClause(ps)){
+		  (out << "got false while adding a clause! ").endl ();
 		}
 
 
@@ -354,7 +397,7 @@ bool addSizeEqualityConstraint(Solver & s, string & str_lhs, string & str_rhs,st
   return true;
 }
 
-void oldEncoding (Solver& S, int szLHS, int szRHS,vector<Var>& stateVars,map<pair<int, int>, Var>& w1,map<pair<int, int>, Var>& w2,std::ostream* out,bool localOptimisation) {
+void oldEncoding (Solver& S, int szLHS, int szRHS,vector<Var>& stateVars,map<pair<int, int>, Var>& w1,map<pair<int, int>, Var>& w2,StreamWrapper& out,bool localOptimisation) {
   //int equationSizes = szRHS;
 	//cout << "now have equationSize " << equationSizes << endl;
 	// TODO:
@@ -398,7 +441,7 @@ void oldEncoding (Solver& S, int szLHS, int szRHS,vector<Var>& stateVars,map<pai
 
 	if (out) {
 	  Words::Solvers::Formatter ff ("Have automaton size %1% times %2% and created %3% many state variables");
-	  *out << (ff %szLHS %szRHS %stateVars.size ()).str() << std::endl;
+	  (out << (ff %szLHS %szRHS %stateVars.size ()).str()).endl();
 	}
 	for(int i = 0 ; i <= szLHS ; i++){
 	  for(int j = 0 ; j <= szRHS; j++){
@@ -620,7 +663,7 @@ void newEncoding (Solver& S, int szLHS, int szRHS,vector<Var>& stateVars,map<pai
 
 // localOptimisation: add clauses s(i,j) -> (s(i+1, j) \/ s(i+1, j+1) \/ s(i,j+1))
 template<bool newEncode = true>
-void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool localOptimisation, bool fillUntilSquare,std::ostream* out){
+void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool localOptimisation, bool fillUntilSquare,StreamWrapper& out){
   map<pair<int, int>, Var> w1, w2;
   int szLHS = 0;
   int szRHS = 0;
@@ -648,7 +691,7 @@ void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool local
   szLHS = column;
   if (out) {
 	Words::Solvers::Formatter formatter ("Done with first part, have %1% many columns")  ; 
-	*out << (formatter % column). str() << std::endl;
+	(out << (formatter % column). str()).endl();
   }
   column = 0;
   for(int i = 0 ; i < input_w2.size() ; i++){
@@ -683,7 +726,7 @@ void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool local
   if(fillUntilSquare){
 	if(szLHS < szRHS){
 	  if (out)
-		*out << "c Padding left-hand side: " << endl;
+		(out << "c Padding left-hand side: ").endl();
 	  for( ; szLHS < szRHS ; szLHS++){
 		for(int j = 0 ; j <= sigmaSize ; j++){
 		  assert(w1.count(make_pair(szLHS, j)) == false);
@@ -693,7 +736,7 @@ void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool local
 	}
 	if(szLHS > szRHS){
 	  if (out)
-		*out << "c Padding right-hand side: " << endl;
+		(out << "c Padding right-hand side: ").endl ();
 	  for( ; szRHS < szLHS ; szRHS++){
 		for(int j = 0 ; j <= sigmaSize ; j++){
 		  w2[make_pair(szRHS, j)] = constantsVars[make_pair(sigmaSize, j)];
@@ -703,7 +746,7 @@ void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool local
 	assert(szRHS == szLHS);
   }
   if (out) {
-	*out << (Words::Solvers::Formatter ("creating table of size %1% x %2%") % szLHS % szRHS).str () << std::endl; 
+	(out << (Words::Solvers::Formatter ("creating table of size %1% x %2%") % szLHS % szRHS).str ()).endl (); 
   }
   
   //map<pair<int, int>, Var> stateVars;
@@ -783,49 +826,207 @@ void encodeNotEqual(Solver & s, int firstIndex, int secondIndex, int sigmaSize,s
 }
 
 
-void sharpenBounds(Solver & s, string & lhs, string & rhs,std::ostream* out = nullptr){
-  map<int, int> coefficients;
-  int c = 0;
-  getCoefficients(lhs, rhs, coefficients, c);
-  if (out) {
-	*out << "Got equation ";
+void sharpenBounds(Solver & s, string & lhs, string & rhs,StreamWrapper& out){
+  map<int, int> coefficients, letter_coefficients;
+   int c = 0;
+    getCoefficients(lhs, rhs, coefficients, c,letter_coefficients);
+	if (out) {
+	  (out << "Got equation ").endl();
+	  for(map<int, int>::iterator it = coefficients.begin() ; it != coefficients.end();it++){
+		out << it->second << " * " << index2Varible[it->first] << " ";
+	  }
+	  (out << "= " << c).endl ();
+	}
 	for(map<int, int>::iterator it = coefficients.begin() ; it != coefficients.end();it++){
-	  *out << it->second << " * " << index2Varible[it->first] << " ";
-	}
-	*out << "= " << c << endl;
-  }
-  for(map<int, int>::iterator it = coefficients.begin() ; it != coefficients.end();it++){
-	if(it->second != 0){ // only consider unbalanced variables!
-	  int rhs = c;
-	  for(map<int, int>::iterator others = coefficients.begin() ; others != coefficients.end();others++){
-		if((it->second < 0) ^ (others->second < 0)){ // get upper bound, thus try to make rhs/a_i as large as possible
+        if(it->second != 0){ // only consider unbalanced variables!
+            int rhs = c;
+            for(map<int, int>::iterator others = coefficients.begin() ; others != coefficients.end();others++){
+                if((it->second < 0) ^ (others->second < 0)){ // get upper bound, thus try to make rhs/a_i as large as possible
 
-		  rhs -= others->second * maxPadding[others->first];
-		}
-	  }
-	  if (out) {
-		*out << "Can infer bound " << index2Varible[it->first] << " <= " << rhs << "/" << it->second << " = " << (rhs / it->second) << endl;
-	  }
-	  rhs /= it->second;
-	  if(rhs < maxPadding[it->first])
-		maxPadding[it->first] = rhs;
-	}
-  }
-
+                    rhs -= others->second * maxPadding[others->first];
+                }
+            }
+			if (out)
+			  (out << "c Can infer bound " << index2Varible[it->first] << " <= " << rhs << "/" << it->second << " = " << (rhs / it->second)).endl ();
+            rhs /= it->second;
+            if(rhs < maxPadding[it->first])
+                maxPadding[it->first] = rhs;
+        }
+    }
 }
 
 
 // sum a_i x_i - sum b_j x_j <=  + c, where a_i, b_j >= 0
 
 // Expect x_i as one-hot encoded, with pairs (j, v_j) <-> x_i = j
+bool addLinearEqualityConstraint(Solver & s, string & str_lhs, string & str_rhs, StreamWrapper&out){
+  map<int, int>  coefficients, letter_coefficients;
+  int rhs=0; // amount of terminal symbols if we substract rhs count from lhs count
+  getCoefficients(str_lhs, str_rhs, coefficients, rhs,letter_coefficients);
 
-void encodeLinConstraint(Solver & s, vec<int> & ai, vector<vector<pair<int, Lit> > > & xi, int c, int type){
-  map<pair<int, int>, Var > partialSums;
-  Var emptySumZero = trueConst;
-  partialSums[make_pair(0, 0)] = trueConst;
-  for(int i = 0 ; i < xi.size();i++){
+  set<pair<int, int> > states;
+  int numVars = variableIndices.size();
+  states.insert(make_pair(-1, 0));    // state for the empty prefix
+  vector<int >  currentRow;
 
+  map<pair<int, int>, set<pair<int, int> > > predecessors, successors;
+  currentRow.push_back(0);
+
+  set<int> nextRow;
+  set<int> possibleFinalValues;
+
+
+  for(int i = 0 ; i < numVars;i++){
+	if (out)
+	  (out << "Considering Variable " << i). endl ();
+	for(int j = 0 ; j < currentRow.size();j++){
+	  for(int k = 0 ; k <= maxPadding[i] ; k++){
+		int nextValue = currentRow[j] + k * coefficients[i];
+		nextRow.insert(nextValue);
+		states.insert(make_pair(i, nextValue));
+		if (out)
+		  (out << "Building State " << nextValue << " based on " <<currentRow[j] <<"+" << k << "*" << coefficients[i]).endl ();
+	  }
+	}
+	  
+	// save possible finals
+	if(i == numVars-1){
+	  for (auto value : nextRow){
+		(out << value).endl ();
+		if(value >= rhs){ // remove never reached stuff, encoding <=
+		  possibleFinalValues.insert(value);
+		}
+	  }
+	}
+	currentRow.clear();
+	currentRow.insert(currentRow.end(), nextRow.begin(), nextRow.end());
+	nextRow.clear();
   }
+  if (out)
+	(out << (Words::Solvers::Formatter ("Created %1% states for MDD!") % states.size ()).str ()). endl ();
+  
+	
+  set<pair<int, int> > markedStates;
+  vector<pair<int, int> > queue;
+  int nextIndex = 0;
+	
+  // Mark posible final states
+  for	(auto value : possibleFinalValues){
+	markedStates.insert(make_pair(numVars-1, value));
+	queue.push_back(make_pair(numVars-1, value));
+  }
+	
+  while(nextIndex < queue.size()){
+	pair<int, int> currentState = queue[nextIndex];
+	nextIndex++;
+	int this_var = currentState.first;
+	if(this_var < 0){
+	  // Okay, I reached the root
+	  markedStates.insert(currentState);
+	}
+	else{
+	  Words::Solvers::Formatter format ("Building state %1% based on %2% - %3%*%4%"); 
+	  assert(this_var >= 0 && this_var < numVars);
+	  for(int j = 0 ; j <= maxPadding[this_var] ; j++){
+		pair<int, int> predecessor = make_pair(this_var-1, currentState.second - j * coefficients[this_var]);
+		if(states.count(predecessor)){
+		  if(markedStates.count(predecessor) == 0)
+			queue.push_back(predecessor);
+		  if (out)
+			out << (format %  (currentState.second - j * coefficients[this_var]) % currentState.second % j %coefficients[this_var]).str ();
+		  markedStates.insert(predecessor);
+		  predecessors[currentState].insert(predecessor);
+		  successors[predecessor].insert(currentState);
+		}
+	  }
+	}
+  }
+  Words::Solvers::Formatter format ("Have %d marked states! \n");
+  (out << (format % markedStates.size ()).str()).endl (); 
+  map<pair<int, int>, Var> partialSumVariables;
+  for(set<pair<int, int> >::iterator it = markedStates.begin() ; it != markedStates.end();it++){
+	partialSumVariables[*it] = s.newVar();
+  }
+
+  // there is no way back to the intial state
+  if(partialSumVariables.count(make_pair(-1, 0)) == 0){
+	(out << "c linear equality is unsatisfiable! ").endl ();
+	return false;
+  }
+
+  assert(partialSumVariables.count(make_pair(-1, 0)));
+  s.addClause(mkLit(partialSumVariables[make_pair(-1, 0)]));
+
+
+  for	(auto value : possibleFinalValues){
+	s.addClause(mkLit(partialSumVariables[make_pair(numVars-1, value)]));
+  }
+
+  // Add clauses: A[i-1,j] /\ x_i = c -> A[i, j+a_i * c]
+  for(set<pair<int, int> >::iterator it = markedStates.begin() ; it != markedStates.end();it++){
+	//cout << "Have marked state " << it->first << " " << it->second << " and " << s.nFreeVars() << " free variables" << endl;
+	int this_var = it->first + 1;
+	if(this_var >= numVars){
+	  assert(this_var == numVars);
+	  assert(it->second >= rhs);
+	  (out << "adding unit clause! ").endl ();
+	  s.addClause(mkLit(partialSumVariables[*it]));
+	}
+	else{
+	  assert(maxPadding.count(this_var));
+	  int successorsFound = 0;
+	  int lastVarAssignmentThatFit = -1;
+	  for(int i = 0 ; i <= maxPadding[this_var] ; i++){
+		int new_sum = it->second + i * coefficients[this_var];
+		assert(states.count(make_pair(this_var, new_sum)));
+
+		vec<Lit> ps;
+		assert(partialSumVariables.count(*it));
+		ps.push(~mkLit(partialSumVariables[*it])); // A[this_var-1,j]
+		if(oneHotEncoding.count(make_pair(this_var, i)) == 0){
+		  cout << "Cannot find oneHot for variable " << this_var << " and value " << i << endl;
+		}
+		assert(oneHotEncoding.count(make_pair(this_var, i)));
+		ps.push(~oneHotEncoding[make_pair(this_var, i)]);           // this_var=i
+
+
+		if(markedStates.count(make_pair(this_var, new_sum))){
+		  successorsFound++;
+		  assert(markedStates.count(make_pair(this_var, new_sum)));
+		  assert(partialSumVariables.count(make_pair(this_var, new_sum)));
+		  ps.push(mkLit(partialSumVariables[make_pair(this_var, new_sum)]));
+		  lastVarAssignmentThatFit = i;
+		}
+		if(!s.addClause(ps)){
+		  (out << "got false while adding a clause! ").endl ();
+		}
+
+
+	  }
+	  assert(successorsFound > 0);
+	  if(successorsFound == 1){
+		assert(lastVarAssignmentThatFit >= 0);
+		vec<Lit> ps;
+		assert(partialSumVariables.count(*it));
+		ps.push(~mkLit(partialSumVariables[*it])); // A[this_var-1,j]
+		//printf("c only one successor, adding unit clause! \n");
+		ps.push(oneHotEncoding[make_pair(this_var, lastVarAssignmentThatFit)]);    // Only one successor. Thus, if A[i,j] is active, this immediately implies the value of x[i]
+		s.addClause(ps);
+	  }
+
+	}
+
+	//        vector<pair<int, int> > & v = it->second;
+	//        for(int i = 0 ; i < v.size();i++){
+	//            //
+	//            vec<Lit> ps;
+	//            ps.push(~mkLit(partialSumVariables[it->first])); // A[i-1, j]
+	//            assert(coefficients.count(i));
+	//            int c = (v[i].second - it->first.second) / coefficients[i];
+	//            assert(it->first.second + c * coefficients[i] == v[i].second);
+	//        }
+  }
+  return true;
 
 }
 
@@ -883,10 +1084,16 @@ void setupSolverMain (std::vector<std::string>& mlhs, std::vector<std::string>& 
   globalMaxPadding = static_cast<int> (global);
 }
 
+void addLinearConstraint (const std::string& lhs, const std::string& rhs) {
+  input_linears_lhs.push_back (lhs);
+  input_linears_rhs.push_back (rhs);
+}
+
 template<bool newencode = true>
 ::Words::Solvers::Result runSolver (const bool squareAuto,  const Words::Context& context, Words::Substitution& substitution,
-									Words::Solvers::Timing::Keeper& tkeeper, std::ostream* odiag = nullptr) {
+									Words::Solvers::Timing::Keeper& tkeeper, std::ostream* odia = nullptr) {
   Words::Solvers::Timing::Timer overalltimer (tkeeper,"Overall Solving Time");
+  StreamWrapper wrap (odia);
   Solver S;
   int lin = 0, reg = 0, d = 0;  // upper bound on length of variables
   double initial_time = cpuTime();
@@ -910,7 +1117,7 @@ template<bool newencode = true>
   
   for(int i = 0 ; i < input_equations_lhs.size();i++){
 	// TODO: Derive bounds on lengths here?
-	sharpenBounds(S, input_equations_lhs[i], input_equations_rhs[i],odiag);
+	sharpenBounds(S, input_equations_lhs[i], input_equations_rhs[i],wrap);
   }
   int numVars;
   {
@@ -921,8 +1128,8 @@ template<bool newencode = true>
 	numVars = variableIndices.size();
 	
 	for(int i = 0 ; i < numVars ; i++){
-	  if (odiag)
-		*odiag << "bound for " << index2Varible[i] << ": " << maxPadding[i] << endl;
+	  
+	  (wrap << "bound for " << index2Varible[i] << ": " << maxPadding[i]).endl ();
   }
 	// Encode variables for terminal symbols
 	
@@ -975,15 +1182,23 @@ template<bool newencode = true>
 	addOneHotEncoding(S);
   
 	for(int i = 0 ; i < input_equations_lhs.size();i++){
-	  bool succ = addSizeEqualityConstraint(S, input_equations_lhs[i], input_equations_rhs[i],odiag);
+	  bool succ = addSizeEqualityConstraint(S, input_equations_lhs[i], input_equations_rhs[i],wrap);
+	  if(!succ){
+		return Words::Solvers::Result::NoSolution;
+	  }
+	}
+	// quick linears hack
+	for(int i = 0 ; i < input_linears_lhs.size();i++){
+	  bool succ = addLinearEqualityConstraint(S, input_linears_lhs[i], input_linears_rhs[i],wrap);
 	  if(!succ){
 		return Words::Solvers::Result::NoSolution;
 	  }
 	}
 	
 	
+	
 	for(int i = 0 ; i < input_equations_lhs.size();i++){
-	  encodeEquation<newencode>(S, input_equations_lhs[i], input_equations_rhs[i], true, squareAuto,odiag);
+	  encodeEquation<newencode>(S, input_equations_lhs[i], input_equations_rhs[i], true, squareAuto,wrap);
 	}
 
   }
@@ -1014,12 +1229,12 @@ template<bool newencode = true>
   
   int stateVarsSeen = 0;
   int stateVarsOverall = 0;
-  if(odiag){
+  if(wrap){
 	for(int t = 0 ; t < stateTables.size();t++){
 	  vector<Var> & v = stateTables[t];
 	  int nCols = stateTableColumns[t];
 	  int nRows = stateTableRows[t];
-	  *odiag << "print a " << nRows << " x " << nCols << " matrix..." << endl;
+	  (wrap << "print a " << nRows << " x " << nCols << " matrix..."). endl ();
 	  int index = 0;
 	  for(int i = 0 ; i < nRows ; i++){
 		for(int j = 0 ; j < nCols ; j++){
@@ -1027,22 +1242,22 @@ template<bool newencode = true>
 		  assert(index == getIndex(nCols, i, j));
 		  if(S.varSeen[v[getIndex(nCols, i, j)]]){
 			stateVarsSeen++;
-			*odiag << "*";
+			wrap << "*";
 		  }
 		  else {
-			*odiag << " ";
+			wrap << " ";
 		  }
 		  index++;
 		}
-		*odiag << "|" << i << endl;
+		(wrap << "|" << i).endl ();
 	  }
 	  assert(index == v.size());
-	  *odiag << endl;
+	  //wrap << endl;
 	}
   }
-  if (odiag){
+  if (wrap){
 	Words::Solvers::Formatter ff ("saw %1% out of %2% state variables! ");
-	*odiag << (ff % stateVarsSeen % stateVarsOverall).str () << std::endl;
+	wrap << (ff % stateVarsSeen % stateVarsOverall).str (); //<< std::endl;
 	//printf("c saw %d out of %d state variables! \n", stateVarsSeen, stateVarsOverall);
   
   //-------------- Result is put in a external file
@@ -1097,7 +1312,7 @@ template<bool newencode = true>
 	  }
 	  cout << endl;
 	  }*/
-	if(odiag){
+	if(wrap){
 	  for(int t = 0 ; t < stateTables.size();t++){
 		vector<Var> & v = stateTables[t];
 		int index = 0;
@@ -1106,18 +1321,18 @@ template<bool newencode = true>
 				
 			assert(index == getIndex(stateTableColumns[t], i, j));
 			if(S.modelValue(v[index]) == l_True){
-			  *odiag << "*";
+			  wrap << "*";
 			}
 			else if(S.modelValue(v[index]) == l_False){
-			  *odiag << " ";
+			  wrap << " ";
 			}
 			else
-			  *odiag << "?";
+			  wrap << "?";
 			index++;
 		  }
-		  *odiag << "|" << i << endl;
+		  (wrap << "|" << i). endl ();
 		}
-		*odiag << endl;
+		wrap.endl();
 	  }
 	}
 

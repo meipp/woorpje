@@ -36,6 +36,7 @@ namespace Words {
 	private:
 	  boost::format formatter;
 	};
+
 	
 	
 	class MessageRelay {

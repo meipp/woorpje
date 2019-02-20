@@ -1,7 +1,6 @@
 Variables {ABD}
 Terminals {bca}
 Length : 10
-Equation: bAA = baB
-Equation: Da = bbB
-
+Equation: A = bbbB
+LinConstraint: [<= +1|A|+2|B|,+5] 
 SatGlucose

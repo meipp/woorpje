@@ -69,6 +69,10 @@ namespace Words {
 	}
 	return true;
   }
+  
+  size_t Context::nbVars () const {
+	return _internal->vars.size();
+  }
 
   
   IEntry* Context::findSymbol (char c) const {
