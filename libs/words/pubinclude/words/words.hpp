@@ -93,6 +93,7 @@ namespace Words {
 	std::unique_ptr<WordBuilder> makeWordBuilder (Word& w) {return std::make_unique<WordBuilder> (*this,w);}
 	bool conformsToConventions () const;
 	size_t nbVars () const;
+	size_t nbTerms () const;
   private:
 	struct Internals;
 	std::unique_ptr<Internals> _internal;
@@ -104,8 +105,6 @@ namespace Words {
   };
 
   struct Options {
-	size_t wordMaxLength = 0;
-	size_t varMaxPadding = 0;
 	Context context;
 	std::vector<Equation> equations;
 	std::vector<Constraints::Constraint_ptr> constraints;

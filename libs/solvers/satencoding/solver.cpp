@@ -6,12 +6,12 @@
 #include "words/linconstraint.hpp"
 #include "solver.hpp"
 
-void setupSolverMain (std::vector<std::string>&, std::vector<std::string>&, size_t global);
+void setupSolverMain (std::vector<std::string>&, std::vector<std::string>&);
 
 void addLinearConstraint (const std::string& lhs, const std::string& rhs);
 
 template<bool>
-::Words::Solvers::Result runSolver (const bool squareAuto, const Words::Context&,Words::Substitution&,Words::Solvers::Timing::Keeper&,std::ostream*);
+::Words::Solvers::Result runSolver (const bool squareAuto, size_t bound, const Words::Context&,Words::Substitution&,Words::Solvers::Timing::Keeper&,std::ostream*);
   
 namespace Words {
   namespace Solvers {
@@ -53,8 +53,9 @@ namespace Words {
 			return ::Words::Solvers::Result::NoIdea;
 		}
 		
-		setupSolverMain (lhs,rhs,opt.varMaxPadding);
-		return runSolver<encoding> (false,opt.context,sub,timekeep,(diagnostic ? &diagStr : nullptr));
+		setupSolverMain (lhs,rhs);
+		Words::Solvers::Timing::Timer overalltimer (timekeep,"Overall Solving Time");
+		return runSolver<encoding> (false,bound,opt.context,sub,timekeep,(diagnostic ? &diagStr : nullptr));
 		
 	  }
 	  
@@ -110,11 +111,5 @@ namespace Words {
 	  }
 	}
 	
-	
-	template<>
-	Solver_ptr makeSolver<Types::SatEncoding> () {return std::make_unique<SatEncoding::Solver<true>> ();}
-
-	template<>
-	Solver_ptr makeSolver<Types::SatEncodingOld> () {return std::make_unique<SatEncoding::Solver<false>> ();}
   }
 }

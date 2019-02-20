@@ -14,6 +14,7 @@ namespace Words {
 	  template<bool encoding>
 	  class Solver : public ::Words::Solvers::Solver {
 	  public:
+		Solver (size_t bound) : bound(bound) {} 
 		Result Solve (Words::Options&,Words::Solvers::MessageRelay&) override;
 		//Should only be called if Result returned HasSolution
 		void getResults (Words::Solvers::ResultGatherer& r) override;
@@ -26,8 +27,17 @@ namespace Words {
 		std::stringstream diagStr;
 		bool diagnostic = false;
 		Words::Solvers::Timing::Keeper timekeep;
+		size_t bound;
 	  };
 	}
+
+	template<>
+	Solver_ptr makeSolver<Types::SatEncoding,size_t> (size_t bound ) {return std::make_unique<SatEncoding::Solver<true>> (bound);}
+
+	template<>
+	Solver_ptr makeSolver<Types::SatEncodingOld,size_t> (size_t bound) {return std::make_unique<SatEncoding::Solver<false>> (bound);}
+	
+	
   }
 }
 

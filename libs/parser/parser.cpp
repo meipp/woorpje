@@ -133,16 +133,6 @@ Words::IEntry* Words::Parser::parseVarLength () {
   return nullptr;
 }
 
-
-bool Words::Parser::parseLength () {
-  std::string text;
-  if (acceptKeyword (Keywords::Length) && accept(Tokens::COLON) && accept (Tokens::NUMBER,text) ) {
-	options->varMaxPadding = std::atoi (text.c_str());
-	return true;
-  }
-  return false;
-}
-
 bool Words::Parser::tryaccept (Tokens t) {
   std::string s;
   return tryaccept (t,s);

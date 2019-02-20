@@ -32,6 +32,8 @@ num1    {dig}+
 
 "{" return LBRACE;
 "}" return RBRACE;
+"(" return LPARAN;
+")" return RPARAN;
 ":" return COLON;
 "=" return EQUAL;
 "," return COMMA;

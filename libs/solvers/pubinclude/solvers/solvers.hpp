@@ -80,8 +80,8 @@ namespace Words {
 
 	using Solver_ptr =std::unique_ptr<Solver>;
 	
-	template<Types>
-	Solver_ptr makeSolver ();
+	template<Types,typename ...Args>
+	Solver_ptr makeSolver (Args... args);
   }
 }
 
