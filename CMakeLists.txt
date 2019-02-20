@@ -1,12 +1,12 @@
 project(wordsolver)
 
-SET (ToolName WoSol)
+SET (ToolName woorpje)
 SET (VERSION_MAJOR 0)
 SET (VERSION_MINOR 1)
-SET (MAINDEVELOPERNAME "Mitja Kulszynski")
+SET (MAINDEVELOPERNAME "Mitja Kulczynski")
 SET (MAINDEVELOPEREMAIL "mku@informatik.uni-kiel.de")
 SET (ORGANISATION "Dependable Systems Group, Kiel Univeristy")
-SET (DEPSACK "Based on Glucose.")
+SET (DEPSACK "${ToolName} is a word equation solver based on Glucose.")
 
 # when building, don't use the install RPATH already
 # (but later on when installing)
