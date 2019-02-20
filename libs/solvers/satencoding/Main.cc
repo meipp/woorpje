@@ -1276,7 +1276,7 @@ template<bool newencode = true>
   }
   if (wrap){
 	Words::Solvers::Formatter ff ("saw %1% out of %2% state variables! ");
-	wrap << (ff % stateVarsSeen % stateVarsOverall).str (); //<< std::endl;
+	(wrap << (ff % stateVarsSeen % stateVarsOverall).str ()).endl(); //<< std::endl;
 	//printf("c saw %d out of %d state variables! \n", stateVarsSeen, stateVarsOverall);
   
   //-------------- Result is put in a external file
