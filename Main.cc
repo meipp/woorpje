@@ -867,7 +867,7 @@ int main(int argc, char** argv)
         IntOption    cpu_lim("MAIN", "cpu-lim","Limit on CPU time allowed in seconds.\n", INT32_MAX, IntRange(0, INT32_MAX));
         IntOption    mem_lim("MAIN", "mem-lim","Limit on memory usage in megabytes.\n", INT32_MAX, IntRange(0, INT32_MAX));
         BoolOption   squareAuto   ("MAIN", "useSquareAutomaton",   "Make the automaton the shape of a square.", false);
-        BoolOption   optPrintTable   ("MAIN", "printTables",   "Print tables.", false);
+        BoolOption   optPrintTable   ("MAIN", "printTables",   "Print tables.", true);
 
         parseOptions(argc, argv, true);
 

@@ -68,7 +68,7 @@ private:
 
 void printContactDetails (std::ostream& os) {
   os << Version::ORGANISATION << std::endl;
-  os << Version::MAINDEVELOPERNAME <<  "<" << Version::MAINDEVELOPEREMAIL << ">" << std::endl;
+  os << Version::MAINDEVELOPERNAME <<  " <" << Version::MAINDEVELOPEREMAIL << ">" << std::endl;
 }
 
 
@@ -94,7 +94,7 @@ int main (int argc, char** argv) {
   po::options_description desc("General Options");
   desc.add_options ()
 	("help,h",po::bool_switch(&help), "Help message.")
-	("nobanner,n",po::bool_switch(&suppressbanner), "Suppress the panner.")
+	("nobanner,n",po::bool_switch(&suppressbanner), "Suppress the banner.")
 	("diagnostics,d",po::bool_switch(&diagnostic), "Enable Diagnostic Data.")
 	("configuration,c",po::value<std::string>(&conffile), "Configuration file");
   
