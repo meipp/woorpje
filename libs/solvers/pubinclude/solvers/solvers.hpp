@@ -5,7 +5,6 @@
 #include <memory>
 #include <boost/format.hpp>
 
-
 #include "words/words.hpp"
 #include "solvers/timing.hpp"
 
@@ -36,8 +35,6 @@ namespace Words {
 	private:
 	  boost::format formatter;
 	};
-
-	
 	
 	class MessageRelay {
 	public:

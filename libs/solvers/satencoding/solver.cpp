@@ -4,6 +4,8 @@
 #include "words/exceptions.hpp"
 #include "words/words.hpp"
 #include "words/linconstraint.hpp"
+#include "solvers/exceptions.hpp"
+#include "core/Solver.h"
 #include "solver.hpp"
 
 void setupSolverMain (std::vector<std::string>&, std::vector<std::string>&);
@@ -55,8 +57,11 @@ namespace Words {
 		
 		setupSolverMain (lhs,rhs);
 		Words::Solvers::Timing::Timer overalltimer (timekeep,"Overall Solving Time");
-		return runSolver<encoding> (false,bound,opt.context,sub,timekeep,(diagnostic ? &diagStr : nullptr));
-		
+		try {
+		  return runSolver<encoding> (false,bound,opt.context,sub,timekeep,(diagnostic ? &diagStr : nullptr));
+		}catch(Glucose::OutOfMemoryException& e) {
+		  throw Words::Solvers::OutOfMemoryException ();
+		}
 	  }
 	  
 	  //Should only be called if Result returned HasSolution

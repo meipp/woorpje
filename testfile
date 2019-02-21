@@ -2,4 +2,4 @@ Variables {ABD}
 Terminals {bca}
 Equation: A = bbbB
 LinConstraint: [<= +1|A|+2|B|,+5] 
-SatGlucose(20)
+SatGlucose(2000)
