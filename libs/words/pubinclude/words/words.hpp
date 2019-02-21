@@ -95,6 +95,8 @@ namespace Words {
 	bool conformsToConventions () const;
 	size_t nbVars () const;
 	size_t nbTerms () const;
+	IEntry* getTerminal (size_t) const;
+	IEntry* getVariable (size_t s) const;
   private:
 	struct Internals;
 	std::unique_ptr<Internals> _internal;

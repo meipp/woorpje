@@ -12,7 +12,8 @@ namespace Words {
   namespace Solvers {
 	enum class Types {
 					  SatEncoding,
-					  SatEncodingOld
+					  SatEncodingOld,
+					  Reachability
 	};
 
 	enum class Result {

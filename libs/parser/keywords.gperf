@@ -12,6 +12,7 @@ Length, STRING, Length,
 LinConstraint,STRING,LinConstraint
 SatGlucose, STRING, SatGlucose
 SatGlucoseOld, STRING, SatGlucoseOld
+Reachability, STRING, Reachability
 %%
 
 bool KeywordChecker::isKeyword (std::string str) {

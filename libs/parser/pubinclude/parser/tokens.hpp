@@ -39,7 +39,8 @@ enum  Keywords{
 					Length,
 					LinConstraint,
 					SatGlucose,
-					SatGlucoseOld
+					SatGlucoseOld,
+					Reachability
 };
 
 

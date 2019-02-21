@@ -3,6 +3,7 @@
 #include <set>
 #include <stdio.h>
 #include <string.h>
+#include <iostream>
 
 #include "words/words.hpp"
 
@@ -18,21 +19,31 @@ namespace Words{
 	public:
 	  struct Node {
 	  public:
-		Node (std::unique_ptr<T*[]>& d,size_t s) : data(std::move(d)),size(s) {}
-		const T* operator[] (size_t i) {return data.get()[i];}
+		Node (std::unique_ptr<T*[]>& d,size_t s) : data(std::move(d)),size(s) {
+		}
+		
+		const T* operator[] (size_t i) {
+		  return data.get()[i];
+		}
 		std::unique_ptr<T*[]> data;
 		size_t size;
 	  };
 
+	  ~ArrayStore () {
+		for (auto s : map)
+		  delete s.second;
+	  }
+	  
 	  Node* makeNode (size_t s) {
 		std::unique_ptr<T*[]> newD (new T*[s]);
 		std::fill (newD.get(),newD.get()+s,nullptr);
 		return insert (newD,s);
 	  }
 
-	  Node* change (Node* n,size_t pos, T*) {
+	  Node* change (Node* n,size_t pos, const T* t) {
 		std::unique_ptr<T*[]> newD (new T*[n->size]);
-		std::copy (n->data.get(),n->data.get(),newD.get());
+		std::copy (n->data.get(),n->data.get()+n->size,newD.get());
+		newD.get()[pos] = const_cast<T*> (t);
 		return insert (newD,n->size);
 	  }
 	  
@@ -44,15 +55,15 @@ namespace Words{
 		  if (it->second->size == s &&
 			  !memcmp (data.get(),it->second->data.get(),s)
 			  )
-			return it->second.get();
+			return it->second;
 		}
 		auto newnode = std::make_unique<Node> (data,s);
 		auto res = newnode.get();
-		map.insert(std::pair<uint32_t,std::unique_ptr<Node>> (hash,std::move(newnode)));
+		map.emplace(hash,newnode.release());
 		return res;
 	  }
 	  
-	  std::unordered_map<uint32_t,std::unique_ptr<Node>> map;
+	  std::map<uint32_t,Node*> map;
 	};
 
 	
@@ -63,12 +74,88 @@ namespace Words{
 	
 	template<class T> 
 	struct SearchState  {
+	  auto copy () const {return std::make_unique<SearchState<T>> (*this);}
 	  WordPos lhs;
 	  WordPos rhs;
 	  std::vector<typename ArrayStore<T>::Node*> substitutions;
 	  uint32_t hash () {
 		return 1;
 	  }
+	};
+
+	template<class T>
+	struct SearchStatePrinter {
+	  SearchStatePrinter (std::ostream& os) : os (os) {}
+	  void output (Words::Context& c, SearchState<T>& s,size_t bound) {
+		for (size_t i = 0; i < c.nbVars (); i++) {
+		  auto v = c.getVariable(i);
+		  os << v->getRepr () << ": ";
+		  for (size_t j = 0; j < bound; j++) {
+			if ((*s.substitutions[v->getIndex ()])[j])
+			  os << (*s.substitutions[v->getIndex ()])[j]->getRepr ();
+			else
+			  os << "*";
+		  }
+		  os << std::endl;
+		}
+	  }
+	  std::ostream& os;
+	};
+	
+	template<typename T>
+	class WordWrapper {
+	public:
+	  WordWrapper (Words::Word& w, WordPos& pos, size_t varbound,std::vector<typename ArrayStore<T>::Node*>& s,T* eps) :
+		entry(nullptr),word(w),pos(pos),varbound(varbound),subst(s) {
+		if (finished ())
+		  entry = nullptr;
+		else {
+		  entry = word.data()[pos.pos];
+		  
+		}
+	  }
+	  
+	  bool finished () { return pos.pos >= varbound;}
+	  bool isTerminal () {return entry->isTerminal ();}
+	  bool isVariable () {return entry->isVariable ();}
+	  const T* theEntry () {
+		return entry;
+	  }
+	  const T* InVarTerminal () {
+		return (*subst[entry->getIndex ()])[pos.invar_pos];
+	}
+	  bool isEpsilon () {return entry == epsilon;}
+	  
+	  void set (const T* n,ArrayStore<T>& store) {
+		auto node = store.change(subst[entry->getIndex ()],pos.invar_pos,n);
+		subst[entry->getIndex()] = node;
+	  }
+
+	  void jumpVar () {
+		pos.invar_pos = 0;
+		pos.pos++;
+	  }
+
+	  void increment () {
+		std::cerr << pos.pos << "." << pos.invar_pos << std::endl;
+		if (isVariable()) {
+		  pos.invar_pos++;
+		  if (pos.invar_pos >= varbound)
+			pos.pos++;
+		}
+		else {
+		  pos.pos++;
+		  pos.invar_pos = 0;
+		}
+	  }
+		
+  private:
+	  T* entry;
+	  Words::Word& word;
+	  WordPos& pos;
+	  size_t varbound;
+	  std::vector<typename ArrayStore<T>::Node*>& subst;
+	  const T* epsilon;
 	};
 
 	
@@ -88,6 +175,8 @@ namespace Words{
 		waiting.pop_back();
 		return res;
 	  }
+
+	  
 	  
 	private:
 	  std::set<uint32_t> seen;
@@ -112,33 +201,156 @@ namespace Words{
 		passed.insert(state);
 	  }
 
-	  bool satisfying (SearchState<IEntry>& state) {
-		if (state.lhs.pos > lhs.characters () &&
-			state.rhs.pos > rhs.characters ()
-			) {
-		  return true;
-		}
-	  }
 	  
-	  void step (const SearchState<IEntry>& state) {
-		auto lentry = lhs.data()[state.lhs.pos];
-		auto rentry = rhs.data()[state.rhs.pos];
-		if (lentry->isTerminal () && rentry->isTerminal () ) {
-		  if (lentry == rentry) {
-			auto n = std::make_unique<SearchState<IEntry>> (state);
-			n->lhs.pos++;
-			n->rhs.pos++;
-			passed.insert(n);
+	  void step (SearchState<IEntry>& state) {
+		auto left =  makeLeft(state);
+		auto right = makeRight(state);
+		
+		if (left.finished()) {
+		  auto nstate = state.copy ();
+		  auto nright = makeRight (*nstate);
+		  if (nright.isVariable ()) {
+			auto invar = nright.InVarTerminal ();
+			if (invar == c.getEpsilon () || invar == nullptr) {
+			  nright.jumpVar ();
+			  passed.insert (nstate);
+			}
 		  }
 		}
-		else if (lentry->isVariable() && rentry->isVariable ()) {
-		 
+		
+		else if (right.finished () ) {
+		  auto nstate = state.copy ();
+		  auto nleft = makeLeft(*nstate);
+		  if (nleft.isVariable ()) {
+			auto invar = nleft.InVarTerminal ();
+			if (invar == c.getEpsilon () || invar == nullptr) {
+			  nleft.jumpVar ();
+			  passed.insert (nstate);
+			}
+		  }
+		}
+
+		else if (left.isTerminal () && right.isTerminal ()) {
+		  if (left.theEntry () == right.theEntry ()) {
+			auto nstate = state.copy ();
+			auto nleft = makeLeft(*nstate);
+			auto nright = makeRight(*nstate);
+			nleft.increment();
+			nright.increment ();
+			passed.insert(nstate);
+		  }
+		}
+		
+		else if (left.isVariable () && right.isVariable ()) {
 		  
+		  auto leftVar = left.InVarTerminal ();
+		  auto rightVar = right.InVarTerminal ();
+
+		  if (leftVar == c.getEpsilon ()) {
+			auto nstate = state.copy ();
+			auto nleft = makeLeft (*nstate);
+			nleft.jumpVar ();
+			passed.insert (nstate);
+		  }
+
+		  else if (rightVar == c.getEpsilon ()) {
+			auto nstate = state.copy ();
+			auto nright = makeRight (*nstate);
+			nright.jumpVar ();
+			passed.insert (nstate);
+		  }
+
+		  else if (leftVar == nullptr && rightVar == nullptr) {
+			for (size_t i = 0; i < c.nbTerms (); i++) {
+			  auto term = c.getTerminal (i);
+			  auto nstate = state.copy ();
+			  auto rstate = state.copy ();
+			  
+			  auto nright = makeRight (*nstate);
+			  auto nleft = makeLeft (*rstate);
+			  nleft.set (term,store);
+			  nright.set (term,store);
+			  if (term == c.getEpsilon ()) {
+				nleft.jumpVar ();
+				nright.jumpVar ();
+			  }
+			  else {
+				nleft.increment ();
+				nright.increment ();
+			  }
+			  passed.insert(nstate);
+			  passed.insert(rstate);
+			}
+		  }
+		  
+		  else if (leftVar == nullptr) {
+			 auto nstate = state.copy ();
+			 auto nleft = makeLeft (*nstate);
+			 auto nright = makeRight (*nstate);
+			 nleft.set (rightVar,store);
+			 nleft.increment ();
+			 nright.increment ();
+			 passed.insert(nstate);
+		  }
+
+		  else if (rightVar == nullptr) {
+			 auto nstate = state.copy ();
+			 auto nleft = makeLeft (*nstate);
+			 auto nright = makeRight (*nstate);
+			 nright.set (leftVar,store);
+			 nleft.increment();
+			 nright.increment();
+			 passed.insert(nstate);
+		  }
+
+		  else if (leftVar == rightVar) {
+			auto nstate = state.copy ();
+			
+			auto nright = makeRight (*nstate);
+			auto nleft = makeLeft (*nstate);
+			nleft.increment ();
+			nright.increment ();
+			passed.insert(nstate);
+		  }
+		}
+
+		else if (left.isVariable ()) {
+		  auto nstate = state.copy ();
+		  auto nleft = makeLeft (*nstate);
+		  auto nright = makeRight (*nstate);
+		  nleft.set (right.theEntry (),store);
+		  nleft.increment ();
+		  nright.increment ();
+		  passed.insert (nstate);
+		}
+		
+		else if (right.isVariable ()) {
+		  auto nstate = state.copy ();
+		  auto nleft = makeLeft (*nstate);
+		  auto nright = makeRight (*nstate);
+		  nright.set (left.theEntry (),store);
+		  nright.increment ();
+		  nleft.increment ();
+		  passed.insert (nstate);
 		}
 	  }
-	  
-	private:
 
+	  bool finalState (SearchState<IEntry>& state) {
+		auto left =  makeLeft(state);
+		auto right = makeRight(state);
+		
+		return left.finished() && right.finished();
+	  }
+	  
+	private:  
+	  WordWrapper<IEntry> makeLeft (SearchState<IEntry>& state) {
+		return WordWrapper<IEntry> (lhs,state.lhs,varbound,state.substitutions,c.getEpsilon ());
+	  }
+
+	  WordWrapper<IEntry> makeRight (SearchState<IEntry>& state) {
+		return WordWrapper<IEntry> (rhs,state.rhs,varbound,state.substitutions,c.getEpsilon ());
+	  }
+	  
 	  Words::Context& c;
 	  Words::Word& lhs;
 	  Words::Word& rhs;

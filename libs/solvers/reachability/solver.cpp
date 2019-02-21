@@ -1,4 +1,5 @@
 
+#include <iostream>
 
 #include "words/words.hpp"
 #include "solvers/solvers.hpp"
@@ -10,7 +11,19 @@ namespace Words{
 	public:
 	  Solver (size_t bound) : bound(bound) {} 
 	  Words::Solvers::Result Solve (Words::Options& c,Words::Solvers::MessageRelay&) override {
-		SearchState<Words::IEntry> search;
+		PassedWaiting passed;
+		SuccGenerator gen (c.context,c.equations[0].lhs,c.equations[0].rhs,bound,passed);;
+		gen.makeInitial ();
+		SearchStatePrinter<Words::IEntry> printer (std::cerr);
+		
+		while (passed.hasWaiting ()) {
+		  auto st = passed.pull ();
+		  printer.output (c.context,*st,bound);
+		  if (!gen.finalState (*st)) {
+			gen.step(*st);
+		  }
+		}
+		
 		return Words::Solvers::Result::NoIdea;
 	  }
 	  
@@ -28,6 +41,18 @@ namespace Words{
 	  bool diagnostic = false;
 	  Words::Solvers::Timing::Keeper timekeep;
 	  size_t bound;
+	  
 	};
+
+	
+  }
+  
+}
+
+
+namespace Words {
+  namespace Solvers {
+	template<>
+	Solver_ptr makeSolver<Types::Reachability,size_t> (size_t bound ) {return std::make_unique<Words::Reach::Solver> (bound);}
   }
 }
