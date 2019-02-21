@@ -62,6 +62,7 @@ namespace Words {
 	size_t characters () const {return word.size();}
 	auto begin () const {return word.begin();}
 	auto end () const {return word.end();}
+	IEntry** data ()  {return word.data ();}
   protected:
 	void append (IEntry* e) {word.push_back(e);}
 	void clear () {word.clear ();}
