@@ -132,13 +132,13 @@ int main (int argc, char** argv) {
 	return -1;
   }
 
-  if(cpulim) {
-	Words::Host::setCPULimit (cpulim,std::cerr);
-  }
+  if(cpulim && !Words::Host::setCPULimit (cpulim,std::cerr))
+	Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
 
-  if(vmlim) {
-	Words::Host::setVMLimit (vmlim,std::cerr);
-  }
+  if(vmlim && !Words::Host::setVMLimit (vmlim,std::cerr))
+	Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
+
+  
   
   Words::Options opt;
   bool parsesucc = false;
