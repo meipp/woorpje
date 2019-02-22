@@ -68,7 +68,7 @@ private:
 
 void printContactDetails (std::ostream& os) {
   os << Version::ORGANISATION << std::endl;
-  os << Version::MAINDEVELOPERNAME <<  " <" << Version::MAINDEVELOPEREMAIL << ">" << std::endl;
+  os << Version::MAINDEVELOPERNAME <<  " - " << Version::MAINDEVELOPEREMAIL << "" << std::endl;
 }
 
 
