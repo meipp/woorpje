@@ -18,7 +18,8 @@ namespace Words{
 		
 		while (passed.hasWaiting ()) {
 		  auto st = passed.pull ();
-		 
+		  std::cerr << "=====" << std::endl;
+		  printer.output (c.context,*st,bound);
 		  if (!gen.finalState (*st)) {
 			
 			gen.step(*st);

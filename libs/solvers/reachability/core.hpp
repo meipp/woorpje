@@ -5,13 +5,16 @@
 #include <string.h>
 #include <iostream>
 
+#include "Murmur3.hpp"
 #include "words/words.hpp"
 
 namespace Words{
   namespace Reach {
 	template<typename T>
-	uint32_t Hash (T*, size_t,size_t ) {
-	  return 0;
+	uint32_t Hash (T* v, size_t len,size_t seed ) {
+	  uint32_t hash;
+	  MurmurHash3_x86_32 (v,sizeof(T)*len,seed,&hash);
+	  return hash;
 	}
 	
 	template<typename T>
@@ -67,7 +70,7 @@ namespace Words{
 	};
 
 	
-	struct WordPos {
+	struct  WordPos {
 	  size_t pos = 0;
 	  size_t invar_pos = 0;
 	};
@@ -79,7 +82,9 @@ namespace Words{
 	  WordPos rhs;
 	  std::vector<typename ArrayStore<T>::Node*> substitutions;
 	  uint32_t hash () {
-		return 1;
+		uint32_t seed = Hash<WordPos> (&lhs,1,1);
+		seed = Hash<WordPos> (&lhs,1,seed);
+		return Hash<typename ArrayStore<T>::Node*> (substitutions.data(),substitutions.size(),seed);
 	  }
 	};
 
@@ -165,6 +170,7 @@ namespace Words{
 		auto hash = var->hash ();
 		if (!seen.count(hash)) {
 		  waiting.push_back(std::move(var));
+		  seen.insert(hash);
 		}
 	  }
 
@@ -244,7 +250,8 @@ namespace Words{
 		  
 		  auto leftVar = left.InVarTerminal ();
 		  auto rightVar = right.InVarTerminal ();
-
+		 
+		  
 		  if (leftVar == c.getEpsilon ()) {
 			auto nstate = state.copy ();
 			auto nleft = makeLeft (*nstate);
@@ -265,8 +272,6 @@ namespace Words{
 			  auto nstate = state.copy ();
 			  auto nright = makeRight (*nstate);
 			  auto nleft = makeLeft (*nstate);
-			  nleft.set (term,store);
-			  nright.set (term,store);
 			  if (term == c.getEpsilon ()) {
 				auto lstate = state.copy ();
 				auto rstate = state.copy ();
@@ -280,6 +285,8 @@ namespace Words{
 				passed.insert(rstate);
 			  }
 			  else {
+				nleft.set (term,store);
+				nright.set (term,store);
 				nleft.increment ();
 				nright.increment ();
 			  }
@@ -326,6 +333,8 @@ namespace Words{
 		  nleft.increment ();
 		  nright.increment ();
 		  passed.insert (nstate);
+		  
+		  
 		}
 		
 		else if (right.isVariable ()) {
@@ -336,6 +345,22 @@ namespace Words{
 		  nright.increment ();
 		  nleft.increment ();
 		  passed.insert (nstate);
+
+		  
+		}
+		if (!left.finished () && left.isVariable ()) {
+		  auto nnstate = state.copy ();
+		  auto nnleft = makeRight (*nnstate);
+		  nnleft.set (c.getEpsilon (),store);
+		  nnleft.jumpVar ();
+		  passed.insert(nnstate);
+		}
+		if (!right .finished () && right.isVariable ()) {
+		  auto nnstate = state.copy ();
+		  auto nnright = makeRight (*nnstate);
+		  nnright.set (c.getEpsilon (),store);
+		  nnright.jumpVar();
+		  passed.insert(nnstate);
 		}
 	  }
 
