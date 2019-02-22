@@ -107,15 +107,16 @@ namespace Words{
 	public:
 	  WordWrapper (Words::Word& w, WordPos& pos, size_t varbound,std::vector<typename ArrayStore<T>::Node*>& s,T* eps) :
 		entry(nullptr),word(w),pos(pos),varbound(varbound),subst(s) {
-		if (finished ())
+		if (finished ()) {
 		  entry = nullptr;
+		}
 		else {
 		  entry = word.data()[pos.pos];
 		  
 		}
 	  }
 	  
-	  bool finished () { return pos.pos >= varbound;}
+	  bool finished () { return pos.pos >= word.characters();}
 	  bool isTerminal () {return entry->isTerminal ();}
 	  bool isVariable () {return entry->isVariable ();}
 	  const T* theEntry () {
@@ -137,7 +138,6 @@ namespace Words{
 	  }
 
 	  void increment () {
-		std::cerr << pos.pos << "." << pos.invar_pos << std::endl;
 		if (isVariable()) {
 		  pos.invar_pos++;
 		  if (pos.invar_pos >= varbound)
@@ -205,7 +205,6 @@ namespace Words{
 	  void step (SearchState<IEntry>& state) {
 		auto left =  makeLeft(state);
 		auto right = makeRight(state);
-		
 		if (left.finished()) {
 		  auto nstate = state.copy ();
 		  auto nright = makeRight (*nstate);
@@ -264,22 +263,27 @@ namespace Words{
 			for (size_t i = 0; i < c.nbTerms (); i++) {
 			  auto term = c.getTerminal (i);
 			  auto nstate = state.copy ();
-			  auto rstate = state.copy ();
-			  
 			  auto nright = makeRight (*nstate);
-			  auto nleft = makeLeft (*rstate);
+			  auto nleft = makeLeft (*nstate);
 			  nleft.set (term,store);
 			  nright.set (term,store);
 			  if (term == c.getEpsilon ()) {
-				nleft.jumpVar ();
-				nright.jumpVar ();
+				auto lstate = state.copy ();
+				auto rstate = state.copy ();
+				auto nnright = makeRight (*rstate);
+				auto nnleft = makeLeft (*lstate);
+				nnleft.set (term,store);
+				nnright.set (term,store);
+				nnleft.jumpVar ();
+				nnright.jumpVar ();
+				passed.insert(lstate);
+				passed.insert(rstate);
 			  }
 			  else {
 				nleft.increment ();
 				nright.increment ();
 			  }
 			  passed.insert(nstate);
-			  passed.insert(rstate);
 			}
 		  }
 		  
