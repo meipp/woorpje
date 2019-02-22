@@ -4,6 +4,7 @@
 #include <ostream>
 #include <memory>
 #include <boost/format.hpp>
+#include <chrono>
 
 #include "words/words.hpp"
 #include "solvers/timing.hpp"
@@ -40,14 +41,31 @@ namespace Words {
 	class MessageRelay {
 	public:
 	  virtual void pushMessage (const std::string& s) = 0;
+	  virtual void progressMessage (const std::string& s) = 0;
 	};
 
 	class StreamRelay :public MessageRelay {
 	public:
-	  StreamRelay (std::ostream& os) : os(os) {}
-	  void pushMessage (const std::string& s) {os << s << std::endl;}
+	  StreamRelay (std::ostream& os) : os(os) {
+		last = std::chrono::high_resolution_clock::now();
+	  }
+	  void progressMessage (const std::string& s) override {
+		timep now = std::chrono::high_resolution_clock::now();
+		if (std::chrono::duration_cast<std::chrono::milliseconds>( now - last ).count() >=5 ) {
+		  os << arr[++i] << " " << s << "\r";
+		  if (arr[i] == '\0')
+			i = 0;
+		  last = now;
+		}
+	   
+	  }
+	  void pushMessage (const std::string& s) override{os << s << std::endl;}
 	private:
+	  using timep = std::chrono::high_resolution_clock::time_point;
 	  std::ostream& os;
+	  const char* arr= "/-\\|"; 
+      size_t i = 0;
+	  timep last;
 	};
 
 	

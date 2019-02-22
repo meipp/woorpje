@@ -182,7 +182,9 @@ namespace Words{
 		}
 	  }
 
-	  bool hasWaiting () {return waiting.size();}
+	  size_t waitingSize () {return waiting.size();}
+	  
+	  bool hasWaiting () {return waitingSize ();}
 	  
 	  std::unique_ptr<SearchState<IEntry>> pull () {
 		auto res = std::move(waiting.back());

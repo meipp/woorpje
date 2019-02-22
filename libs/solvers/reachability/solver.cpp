@@ -10,16 +10,16 @@ namespace Words{
 	class Solver : public ::Words::Solvers::Solver {
 	public:
 	  Solver (size_t bound) : bound(bound) {} 
-	  Words::Solvers::Result Solve (Words::Options& c,Words::Solvers::MessageRelay&) override {
+	  Words::Solvers::Result Solve (Words::Options& c,Words::Solvers::MessageRelay& relay) override {
 		PassedWaiting passed;
 		SuccGenerator gen (c.context,c.equations[0].lhs,c.equations[0].rhs,bound,passed);;
 		gen.makeInitial ();
 		SearchStatePrinter<Words::IEntry> printer (std::cerr);
 		
 		while (passed.hasWaiting ()) {
+		  relay.progressMessage (std::to_string (passed.waitingSize ()));
 		  auto st = passed.pull ();
 		  if (!gen.finalState (*st)) {
-			//printer.output (c.context,*st,bound);
 			gen.step(*st);
 		  }
 		  else {
