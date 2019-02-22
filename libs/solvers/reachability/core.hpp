@@ -211,157 +211,155 @@ namespace Words{
 	  void step (SearchState<IEntry>& state) {
 		auto left =  makeLeft(state);
 		auto right = makeRight(state);
-		if (left.finished()) {
-		  auto nstate = state.copy ();
-		  auto nright = makeRight (*nstate);
-		  if (nright.isVariable ()) {
-			auto invar = nright.InVarTerminal ();
-			if (invar == c.getEpsilon () || invar == nullptr) {
-			  nright.jumpVar ();
-			  passed.insert (nstate);
+		if (left.finished () || right.finished()) {
+		  if (left.finished()) {
+			auto nstate = state.copy ();
+			auto nright = makeRight (*nstate);
+			if (nright.isVariable ()) {
+			  auto invar = nright.InVarTerminal ();
+			  if (invar == c.getEpsilon () || invar == nullptr) {
+				nright.jumpVar ();
+				passed.insert (nstate);
+			  }
 			}
 		  }
-		}
-		
-		else if (right.finished () ) {
-		  auto nstate = state.copy ();
-		  auto nleft = makeLeft(*nstate);
-		  if (nleft.isVariable ()) {
-			auto invar = nleft.InVarTerminal ();
-			if (invar == c.getEpsilon () || invar == nullptr) {
-			  nleft.jumpVar ();
-			  passed.insert (nstate);
-			}
-		  }
-		}
-
-		else if (left.isTerminal () && right.isTerminal ()) {
-		  if (left.theEntry () == right.theEntry ()) {
+		  
+		  else if (right.finished () ) {
 			auto nstate = state.copy ();
 			auto nleft = makeLeft(*nstate);
-			auto nright = makeRight(*nstate);
+			if (nleft.isVariable ()) {
+			  auto invar = nleft.InVarTerminal ();
+			  if (invar == c.getEpsilon () || invar == nullptr) {
+				nleft.jumpVar ();
+				passed.insert (nstate);
+			  }
+			}
+		  }
+		}
+		else {
+		  if (left.isTerminal () && right.isTerminal ()) {
+			if (left.theEntry () == right.theEntry ()) {
+			  auto nstate = state.copy ();
+			  auto nleft = makeLeft(*nstate);
+			  auto nright = makeRight(*nstate);
 			nleft.increment();
 			nright.increment ();
 			passed.insert(nstate);
-		  }
-		}
-		
-		else if (left.isVariable () && right.isVariable ()) {
-		  
-		  auto leftVar = left.InVarTerminal ();
-		  auto rightVar = right.InVarTerminal ();
-		 
-		  
-		  if (leftVar == c.getEpsilon ()) {
-			auto nstate = state.copy ();
-			auto nleft = makeLeft (*nstate);
-			nleft.jumpVar ();
-			passed.insert (nstate);
-		  }
-
-		  else if (rightVar == c.getEpsilon ()) {
-			auto nstate = state.copy ();
-			auto nright = makeRight (*nstate);
-			nright.jumpVar ();
-			passed.insert (nstate);
-		  }
-
-		  else if (leftVar == nullptr && rightVar == nullptr) {
-			for (size_t i = 0; i < c.nbTerms (); i++) {
-			  auto term = c.getTerminal (i);
-			  auto nstate = state.copy ();
-			  auto nright = makeRight (*nstate);
-			  auto nleft = makeLeft (*nstate);
-			  if (term == c.getEpsilon ()) {
-				auto lstate = state.copy ();
-				auto rstate = state.copy ();
-				auto nnright = makeRight (*rstate);
-				auto nnleft = makeLeft (*lstate);
-				nnleft.set (term,store);
-				nnright.set (term,store);
-				nnleft.jumpVar ();
-				nnright.jumpVar ();
-				passed.insert(lstate);
-				passed.insert(rstate);
-			  }
-			  else {
-				nleft.set (term,store);
-				nright.set (term,store);
-				nleft.increment ();
-				nright.increment ();
-			  }
-			  passed.insert(nstate);
 			}
 		  }
 		  
-		  else if (leftVar == nullptr) {
-			 auto nstate = state.copy ();
-			 auto nleft = makeLeft (*nstate);
-			 auto nright = makeRight (*nstate);
-			 nleft.set (rightVar,store);
-			 nleft.increment ();
-			 nright.increment ();
-			 passed.insert(nstate);
-		  }
-
-		  else if (rightVar == nullptr) {
-			 auto nstate = state.copy ();
-			 auto nleft = makeLeft (*nstate);
-			 auto nright = makeRight (*nstate);
-			 nright.set (leftVar,store);
-			 nleft.increment();
-			 nright.increment();
-			 passed.insert(nstate);
-		  }
-
-		  else if (leftVar == rightVar) {
-			auto nstate = state.copy ();
+		  else if (left.isVariable () && right.isVariable ()) {
 			
-			auto nright = makeRight (*nstate);
+			auto leftVar = left.InVarTerminal ();
+			auto rightVar = right.InVarTerminal ();
+			
+			
+			if (leftVar == c.getEpsilon ()) {
+			  auto nstate = state.copy ();
+			  auto nleft = makeLeft (*nstate);
+			  nleft.jumpVar ();
+			  passed.insert (nstate);
+			}
+
+			else if (rightVar == c.getEpsilon ()) {
+			  auto nstate = state.copy ();
+			  auto nright = makeRight (*nstate);
+			  nright.jumpVar ();
+			  passed.insert (nstate);
+			}
+			
+			else if (leftVar == nullptr && rightVar == nullptr) {
+			  for (size_t i = 0; i < c.nbTerms (); i++) {
+				auto term = c.getTerminal (i);
+				auto nstate = state.copy ();
+				auto nright = makeRight (*nstate);
+				auto nleft = makeLeft (*nstate);
+				if (term == c.getEpsilon ()) {
+				  auto lstate = state.copy ();
+				  auto rstate = state.copy ();
+				  auto nnright = makeRight (*rstate);
+				  auto nnleft = makeLeft (*lstate);
+				  nnleft.set (term,store);
+				  nnright.set (term,store);
+				  nnleft.jumpVar ();
+				  nnright.jumpVar ();
+				  passed.insert(lstate);
+				  passed.insert(rstate);
+				}
+				else {
+				  nleft.set (term,store);
+				  nright.set (term,store);
+				  nleft.increment ();
+				  nright.increment ();
+				}
+				passed.insert(nstate);
+			  }
+			}
+			
+			else if (leftVar == nullptr) {
+			  auto nstate = state.copy ();
+			  auto nleft = makeLeft (*nstate);
+			  auto nright = makeRight (*nstate);
+			  nleft.set (rightVar,store);
+			  nleft.increment ();
+			  nright.increment ();
+			  passed.insert(nstate);
+			}
+			
+			else if (rightVar == nullptr) {
+			  auto nstate = state.copy ();
+			  auto nleft = makeLeft (*nstate);
+			  auto nright = makeRight (*nstate);
+			  nright.set (leftVar,store);
+			  nleft.increment();
+			  nright.increment();
+			  passed.insert(nstate);
+			}
+			
+			else if (leftVar == rightVar) {
+			  auto nstate = state.copy ();
+			  
+			  auto nright = makeRight (*nstate);
+			  auto nleft = makeLeft (*nstate);
+			  nleft.increment ();
+			  nright.increment ();
+			passed.insert(nstate);
+			}
+		  }
+		  
+		  else if (left.isVariable ()) {
+			auto nstate = state.copy ();
 			auto nleft = makeLeft (*nstate);
+			auto nright = makeRight (*nstate);
+			nleft.set (right.theEntry (),store);
 			nleft.increment ();
 			nright.increment ();
-			passed.insert(nstate);
+			passed.insert (nstate);
+			
+			auto nnstate = state.copy ();
+			auto nnleft = makeRight (*nnstate);
+			nnleft.set (c.getEpsilon (),store);
+			nnleft.jumpVar ();
+			passed.insert(nnstate);
+		  }
+		  
+		  else if (right.isVariable ()) {
+			auto nstate = state.copy ();
+			auto nleft = makeLeft (*nstate);
+			auto nright = makeRight (*nstate);
+			nright.set (left.theEntry (),store);
+			nright.increment ();
+			nleft.increment ();
+			passed.insert (nstate);
+			
+			auto nnstate = state.copy ();
+			auto nnright = makeRight (*nnstate);
+			nnright.set (c.getEpsilon (),store);
+			nnright.jumpVar();
+			passed.insert(nnstate);
 		  }
 		}
-
-		else if (left.isVariable ()) {
-		  auto nstate = state.copy ();
-		  auto nleft = makeLeft (*nstate);
-		  auto nright = makeRight (*nstate);
-		  nleft.set (right.theEntry (),store);
-		  nleft.increment ();
-		  nright.increment ();
-		  passed.insert (nstate);
 		  
-		  
-		}
-		
-		else if (right.isVariable ()) {
-		  auto nstate = state.copy ();
-		  auto nleft = makeLeft (*nstate);
-		  auto nright = makeRight (*nstate);
-		  nright.set (left.theEntry (),store);
-		  nright.increment ();
-		  nleft.increment ();
-		  passed.insert (nstate);
-
-		  
-		}
-		if (!left.finished () && left.isVariable ()) {
-		  auto nnstate = state.copy ();
-		  auto nnleft = makeRight (*nnstate);
-		  nnleft.set (c.getEpsilon (),store);
-		  nnleft.jumpVar ();
-		  passed.insert(nnstate);
-		}
-		if (!right .finished () && right.isVariable ()) {
-		  auto nnstate = state.copy ();
-		  auto nnright = makeRight (*nnstate);
-		  nnright.set (c.getEpsilon (),store);
-		  nnright.jumpVar();
-		  passed.insert(nnstate);
-		}
 	  }
 
 	  bool finalState (SearchState<IEntry>& state) {
