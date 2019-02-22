@@ -44,8 +44,13 @@ namespace Words{
 	  }
 
 	  Node* change (Node* n,size_t pos, const T* t) {
+		auto orig = n->data.get()[pos];
+		if (orig == t) {
+		  return n;
+		}
 		std::unique_ptr<T*[]> newD (new T*[n->size]);
 		std::copy (n->data.get(),n->data.get()+n->size,newD.get());
+		assert(n->data.get()[pos] == nullptr);
 		newD.get()[pos] = const_cast<T*> (t);
 		return insert (newD,n->size);
 	  }
@@ -84,6 +89,7 @@ namespace Words{
 	  uint32_t hash () {
 		uint32_t seed = Hash<WordPos> (&lhs,1,1);
 		seed = Hash<WordPos> (&lhs,1,seed);
+		seed = Hash<WordPos> (&rhs,1,seed);
 		return Hash<typename ArrayStore<T>::Node*> (substitutions.data(),substitutions.size(),seed);
 	  }
 	};
@@ -145,8 +151,10 @@ namespace Words{
 	  void increment () {
 		if (isVariable()) {
 		  pos.invar_pos++;
-		  if (pos.invar_pos >= varbound)
+		  if (pos.invar_pos >= varbound) {
 			pos.pos++;
+			pos.invar_pos = 0;
+		  }
 		}
 		else {
 		  pos.pos++;
@@ -242,10 +250,25 @@ namespace Words{
 			  auto nstate = state.copy ();
 			  auto nleft = makeLeft(*nstate);
 			  auto nright = makeRight(*nstate);
-			nleft.increment();
-			nright.increment ();
-			passed.insert(nstate);
+			  nleft.increment();
+			  nright.increment ();
+			  passed.insert(nstate);
 			}
+			
+		  }
+
+		  else if (left.isVariable () && left.InVarTerminal () == c.getEpsilon ()) {
+			auto nstate = state.copy ();
+			auto nleft = makeLeft (*nstate);
+			nleft.jumpVar ();
+			passed.insert (nstate);
+		  }
+
+		  else if (right.isVariable () && right.InVarTerminal () == c.getEpsilon ()) {
+			auto nstate = state.copy ();
+			auto nright = makeRight (*nstate);
+			nright.jumpVar ();
+			passed.insert (nstate);
 		  }
 		  
 		  else if (left.isVariable () && right.isVariable ()) {
@@ -253,28 +276,12 @@ namespace Words{
 			auto leftVar = left.InVarTerminal ();
 			auto rightVar = right.InVarTerminal ();
 			
-			
-			if (leftVar == c.getEpsilon ()) {
-			  auto nstate = state.copy ();
-			  auto nleft = makeLeft (*nstate);
-			  nleft.jumpVar ();
-			  passed.insert (nstate);
-			}
-
-			else if (rightVar == c.getEpsilon ()) {
-			  auto nstate = state.copy ();
-			  auto nright = makeRight (*nstate);
-			  nright.jumpVar ();
-			  passed.insert (nstate);
-			}
-			
-			else if (leftVar == nullptr && rightVar == nullptr) {
+			if (leftVar == nullptr && rightVar == nullptr) {
 			  for (size_t i = 0; i < c.nbTerms (); i++) {
 				auto term = c.getTerminal (i);
-				auto nstate = state.copy ();
-				auto nright = makeRight (*nstate);
-				auto nleft = makeLeft (*nstate);
+				
 				if (term == c.getEpsilon ()) {
+	
 				  auto lstate = state.copy ();
 				  auto rstate = state.copy ();
 				  auto nnright = makeRight (*rstate);
@@ -285,14 +292,19 @@ namespace Words{
 				  nnright.jumpVar ();
 				  passed.insert(lstate);
 				  passed.insert(rstate);
+				  
 				}
 				else {
+				  auto nstate = state.copy ();
+				  auto nright = makeRight (*nstate);
+				  auto nleft = makeLeft (*nstate);
 				  nleft.set (term,store);
 				  nright.set (term,store);
 				  nleft.increment ();
 				  nright.increment ();
+				  passed.insert(nstate);
 				}
-				passed.insert(nstate);
+				
 			  }
 			}
 			
@@ -304,6 +316,12 @@ namespace Words{
 			  nleft.increment ();
 			  nright.increment ();
 			  passed.insert(nstate);
+
+			  nstate = state.copy ();
+			  auto nnleft = makeLeft (*nstate);
+			  nnleft.set(c.getEpsilon (),store);
+			  nnleft.jumpVar ();
+			  passed.insert(nstate);
 			}
 			
 			else if (rightVar == nullptr) {
@@ -314,6 +332,12 @@ namespace Words{
 			  nleft.increment();
 			  nright.increment();
 			  passed.insert(nstate);
+
+			  nstate = state.copy ();
+			  auto nnright = makeRight (*nstate);
+			  nnright.set(c.getEpsilon (),store);
+			  nnright.jumpVar ();
+			  passed.insert(nstate);
 			}
 			
 			else if (leftVar == rightVar) {
@@ -323,40 +347,59 @@ namespace Words{
 			  auto nleft = makeLeft (*nstate);
 			  nleft.increment ();
 			  nright.increment ();
-			passed.insert(nstate);
+			  passed.insert(nstate);
 			}
 		  }
 		  
 		  else if (left.isVariable ()) {
 			auto nstate = state.copy ();
-			auto nleft = makeLeft (*nstate);
+			auto nleft = makeLeft (*nstate);			
 			auto nright = makeRight (*nstate);
-			nleft.set (right.theEntry (),store);
-			nleft.increment ();
-			nright.increment ();
-			passed.insert (nstate);
-			
-			auto nnstate = state.copy ();
-			auto nnleft = makeRight (*nnstate);
-			nnleft.set (c.getEpsilon (),store);
-			nnleft.jumpVar ();
-			passed.insert(nnstate);
+			if (nleft.InVarTerminal () == nullptr) {
+			  nleft.set (right.theEntry (),store);
+			  nleft.increment ();
+			  nright.increment ();
+			  passed.insert (nstate);
+			  
+			  auto nnstate = state.copy ();
+			  auto nnleft = makeLeft (*nnstate);
+			  nnleft.set (c.getEpsilon (),store);
+			  nnleft.jumpVar ();
+			  passed.insert(nnstate);
+			}
+			else {
+			  if (nleft.InVarTerminal () == right.theEntry ()) {
+				nleft.increment();
+				nright.increment();
+				passed.insert(nstate);
+			  }
+			}
 		  }
 		  
 		  else if (right.isVariable ()) {
 			auto nstate = state.copy ();
 			auto nleft = makeLeft (*nstate);
 			auto nright = makeRight (*nstate);
-			nright.set (left.theEntry (),store);
-			nright.increment ();
-			nleft.increment ();
-			passed.insert (nstate);
+			if (nright.InVarTerminal () == nullptr) {
+			  nright.set (left.theEntry (),store);
+			  nright.increment ();
+			  nleft.increment ();
+			  passed.insert (nstate);
+			  
+			  auto nnstate = state.copy ();
+			  auto nnright = makeRight (*nnstate);
+			  nnright.set (c.getEpsilon (),store);
+			  nnright.jumpVar();
+			  passed.insert(nnstate);
+			}
+			else {
+			  if (nright.InVarTerminal () == left.theEntry ()) {
+				nleft.increment();
+				nright.increment();
+				passed.insert(nstate);
+			  }
+			}
 			
-			auto nnstate = state.copy ();
-			auto nnright = makeRight (*nnstate);
-			nnright.set (c.getEpsilon (),store);
-			nnright.jumpVar();
-			passed.insert(nnstate);
 		  }
 		}
 		  

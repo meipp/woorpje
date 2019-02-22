@@ -19,7 +19,7 @@ namespace Words{
 		while (passed.hasWaiting ()) {
 		  auto st = passed.pull ();
 		  if (!gen.finalState (*st)) {
-			
+			//printer.output (c.context,*st,bound);
 			gen.step(*st);
 		  }
 		  else {
