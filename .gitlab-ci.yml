@@ -1,0 +1,15 @@
+stages:
+  - build
+build:
+  image: palanthal/lodinbase:arch
+  stage: build
+  script:
+    - mkdir release
+    - cd release
+    - cmake  -DCMAKE_BUILD_TYPE=Release ..
+    - make -j4
+    - make package
+  artifacts:
+    paths:
+      - release/*.zip
+    expire_in: 1 day

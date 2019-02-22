@@ -1,0 +1,6 @@
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+add_library (host linux.cpp)
+else()
+add_library (host dummy.cpp)
+endif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+target_include_directories (host PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/pubinclude)

@@ -38,12 +38,11 @@ FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
 
 
 add_executable (${ToolName} main.cpp)
-target_link_libraries (${ToolName}   parser words solvers glucose ${Boost_LIBRARIES} )
+target_link_libraries (${ToolName}  host parser words solvers glucose ${Boost_LIBRARIES} )
 target_include_directories(${ToolName} PRIVATE ${PROJECT_BINARY_DIR})
 
 SET(CPACK_GENERATOR "ZIP")									   
 SET(CPACK_PACKAGE_FILE_NAME ${ToolName}-${VERSION_MAJOR}_${VERSION_MINOR})
 INSTALL (TARGETS ${ToolName} DESTINATION bin)
-INSTALL (TARGETS glucose DESTINATION lib)
 
 INCLUDE(CPack)

@@ -118,6 +118,27 @@ int gammaSize; // Variable Alphabet size
 
 Var trueConst, falseConst;
 
+void clear () {
+  stateTableColumns.clear();
+  stateTableRows.clear ();
+  stateTables.clear ();
+  maxPadding.clear ();
+  constantsVars.clear ();
+  index2Terminal.clear ();
+  index2Varible.clear ();
+  var2Terminal.clear ();
+  terminalIndices.clear ();
+  variableIndices.clear ();
+  variableVars.clear ();
+  oneHotEncoding.clear ();
+  equations_lhs.clear();
+  equations_rhs.clear();
+  input_linears_lhs.clear();
+  input_linears_rhs.clear();
+  input_linears_lhs.clear();
+  input_linears_rhs.clear ();
+}
+
 void readSymbols(string & s){
   for(int j = 0 ; j < s.size();j++){
 	if(terminal(s[j])){
@@ -1076,12 +1097,10 @@ static void SIGINT_exit(int signum) {
 //=================================================================================================
 // Main:
 
-void setupSolverMain (std::vector<std::string>& mlhs, std::vector<std::string>& mrhs, size_t global) {
-  input_equations_lhs.clear();
-  input_equations_rhs.clear();
+void setupSolverMain (std::vector<std::string>& mlhs, std::vector<std::string>& mrhs) {
+  clear ();
   input_equations_lhs = mlhs;
   input_equations_rhs = mrhs;
-  globalMaxPadding = static_cast<int> (global);
 }
 
 void addLinearConstraint (const std::string& lhs, const std::string& rhs) {
@@ -1090,9 +1109,9 @@ void addLinearConstraint (const std::string& lhs, const std::string& rhs) {
 }
 
 template<bool newencode = true>
-::Words::Solvers::Result runSolver (const bool squareAuto,  const Words::Context& context, Words::Substitution& substitution,
+::Words::Solvers::Result runSolver (const bool squareAuto, size_t bound, const Words::Context& context, Words::Substitution& substitution,
 									Words::Solvers::Timing::Keeper& tkeeper, std::ostream* odia = nullptr) {
-  Words::Solvers::Timing::Timer overalltimer (tkeeper,"Overall Solving Time");
+  globalMaxPadding = static_cast<int> (bound);
   StreamWrapper wrap (odia);
   Solver S;
   int lin = 0, reg = 0, d = 0;  // upper bound on length of variables
@@ -1257,7 +1276,7 @@ template<bool newencode = true>
   }
   if (wrap){
 	Words::Solvers::Formatter ff ("saw %1% out of %2% state variables! ");
-	wrap << (ff % stateVarsSeen % stateVarsOverall).str (); //<< std::endl;
+	(wrap << (ff % stateVarsSeen % stateVarsOverall).str ()).endl(); //<< std::endl;
 	//printf("c saw %d out of %d state variables! \n", stateVarsSeen, stateVarsOverall);
   
   //-------------- Result is put in a external file
@@ -1442,7 +1461,7 @@ int main(int argc, char** argv)
 */
 
 template
-::Words::Solvers::Result runSolver<true> (const bool squareAuto, const Words::Context&,Words::Substitution&,Words::Solvers::Timing::Keeper&,std::ostream*);
+::Words::Solvers::Result runSolver<true> (const bool squareAuto, size_t,const Words::Context&,Words::Substitution&,Words::Solvers::Timing::Keeper&,std::ostream*);
 
 template
-::Words::Solvers::Result runSolver<false> (const bool squareAuto, const Words::Context&,Words::Substitution&,Words::Solvers::Timing::Keeper&,std::ostream*);
+::Words::Solvers::Result runSolver<false> (const bool squareAuto, size_t, const Words::Context&,Words::Substitution&,Words::Solvers::Timing::Keeper&,std::ostream*);

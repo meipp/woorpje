@@ -5,8 +5,11 @@
 
 #include "words/words.hpp"
 #include "words/exceptions.hpp"
+#include "host/resources.hpp"
+#include "host/exitcodes.hpp"
 #include "parser/parser.hpp"
 #include "solvers/solvers.hpp"
+#include "solvers/exceptions.hpp"
 
 #include "config.h"
 
@@ -25,7 +28,7 @@ public:
 	  std::cout << std::endl;
 	}
 	std::cout << std::endl;
-
+	
 	std::cout << "Equations after substition" <<std::endl;
 	for (auto& eq : eqs) {
 	  printWordWithSubstitution (eq.lhs,w);
@@ -90,13 +93,17 @@ int main (int argc, char** argv) {
   bool diagnostic = false;
   bool suppressbanner = false;
   bool help = false;
+  size_t cpulim = 0;
+  size_t vmlim = 0;
   std::string conffile;
   po::options_description desc("General Options");
   desc.add_options ()
 	("help,h",po::bool_switch(&help), "Help message.")
 	("nobanner,n",po::bool_switch(&suppressbanner), "Suppress the banner.")
 	("diagnostics,d",po::bool_switch(&diagnostic), "Enable Diagnostic Data.")
-	("configuration,c",po::value<std::string>(&conffile), "Configuration file");
+	("configuration,c",po::value<std::string>(&conffile), "Configuration file")
+	("cpulim,C",po::value<size_t>(&cpulim), "CPU Limit in seconds")
+	("vmlim,V",po::value<size_t>(&vmlim), "VM Limit in MBytes");
   
   po::positional_options_description positionalOptions; 
   positionalOptions.add("configuration", 1); 
@@ -124,6 +131,15 @@ int main (int argc, char** argv) {
 	std::cerr << "Configuration file not specified" << std::endl;
 	return -1;
   }
+
+  if(cpulim && !Words::Host::setCPULimit (cpulim,std::cerr))
+	Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
+
+  if(vmlim && !Words::Host::setVMLimit (vmlim,std::cerr))
+	Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
+
+  
+  
   Words::Options opt;
   bool parsesucc = false;
   Words::Solvers::Solver_ptr solver = nullptr;
@@ -137,31 +153,34 @@ int main (int argc, char** argv) {
 	std::cerr << e.what () << std::endl;
 	return -1;
   }
-
+  
   if (solver) {
 	if (diagnostic)
-	  solver->enableDiagnosticOutput ();
-	Words::Solvers::StreamRelay relay (std::cout);
-	auto ret =  solver->Solve (opt,relay);
-	switch (ret) {
+	  solver->enableDiagnosticOutput ();	
+	try {
+	  Words::Solvers::StreamRelay relay (std::cout);
+	  auto ret =  solver->Solve (opt,relay);
+	  switch (ret) {
 	  
 	  
-	case Words::Solvers::Result::HasSolution: {
-	  std::cout << "Got Solution " << std::endl << std::endl;;
-	  CoutResultGatherer gatherer (opt.equations);
-	  solver->getResults (gatherer);
-	  return 0;
-	}
-	case Words::Solvers::Result::NoSolution: {
-	  std::cout << "No solution" << std::endl;;
-	  return 20;
-	}
-	  
-	default:
-	  std::cout << "No Idea" << std::endl;;
-	  return 10;
+	  case Words::Solvers::Result::HasSolution: {
+		CoutResultGatherer gatherer (opt.equations);
+		solver->getResults (gatherer);
+		Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
+	  }
+	  case Words::Solvers::Result::NoSolution: {
+		std::cout << "No solution" << std::endl;
+		Words::Host::Terminate (Words::Host::ExitCode::NoSolution,std::cout);
+	  }
+		
+	  default:
+		Words::Host::Terminate (Words::Host::ExitCode::NoIdea,std::cout);
+	  }
+	}catch (Words::Solvers::OutOfMemoryException&) {
+	  Words::Host::Terminate (Words::Host::ExitCode::OutOfMemory,std::cout);
 	}
   }
-  else 
-	std::cout << "Parse error" << std::endl;
+  else {
+	Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
+  }
 }

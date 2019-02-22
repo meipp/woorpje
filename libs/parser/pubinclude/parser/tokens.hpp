@@ -15,6 +15,8 @@
   X(COMMA)											\
   X(LBRACK)										\
   X(RBRACK)											\
+  X(LPARAN)										\
+  X(RPARAN)											\
   X(PLUS)											\
   X(MINUS)											\
   X(BAR)											\
