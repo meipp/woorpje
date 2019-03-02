@@ -9,9 +9,8 @@
 #include "solver.hpp"
 
 void setupSolverMain (std::vector<std::string>&, std::vector<std::string>&);
-
+void clearLinears();
 void addLinearConstraint (std::vector<std::pair<char, int>> lhs, int rhs);
-void addLinearConstraint (Words::Constraints::LinearConstraint*& lc);
 
 template<bool>
 ::Words::Solvers::Result runSolver (const bool squareAuto, size_t bound, const Words::Context&,Words::Substitution&,Words::Solvers::Timing::Keeper&,std::ostream*);
@@ -50,6 +49,7 @@ namespace Words {
 		  rhs.push_back (str.str());
 		}
 
+		clearLinears();
 		
 		for (auto& constraint : opt.constraints) {
 		  if (!handleConstraint (*constraint,relay,entry))

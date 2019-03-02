@@ -134,11 +134,15 @@ void clear () {
   oneHotEncoding.clear ();
   equations_lhs.clear();
   equations_rhs.clear();
-  input_linears_lhs.clear();
-  input_linears_rhs.clear();
-  input_linears_lhs.clear();
-  input_linears_rhs.clear ();
 }
+
+void clearLinears() {
+	  input_linears_lhs.clear();
+	  input_linears_rhs.clear();
+	  input_linears_lhs.clear();
+	  input_linears_rhs.clear ();
+}
+
 
 void readSymbols(string & s){
   for(int j = 0 ; j < s.size();j++){
@@ -882,171 +886,143 @@ void sharpenBounds(Solver & s, string & lhs, string & rhs,StreamWrapper& out){
 
 // Expect x_i as one-hot encoded, with pairs (j, v_j) <-> x_i = j
 bool addLinearEqualityConstraint(Solver & s, map<int,int> & coefficients, int & rhs, StreamWrapper&out){
-  set<pair<int, int> > states;
-  int numVars = variableIndices.size();
-  states.insert(make_pair(-1, 0));    // state for the empty prefix
-  vector<int >  currentRow;
+	  set<pair<int, int>> states;
+	  set<pair<int, int>> acceptingStates;
+	  int numVars = variableIndices.size();
+	  states.insert(make_pair(-1, 0));    // state for the empty prefix
+	  vector<int >  currentRow;
+	  map<pair<int, int>, set<pair<int, int> > > predecessors, successors;
+	  set<int> nextRow;
 
-  map<pair<int, int>, set<pair<int, int> > > predecessors, successors;
-  currentRow.push_back(0);
+	  currentRow.push_back(0);
 
-  set<int> nextRow;
-  set<int> possibleFinalValues;
-
-
-  for(int i = 0 ; i < numVars;i++){
-	if (out)
-	  (out << "Considering Variable " << i). endl ();
-	for(int j = 0 ; j < currentRow.size();j++){
-	  for(int k = 0 ; k <= maxPadding[i] ; k++){
-		int nextValue = currentRow[j] + k * coefficients[i];
-		nextRow.insert(nextValue);
-		states.insert(make_pair(i, nextValue));
-		if (out)
-		  (out << "Building State " << nextValue << " based on " <<currentRow[j] <<"+" << k << "*" << coefficients[i]).endl ();
+	  for(int i = 0 ; i < numVars;i++){
+		for(int j = 0 ; j < currentRow.size();j++){
+		  for(int k = 0 ; k <= maxPadding[i] ; k++){
+			int nextValue = currentRow[j] + k * coefficients[i];
+			nextRow.insert(nextValue);
+			states.insert(make_pair(i, nextValue));
+			if (i == numVars-1 && nextValue <= rhs){
+				acceptingStates.insert(make_pair(i, nextValue));
+			}
+		  }
+		}
+		currentRow.clear();
+		currentRow.insert(currentRow.end(), nextRow.begin(), nextRow.end());
+		nextRow.clear();
 	  }
-	}
-	  
-	// save possible finals
-	if(i == numVars-1){
-	  for (auto value : nextRow){
-		(out << value).endl ();
-		if(value >= rhs){ // remove never reached stuff, encoding <=
-		  possibleFinalValues.insert(value);
-		}
+	  if (out) {
+		(out << (Words::Solvers::Formatter ("Created %d states for MDD! ") % states.size ()).str()).endl ();
 	  }
-	}
-	currentRow.clear();
-	currentRow.insert(currentRow.end(), nextRow.begin(), nextRow.end());
-	nextRow.clear();
-  }
-  if (out)
-	(out << (Words::Solvers::Formatter ("Created %1% states for MDD!") % states.size ()).str ()). endl ();
-  
-	
-  set<pair<int, int> > markedStates;
-  vector<pair<int, int> > queue;
-  int nextIndex = 0;
-	
-  // Mark posible final states
-  for	(auto value : possibleFinalValues){
-	markedStates.insert(make_pair(numVars-1, value));
-	queue.push_back(make_pair(numVars-1, value));
-  }
-	
-  while(nextIndex < queue.size()){
-	pair<int, int> currentState = queue[nextIndex];
-	nextIndex++;
-	int this_var = currentState.first;
-	if(this_var < 0){
-	  // Okay, I reached the root
-	  markedStates.insert(currentState);
-	}
-	else{
-	  Words::Solvers::Formatter format ("Building state %1% based on %2% - %3%*%4%"); 
-	  assert(this_var >= 0 && this_var < numVars);
-	  for(int j = 0 ; j <= maxPadding[this_var] ; j++){
-		pair<int, int> predecessor = make_pair(this_var-1, currentState.second - j * coefficients[this_var]);
-		if(states.count(predecessor)){
-		  if(markedStates.count(predecessor) == 0)
-			queue.push_back(predecessor);
-		  if (out)
-			out << (format %  (currentState.second - j * coefficients[this_var]) % currentState.second % j %coefficients[this_var]).str ();
-		  markedStates.insert(predecessor);
-		  predecessors[currentState].insert(predecessor);
-		  successors[predecessor].insert(currentState);
-		}
-	  }
-	}
-  }
-  Words::Solvers::Formatter format ("Have %d marked states! \n");
-  (out << (format % markedStates.size ()).str()).endl (); 
-  map<pair<int, int>, Var> partialSumVariables;
-  for(set<pair<int, int> >::iterator it = markedStates.begin() ; it != markedStates.end();it++){
-	partialSumVariables[*it] = s.newVar();
-  }
+	  //printf("c created %d states for MDD! \n", states.size());
+	  /*for(set<pair<int, int> >::iterator it = states.begin() ; it != states.end();it++){
+		cout << "initial state: " << it->first << " " << it->second << endl;
+	    }*/
 
-  // there is no way back to the intial state
-  if(partialSumVariables.count(make_pair(-1, 0)) == 0){
-	(out << "c linear equality is unsatisfiable! ").endl ();
-	return false;
-  }
-
-  assert(partialSumVariables.count(make_pair(-1, 0)));
-  s.addClause(mkLit(partialSumVariables[make_pair(-1, 0)]));
-
-
-  for	(auto value : possibleFinalValues){
-	s.addClause(mkLit(partialSumVariables[make_pair(numVars-1, value)]));
-  }
-
-  // Add clauses: A[i-1,j] /\ x_i = c -> A[i, j+a_i * c]
-  for(set<pair<int, int> >::iterator it = markedStates.begin() ; it != markedStates.end();it++){
-	//cout << "Have marked state " << it->first << " " << it->second << " and " << s.nFreeVars() << " free variables" << endl;
-	int this_var = it->first + 1;
-	if(this_var >= numVars){
-	  assert(this_var == numVars);
-	  assert(it->second >= rhs);
-	  (out << "adding unit clause! ").endl ();
-	  s.addClause(mkLit(partialSumVariables[*it]));
-	}
-	else{
-	  assert(maxPadding.count(this_var));
-	  int successorsFound = 0;
-	  int lastVarAssignmentThatFit = -1;
-	  for(int i = 0 ; i <= maxPadding[this_var] ; i++){
-		int new_sum = it->second + i * coefficients[this_var];
-		assert(states.count(make_pair(this_var, new_sum)));
-
-		vec<Lit> ps;
-		assert(partialSumVariables.count(*it));
-		ps.push(~mkLit(partialSumVariables[*it])); // A[this_var-1,j]
-		if(oneHotEncoding.count(make_pair(this_var, i)) == 0){
-		  cout << "Cannot find oneHot for variable " << this_var << " and value " << i << endl;
-		}
-		assert(oneHotEncoding.count(make_pair(this_var, i)));
-		ps.push(~oneHotEncoding[make_pair(this_var, i)]);           // this_var=i
-
-
-		if(markedStates.count(make_pair(this_var, new_sum))){
-		  successorsFound++;
-		  assert(markedStates.count(make_pair(this_var, new_sum)));
-		  assert(partialSumVariables.count(make_pair(this_var, new_sum)));
-		  ps.push(mkLit(partialSumVariables[make_pair(this_var, new_sum)]));
-		  lastVarAssignmentThatFit = i;
-		}
-		if(!s.addClause(ps)){
-		  (out << "got false while adding a clause! ").endl ();
-		}
-
-
-	  }
-	  assert(successorsFound > 0);
-	  if(successorsFound == 1){
-		assert(lastVarAssignmentThatFit >= 0);
-		vec<Lit> ps;
-		assert(partialSumVariables.count(*it));
-		ps.push(~mkLit(partialSumVariables[*it])); // A[this_var-1,j]
-		//printf("c only one successor, adding unit clause! \n");
-		ps.push(oneHotEncoding[make_pair(this_var, lastVarAssignmentThatFit)]);    // Only one successor. Thus, if A[i,j] is active, this immediately implies the value of x[i]
-		s.addClause(ps);
+	  if(acceptingStates.size() == 0){
+		return false;
 	  }
 
+	  set<pair<int, int> > markedStates;
+	  vector<pair<int, int> > queue;
+	  int nextIndex = 0;
+	  // Mark final states
+	  for(auto x : acceptingStates){
+		  markedStates.insert(x);
+		  queue.push_back(x);
+	  }
+	  while(nextIndex < queue.size()){
+		pair<int, int> currentState = queue[nextIndex];
+		nextIndex++;
+		int this_var = currentState.first;
+		if(this_var < 0){
+		  // Okay, I reached the root
+		  markedStates.insert(currentState);
+		}
+		else{
+		  assert(this_var >= 0 && this_var < numVars);
+		  for(int j = 0 ; j <= maxPadding[this_var] ; j++){
+			pair<int, int> predecessor = make_pair(this_var-1, currentState.second - j * coefficients[this_var]);
+			if(states.count(predecessor)){
+			  if(markedStates.count(predecessor) == 0)
+				queue.push_back(predecessor);
+
+			  markedStates.insert(predecessor);
+			  predecessors[currentState].insert(predecessor);
+			  successors[predecessor].insert(currentState);
+			}
+		  }
+		}
+	  }
+	  Words::Solvers::Formatter ff ("have %1% marked states for linear constraint MDD!");
+	  (out << (ff % markedStates.size ()).str()).endl ();
+	  //printf("c have %d marked states! \n", markedStates.size());
+	  map<pair<int, int>, Var> partialSumVariables;
+	  for(set<pair<int, int> >::iterator it = markedStates.begin() ; it != markedStates.end();it++){
+		partialSumVariables[*it] = s.newVar();
+	  }
+	  assert(partialSumVariables.count(make_pair(-1, 0)));
+	  s.addClause(mkLit(partialSumVariables[make_pair(-1, 0)]));
+
+	  // Mark all accepting states active
+	  for(auto x : acceptingStates){
+		  assert(partialSumVariables.count(x));
+		  s.addClause(mkLit(partialSumVariables[x]));
+	  }
+
+	  // Add clauses: A[i-1,j] /\ x_i = c -> A[i, j+a_i * c]
+	  for(set<pair<int, int> >::iterator it = markedStates.begin() ; it != markedStates.end();it++){
+		//cout << "Have marked state " << it->first << " " << it->second << " and " << s.nFreeVars() << " free variables" << endl;
+		int this_var = it->first + 1;
+		if(this_var >= numVars){
+		  assert(this_var == numVars);
+		  assert(it->second <= rhs);
+		  (out << "adding unit clause! ").endl ();
+		  s.addClause(mkLit(partialSumVariables[*it]));
+		}
+		else{
+		  assert(maxPadding.count(this_var));
+		  int successorsFound = 0;
+		  int lastVarAssignmentThatFit = -1;
+		  for(int i = 0 ; i <= maxPadding[this_var] ; i++){
+			int new_sum = it->second + i * coefficients[this_var];
+			assert(states.count(make_pair(this_var, new_sum)));
+
+			vec<Lit> ps;
+			assert(partialSumVariables.count(*it));
+			ps.push(~mkLit(partialSumVariables[*it])); // A[this_var-1,j]
+			if(oneHotEncoding.count(make_pair(this_var, i)) == 0){
+			  cout << "Cannot find oneHot for variable " << this_var << " and value " << i << endl;
+			}
+			assert(oneHotEncoding.count(make_pair(this_var, i)));
+			ps.push(~oneHotEncoding[make_pair(this_var, i)]);           // this_var=i
+
+
+			if(markedStates.count(make_pair(this_var, new_sum))){
+			  successorsFound++;
+			  assert(markedStates.count(make_pair(this_var, new_sum)));
+			  assert(partialSumVariables.count(make_pair(this_var, new_sum)));
+			  ps.push(mkLit(partialSumVariables[make_pair(this_var, new_sum)]));
+			  lastVarAssignmentThatFit = i;
+			}
+			if(!s.addClause(ps)){
+			  (out << "got false while adding a clause! ").endl ();
+			}
+		  }
+		  assert(successorsFound > 0);
+		  if(successorsFound == 1){
+			assert(lastVarAssignmentThatFit >= 0);
+			vec<Lit> ps;
+			assert(partialSumVariables.count(*it));
+			ps.push(~mkLit(partialSumVariables[*it])); // A[this_var-1,j]
+			ps.push(oneHotEncoding[make_pair(this_var, lastVarAssignmentThatFit)]);    // Only one successor. Thus, if A[i,j] is active, this immediately implies the value of x[i]
+			s.addClause(ps);
+		  }
+
+		}
+	  }
+	  return true;
 	}
-
-	//        vector<pair<int, int> > & v = it->second;
-	//        for(int i = 0 ; i < v.size();i++){
-	//            //
-	//            vec<Lit> ps;
-	//            ps.push(~mkLit(partialSumVariables[it->first])); // A[i-1, j]
-	//            assert(coefficients.count(i));
-	//            int c = (v[i].second - it->first.second) / coefficients[i];
-	//            assert(it->first.second + c * coefficients[i] == v[i].second);
-	//        }
-  }
-  return true;
-
-}
 // Variables from regular language
 
 /*void printStats(Solver& solver)
@@ -1121,9 +1097,10 @@ template<bool newencode = true>
   falseConst = S.newVar();
   S.addClause(~mkLit(falseConst));
   
-  assert(lin == 0 && "No linears yet! ");
+  //assert(lin == 0 && "No linears yet! ");
   assert(reg == 0 && "No regulars yet! ");
   
+
   // Encode problem here
   // assume for aXbY, i.e. terminal symbols small, variables capital letters
   for(int i = 0 ; i < input_equations_lhs.size();i++){
@@ -1206,7 +1183,7 @@ template<bool newencode = true>
 		return Words::Solvers::Result::NoSolution;
 	  }
 	}
-	// quick linears hack
+	// linears
 	for(int i = 0 ; i < input_linears_lhs.size();i++){
 	  bool succ = addLinearEqualityConstraint(S, input_linears_lhs[i], input_linears_rhs[i],wrap);
 	  if(!succ){
