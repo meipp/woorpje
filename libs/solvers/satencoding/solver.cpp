@@ -83,30 +83,6 @@ namespace Words {
 			relay.pushMessage ("Missing Dummy Variable");
 			return false;
 		  }
-		  /*
-		  std::stringstream lhs;
-		  std::stringstream rhs;
-
-		  for (auto& vm : *lc) {
-			if (vm.number <= 0) {
-			  relay.pushMessage ("Variable multiplicity must be strictly greater than zero");
-			  return false;
-			}
-			char c = vm.entry->getRepr ();
-			for (int64_t i = 0; i < vm.number; i++) {
-			  lhs << c;
-			}
-		  }
-		  auto rhs_n = lc->getRHS ();
-		  if (rhs_n <= 0) {
-			relay.pushMessage ("RHS of lineary constraint must be strictly larger than zero");
-			return false;
-		  }
-		  for (int64_t i = 0; i < rhs_n; i++) {
-			rhs << e->getRepr();
-		  }
-		  addLinearConstraint (lhs.str(),rhs.str());
-		  */
 
 		  std::vector<std::pair<char, int>> lhs;
 		  int rhs = lc->getRHS ();
