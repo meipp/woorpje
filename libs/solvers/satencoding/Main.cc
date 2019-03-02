@@ -105,7 +105,8 @@ int globalMaxPadding;
 
 vector<vector<Var> > stateTables;
 vector<int> stateTableColumns, stateTableRows;
-vector<string> input_linears_lhs, input_linears_rhs;
+vector<map<int,int>> input_linears_lhs;
+vector<int>input_linears_rhs;
 int getIndex(int numCols, int row, int col){
   return row*numCols + col;
 }
@@ -880,11 +881,7 @@ void sharpenBounds(Solver & s, string & lhs, string & rhs,StreamWrapper& out){
 // sum a_i x_i - sum b_j x_j <=  + c, where a_i, b_j >= 0
 
 // Expect x_i as one-hot encoded, with pairs (j, v_j) <-> x_i = j
-bool addLinearEqualityConstraint(Solver & s, string & str_lhs, string & str_rhs, StreamWrapper&out){
-  map<int, int>  coefficients, letter_coefficients;
-  int rhs=0; // amount of terminal symbols if we substract rhs count from lhs count
-  getCoefficients(str_lhs, str_rhs, coefficients, rhs,letter_coefficients);
-
+bool addLinearEqualityConstraint(Solver & s, map<int,int> & coefficients, int & rhs, StreamWrapper&out){
   set<pair<int, int> > states;
   int numVars = variableIndices.size();
   states.insert(make_pair(-1, 0));    // state for the empty prefix
@@ -1051,6 +1048,180 @@ bool addLinearEqualityConstraint(Solver & s, string & str_lhs, string & str_rhs,
 
 }
 
+
+/* OLD SHIT!
+bool addLinearEqualityConstraint(Solver & s, string & str_lhs, string & str_rhs, StreamWrapper&out){
+  map<int, int>  coefficients, letter_coefficients;
+  int rhs=0; // amount of terminal symbols if we substract rhs count from lhs count
+  getCoefficients(str_lhs, str_rhs, coefficients, rhs,letter_coefficients);
+
+  set<pair<int, int> > states;
+  int numVars = variableIndices.size();
+  states.insert(make_pair(-1, 0));    // state for the empty prefix
+  vector<int >  currentRow;
+
+  map<pair<int, int>, set<pair<int, int> > > predecessors, successors;
+  currentRow.push_back(0);
+
+  set<int> nextRow;
+  set<int> possibleFinalValues;
+
+
+  for(int i = 0 ; i < numVars;i++){
+	if (out)
+	  (out << "Considering Variable " << i). endl ();
+	for(int j = 0 ; j < currentRow.size();j++){
+	  for(int k = 0 ; k <= maxPadding[i] ; k++){
+		int nextValue = currentRow[j] + k * coefficients[i];
+		nextRow.insert(nextValue);
+		states.insert(make_pair(i, nextValue));
+		if (out)
+		  (out << "Building State " << nextValue << " based on " <<currentRow[j] <<"+" << k << "*" << coefficients[i]).endl ();
+	  }
+	}
+
+	// save possible finals
+	if(i == numVars-1){
+	  for (auto value : nextRow){
+		(out << value).endl ();
+		if(value >= rhs){ // remove never reached stuff, encoding <=
+		  possibleFinalValues.insert(value);
+		}
+	  }
+	}
+	currentRow.clear();
+	currentRow.insert(currentRow.end(), nextRow.begin(), nextRow.end());
+	nextRow.clear();
+  }
+  if (out)
+	(out << (Words::Solvers::Formatter ("Created %1% states for MDD!") % states.size ()).str ()). endl ();
+
+
+  set<pair<int, int> > markedStates;
+  vector<pair<int, int> > queue;
+  int nextIndex = 0;
+
+  // Mark posible final states
+  for	(auto value : possibleFinalValues){
+	markedStates.insert(make_pair(numVars-1, value));
+	queue.push_back(make_pair(numVars-1, value));
+  }
+
+  while(nextIndex < queue.size()){
+	pair<int, int> currentState = queue[nextIndex];
+	nextIndex++;
+	int this_var = currentState.first;
+	if(this_var < 0){
+	  // Okay, I reached the root
+	  markedStates.insert(currentState);
+	}
+	else{
+	  Words::Solvers::Formatter format ("Building state %1% based on %2% - %3%*%4%");
+	  assert(this_var >= 0 && this_var < numVars);
+	  for(int j = 0 ; j <= maxPadding[this_var] ; j++){
+		pair<int, int> predecessor = make_pair(this_var-1, currentState.second - j * coefficients[this_var]);
+		if(states.count(predecessor)){
+		  if(markedStates.count(predecessor) == 0)
+			queue.push_back(predecessor);
+		  if (out)
+			out << (format %  (currentState.second - j * coefficients[this_var]) % currentState.second % j %coefficients[this_var]).str ();
+		  markedStates.insert(predecessor);
+		  predecessors[currentState].insert(predecessor);
+		  successors[predecessor].insert(currentState);
+		}
+	  }
+	}
+  }
+  Words::Solvers::Formatter format ("Have %d marked states! \n");
+  (out << (format % markedStates.size ()).str()).endl ();
+  map<pair<int, int>, Var> partialSumVariables;
+  for(set<pair<int, int> >::iterator it = markedStates.begin() ; it != markedStates.end();it++){
+	partialSumVariables[*it] = s.newVar();
+  }
+
+  // there is no way back to the intial state
+  if(partialSumVariables.count(make_pair(-1, 0)) == 0){
+	(out << "c linear equality is unsatisfiable! ").endl ();
+	return false;
+  }
+
+  assert(partialSumVariables.count(make_pair(-1, 0)));
+  s.addClause(mkLit(partialSumVariables[make_pair(-1, 0)]));
+
+
+  for	(auto value : possibleFinalValues){
+	s.addClause(mkLit(partialSumVariables[make_pair(numVars-1, value)]));
+  }
+
+  // Add clauses: A[i-1,j] /\ x_i = c -> A[i, j+a_i * c]
+  for(set<pair<int, int> >::iterator it = markedStates.begin() ; it != markedStates.end();it++){
+	//cout << "Have marked state " << it->first << " " << it->second << " and " << s.nFreeVars() << " free variables" << endl;
+	int this_var = it->first + 1;
+	if(this_var >= numVars){
+	  assert(this_var == numVars);
+	  assert(it->second >= rhs);
+	  (out << "adding unit clause! ").endl ();
+	  s.addClause(mkLit(partialSumVariables[*it]));
+	}
+	else{
+	  assert(maxPadding.count(this_var));
+	  int successorsFound = 0;
+	  int lastVarAssignmentThatFit = -1;
+	  for(int i = 0 ; i <= maxPadding[this_var] ; i++){
+		int new_sum = it->second + i * coefficients[this_var];
+		assert(states.count(make_pair(this_var, new_sum)));
+
+		vec<Lit> ps;
+		assert(partialSumVariables.count(*it));
+		ps.push(~mkLit(partialSumVariables[*it])); // A[this_var-1,j]
+		if(oneHotEncoding.count(make_pair(this_var, i)) == 0){
+		  cout << "Cannot find oneHot for variable " << this_var << " and value " << i << endl;
+		}
+		assert(oneHotEncoding.count(make_pair(this_var, i)));
+		ps.push(~oneHotEncoding[make_pair(this_var, i)]);           // this_var=i
+
+
+		if(markedStates.count(make_pair(this_var, new_sum))){
+		  successorsFound++;
+		  assert(markedStates.count(make_pair(this_var, new_sum)));
+		  assert(partialSumVariables.count(make_pair(this_var, new_sum)));
+		  ps.push(mkLit(partialSumVariables[make_pair(this_var, new_sum)]));
+		  lastVarAssignmentThatFit = i;
+		}
+		if(!s.addClause(ps)){
+		  (out << "got false while adding a clause! ").endl ();
+		}
+
+
+	  }
+	  assert(successorsFound > 0);
+	  if(successorsFound == 1){
+		assert(lastVarAssignmentThatFit >= 0);
+		vec<Lit> ps;
+		assert(partialSumVariables.count(*it));
+		ps.push(~mkLit(partialSumVariables[*it])); // A[this_var-1,j]
+		//printf("c only one successor, adding unit clause! \n");
+		ps.push(oneHotEncoding[make_pair(this_var, lastVarAssignmentThatFit)]);    // Only one successor. Thus, if A[i,j] is active, this immediately implies the value of x[i]
+		s.addClause(ps);
+	  }
+
+	}
+
+	//        vector<pair<int, int> > & v = it->second;
+	//        for(int i = 0 ; i < v.size();i++){
+	//            //
+	//            vec<Lit> ps;
+	//            ps.push(~mkLit(partialSumVariables[it->first])); // A[i-1, j]
+	//            assert(coefficients.count(i));
+	//            int c = (v[i].second - it->first.second) / coefficients[i];
+	//            assert(it->first.second + c * coefficients[i] == v[i].second);
+	//        }
+  }
+  return true;
+
+}
+*/
+
 // Variables from regular language
 
 /*void printStats(Solver& solver)
@@ -1103,10 +1274,21 @@ void setupSolverMain (std::vector<std::string>& mlhs, std::vector<std::string>& 
   input_equations_rhs = mrhs;
 }
 
+void addLinearConstraint (vector<pair<char, int>> lhs, int rhs) {
+	map<int,int> coefficients;
+	for (auto x : lhs){
+		coefficients[terminalIndices[x.first]] = x.second;
+	}
+	input_linears_lhs.push_back (coefficients);
+	input_linears_rhs.push_back (rhs);
+}
+
+// OLD STUFF
+/*
 void addLinearConstraint (const std::string& lhs, const std::string& rhs) {
   input_linears_lhs.push_back (lhs);
   input_linears_rhs.push_back (rhs);
-}
+}*/
 
 template<bool newencode = true>
 ::Words::Solvers::Result runSolver (const bool squareAuto, size_t bound, const Words::Context& context, Words::Substitution& substitution,

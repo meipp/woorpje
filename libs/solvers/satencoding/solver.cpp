@@ -10,7 +10,8 @@
 
 void setupSolverMain (std::vector<std::string>&, std::vector<std::string>&);
 
-void addLinearConstraint (const std::string& lhs, const std::string& rhs);
+void addLinearConstraint (std::vector<std::pair<char, int>> lhs, int rhs);
+void addLinearConstraint (Words::Constraints::LinearConstraint*& lc);
 
 template<bool>
 ::Words::Solvers::Result runSolver (const bool squareAuto, size_t bound, const Words::Context&,Words::Substitution&,Words::Solvers::Timing::Keeper&,std::ostream*);
@@ -82,6 +83,7 @@ namespace Words {
 			relay.pushMessage ("Missing Dummy Variable");
 			return false;
 		  }
+		  /*
 		  std::stringstream lhs;
 		  std::stringstream rhs;
 
@@ -104,6 +106,16 @@ namespace Words {
 			rhs << e->getRepr();
 		  }
 		  addLinearConstraint (lhs.str(),rhs.str());
+		  */
+
+		  std::vector<std::pair<char, int>> lhs;
+		  int rhs = lc->getRHS ();
+		  for (auto& vm : *lc) {
+			  char variableName = vm.entry->getRepr ();
+			  int coefficient = vm.number;
+			  lhs.push_back(std::make_pair(variableName,coefficient));
+		  }
+		  addLinearConstraint(lhs,rhs);
 		  return true;
 		}
 		else {
