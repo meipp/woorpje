@@ -1079,6 +1079,7 @@ void addLinearConstraint (vector<pair<char, int>> lhs, int rhs) {
 	map<int,int> coefficients;
 	for (auto x : lhs){
 		coefficients[terminalIndices[x.first]] = x.second;
+		cout << terminalIndices[x.first] << " "  << x.second << " "<< rhs << endl;
 	}
 	input_linears_lhs.push_back (coefficients);
 	input_linears_rhs.push_back (rhs);
