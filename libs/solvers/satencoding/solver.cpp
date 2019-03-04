@@ -62,21 +62,19 @@ namespace Words {
 		int b = static_cast<int> (bound);
 		int currentBound = 0;
 		int i = 0;
-		Words::Solvers::Result ret;
+		Words::Solvers::Result ret = Words::Solvers::Result::NoSolution;
 		
 		while(i < b){
-			i++;
-			std::cout << i << std::endl;
-			currentBound = std::pow(i,2);
-			try {
-			  ret =  runSolver<encoding> (false,static_cast<size_t> (currentBound),opt.context,sub,timekeep,(diagnostic ? &diagStr : nullptr));
-			  if(ret == Words::Solvers::Result::HasSolution){
-				std::cout << "LOL" << std::endl;
-				return ret;
-			  }
-			}catch(Glucose::OutOfMemoryException& e) {
-			  throw Words::Solvers::OutOfMemoryException ();
+		  i++;
+		  currentBound = std::pow(i,2);
+		  try {
+			ret =  runSolver<encoding> (false,static_cast<size_t> (currentBound),opt.context,sub,timekeep,(diagnostic ? &diagStr : nullptr));
+			if(ret == Words::Solvers::Result::HasSolution){
+			  return ret;
 			}
+		  }catch(Glucose::OutOfMemoryException& e) {
+			throw Words::Solvers::OutOfMemoryException ();
+		  }
 		}
 		return ret;
 		
