@@ -7,7 +7,7 @@
 namespace Words {
   namespace Constraints {
 	struct VarMultiplicity {
-	  VarMultiplicity (IEntry* e, size_t n) : entry(e), number(n) {}
+	  VarMultiplicity (IEntry* e, int64_t n) : entry(e), number(n) {}
 	  IEntry* entry;
 	  int64_t number;
 	};

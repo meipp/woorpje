@@ -8,7 +8,7 @@ namespace Words {
   namespace Constraints {
 	template<Cmp outer>
 	struct Helper{
-	  Helper ()  {}
+	  Helper () : rhs(0)  {}
 	  Constraint_ptr makeConstraint () { return nullptr;}
 	  void add (IEntry* e, int64_t i) {
 		multiplicities[e] += i;

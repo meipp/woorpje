@@ -87,8 +87,8 @@ bool Words::Parser::parseLinConstraint () {
 		builder->addRHS (var,val);
 	  }
 	  else {
-		std::cout << " LOL : " << ((int64_t)val) << std::endl;
-		builder->addRHS ((int64_t)val);
+		std::cout << " LOL : " << val << std::endl;
+		builder->addRHS (val);
 	  }
 	}
 	options->constraints.push_back (builder->makeConstraint ());
