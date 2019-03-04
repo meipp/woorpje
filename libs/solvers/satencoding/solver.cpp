@@ -48,15 +48,13 @@ namespace Words {
 		  }
 		  rhs.push_back (str.str());
 		}
-
+		setupSolverMain (lhs,rhs);
 		clearLinears();
 		
 		for (auto& constraint : opt.constraints) {
 		  if (!handleConstraint (*constraint,relay,entry))
 			return ::Words::Solvers::Result::NoIdea;
 		}
-		
-		setupSolverMain (lhs,rhs);
 		Words::Solvers::Timing::Timer overalltimer (timekeep,"Overall Solving Time");
 
 		int b = static_cast<int> (bound);
@@ -103,8 +101,6 @@ namespace Words {
 		  for (auto& vm : *lc) {
 			  char variableName = vm.entry->getRepr ();
 			  int coefficient = vm.number;
-			  //std::cout << coefficient << " " << variableName << std::endl;
-
 			  lhs.push_back(std::make_pair(variableName,coefficient));
 		  }
 		  addLinearConstraint(lhs,rhs);

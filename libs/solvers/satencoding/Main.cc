@@ -125,14 +125,18 @@ void clear () {
   stateTables.clear ();
   maxPadding.clear ();
   constantsVars.clear ();
-  index2Terminal.clear ();
-  index2Varible.clear ();
   var2Terminal.clear ();
-  terminalIndices.clear ();
-  variableIndices.clear ();
   variableVars.clear ();
   oneHotEncoding.clear ();
-  sigmaSize = 0;
+
+}
+
+void clearIndexMaps () {
+	 index2Terminal.clear ();
+	  index2Varible.clear ();
+	  terminalIndices.clear ();
+	  variableIndices.clear ();
+	  sigmaSize = 0;
 }
 
 void clearLinears() {
@@ -155,7 +159,6 @@ void readSymbols(string & s){
 	  int tmp = variableIndices.size();
 	  variableIndices[s[j]] = tmp;
 	  index2Varible[tmp] = s[j];
-	  maxPadding[tmp] = globalMaxPadding;
 	}
   }
 }
@@ -236,7 +239,7 @@ void getCoefficients(string & lhs, string & rhs, map<int, int> & coefficients, i
     assert(c == 0);
     for(size_t j = 0 ; j < lhs.size();j++){
         if(terminal(lhs[j])){
-			letter_coefficients[terminalIndices[lhs[j]]]++;
+			letter_coefficients[terminalIndices.at(lhs[j])]++;
             c++;
         }
         else {
@@ -246,7 +249,7 @@ void getCoefficients(string & lhs, string & rhs, map<int, int> & coefficients, i
     }
     for(size_t j = 0 ; j < rhs.size();j++){
         if(terminal(rhs[j])){
-			letter_coefficients[terminalIndices[lhs[j]]]--;
+			letter_coefficients[terminalIndices.at(rhs[j])]--;
             c--;
         }
         else {
@@ -264,7 +267,7 @@ bool addSizeEqualityConstraint(Solver & s, string & str_lhs, string & str_rhs,St
   getCoefficients(str_lhs, str_rhs, coefficients, rhs,letter_coefficients);
   
   // quick parikh unsat for testing ;)
-  bool allZero = true;
+  /*bool allZero = true;
 
   for (auto const& e : coefficients) {
 	allZero = allZero and (e.second == 0);
@@ -277,7 +280,7 @@ bool addSizeEqualityConstraint(Solver & s, string & str_lhs, string & str_rhs,St
 		return false;
 	  }
 	}
-  }
+  }*/
 
 
   set<pair<int, int> > states;
@@ -696,7 +699,7 @@ void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool local
   for(int i = 0 ; i < input_w1.size() ; i++){
 	if(terminal(input_w1[i])){
 	  for(int j = 0 ; j <= sigmaSize ; j++){
-		w1[make_pair(column, j)] = constantsVars[make_pair(terminalIndices[input_w1[i]], j)];
+		w1[make_pair(column, j)] = constantsVars[make_pair(terminalIndices.at(input_w1[i]), j)];
 	  }
 	  column++;
 	}
@@ -722,7 +725,7 @@ void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool local
   for(int i = 0 ; i < input_w2.size() ; i++){
 	if(terminal(input_w2[i])){
 	  for(int j = 0 ; j <= sigmaSize ; j++){
-		w2[make_pair(column, j)] = constantsVars[make_pair(terminalIndices[input_w2[i]], j)];
+		w2[make_pair(column, j)] = constantsVars[make_pair(terminalIndices.at(input_w2[i]), j)];
 	  }
 	  column++;
 	}
@@ -1069,16 +1072,24 @@ static void SIGINT_exit(int signum) {
 // Main:
 
 void setupSolverMain (std::vector<std::string>& mlhs, std::vector<std::string>& mrhs) {
- 
+ clearIndexMaps();
   input_equations_lhs = mlhs;
   input_equations_rhs = mrhs;
+
+  // Encode problem here
+   // assume for aXbY, i.e. terminal symbols small, variables capital letters
+  for(int i = 0 ; i < input_equations_lhs.size();i++){
+ 	readSymbols(input_equations_lhs[i]);
+ 	readSymbols(input_equations_rhs[i]);
+
+   }
+
 }
 
 void addLinearConstraint (vector<pair<char, int>> lhs, int rhs) {
 	map<int,int> coefficients;
 	for (auto x : lhs){
-		coefficients[terminalIndices[x.first]] = x.second;
-		//cout << terminalIndices[x.first] << " "  << x.second << " "<< rhs << endl;
+		coefficients[variableIndices.at(x.first)] = x.second;
 	}
 	input_linears_lhs.push_back (coefficients);
 	input_linears_rhs.push_back (rhs);
@@ -1090,6 +1101,9 @@ template<bool newencode = true>
 
   clear ();
   globalMaxPadding = static_cast<int> (bound);
+  for (size_t i = 0; i< variableIndices.size();i++) {
+	  maxPadding[i] = globalMaxPadding;
+  }
   StreamWrapper wrap (odia);
   Solver S;
   int lin = 0, reg = 0, d = 0;  // upper bound on length of variables
@@ -1103,14 +1117,8 @@ template<bool newencode = true>
   assert(reg == 0 && "No regulars yet! ");
   
 
-  // Encode problem here
-  // assume for aXbY, i.e. terminal symbols small, variables capital letters
-  for(int i = 0 ; i < input_equations_lhs.size();i++){
-	readSymbols(input_equations_lhs[i]);
-	readSymbols(input_equations_rhs[i]);
-	
-  }
-  sigmaSize = terminalIndices.size();
+
+  //sigmaSize = terminalIndices.size();
   // TODO: Optimise order!
   
   for(int i = 0 ; i < input_equations_lhs.size();i++){
@@ -1284,9 +1292,8 @@ template<bool newencode = true>
 		
 		  }
 		}
-		substitution[context.findSymbol (index2Varible[i])] = sub;
 	  }
-	  
+	  substitution[context.findSymbol (index2Varible[i])] = sub;
 	}
 
 	//To be handled by external solver
