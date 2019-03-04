@@ -100,7 +100,7 @@ namespace Words {
 	  
 	  template<bool encoding>
 	  bool Solver<encoding>::handleConstraint (Words::Constraints::Constraint& c, ::Words::Solvers::MessageRelay& relay,Words::IEntry* e ) {
-		std::cerr << "Handle " << c << std::endl; 
+		//std::cerr << "Handle " << c << std::endl; 
 		Words::Constraints::LinearConstraint* lc = c.getLinconstraint ();
 		if (lc) {
 		  if (!e) {
@@ -112,7 +112,7 @@ namespace Words {
 		  for (auto& vm : *lc) {
 			  char variableName = vm.entry->getRepr ();
 			  int coefficient = vm.number;
-			  std::cout << coefficient << " " << variableName << std::endl;
+			  //std::cout << coefficient << " " << variableName << std::endl;
 
 			  lhs.push_back(std::make_pair(variableName,coefficient));
 		  }
