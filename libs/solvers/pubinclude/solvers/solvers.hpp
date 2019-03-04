@@ -20,6 +20,7 @@ namespace Words {
 	enum class Result {
 					   HasSolution,
 					   NoSolution,
+					   DefinitelyNoSolution,
 					   NoIdea
 	};
 

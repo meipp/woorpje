@@ -8,6 +8,7 @@ namespace Words {
 	enum class ExitCode {
 						  GotSolution = 0,
 						  NoSolution = 10,
+						  DefinitelyNoSolution = 1,
 						  NoIdea = 20,
 						  OutOfMemory = 30,
 						  TimeOut = 40,

@@ -1095,11 +1095,189 @@ void addLinearConstraint (vector<pair<char, int>> lhs, int rhs) {
 	input_linears_rhs.push_back (rhs);
 }
 
+void getAlphabetsAUX(string w, set<char> & variableAlphabet, set<char> & terminalAlphabet){
+	for (auto a : w){
+		if (terminal(a)){
+			terminalAlphabet.insert(a);
+		} else {
+			variableAlphabet.insert(a);
+		}
+	}
+}
+void getAlphabets(string lhs,string rhs, set<char> & variableAlphabet, set<char> & terminalAlphabet){
+	getAlphabetsAUX(lhs,variableAlphabet,terminalAlphabet);
+	getAlphabetsAUX(rhs,variableAlphabet,terminalAlphabet);
+}
+
+vector<int> getFilledNilVector(const int stringSize){
+	vector<int> nilVector;
+	for (int i=0;i<stringSize;i++){
+		nilVector.push_back(0);
+	}
+	return nilVector;
+}
+
+void initializeParikhMatrixAUX(int stringSize, set<char> alphabet, map<char,vector<int>> & parikhMatrix){
+	for (auto a : alphabet){
+		vector<int> nilVector;
+		nilVector.push_back(0);
+		parikhMatrix[a] = getFilledNilVector(stringSize); //nilVector;
+	}
+}
+
+void initializeParikhMatrix(int stringSize, set<char> variableAlphabet, set<char> terminalAlphabet, map<char,vector<int>> & parikhMatrix){
+	initializeParikhMatrixAUX(stringSize,variableAlphabet,parikhMatrix);
+	initializeParikhMatrixAUX(stringSize,terminalAlphabet,parikhMatrix);
+}
+
+// calculate parikh matrix
+void getParikhMatrix(const string w,const set<char> variableAlphabet,const set<char> terminalAlphabet,map<char,vector<int>> & parikhMatrix){
+	initializeParikhMatrix(w.size(), variableAlphabet, terminalAlphabet, parikhMatrix);
+	// first step
+	parikhMatrix[w[0]][0] = 1;
+	for (int i=1; i < w.size();i++){
+		for(auto x : parikhMatrix){
+			if (x.first == w[i]){
+				parikhMatrix[x.first][i] = x.second[i-1]+1;
+			} else {
+				parikhMatrix[x.first][i]= x.second[i-1];
+			}
+		}
+	}
+}
+
+// Prefix and suffix mismatch check
+bool characterMismatch(string rhs, string lhs){
+	int rSize = rhs.size();
+	int lSize = lhs.size();
+	int minSize = min(rSize,lSize);
+
+	// prefix && suffix check
+	bool processPrefix = true;
+	bool processSuffix = true;
+	for (int i = 0; i < minSize; i++){
+		char r = rhs[i];
+		char l = lhs[i];
+		char rr = rhs[(rSize-1)-i];
+		char ll = lhs[(lSize-1)-i];
+		if(processPrefix){
+			if (terminal(r) && terminal(l) && l != r){
+				return true;
+			} else if (l != r){
+				processPrefix = false;
+			}
+		}
+		if(processSuffix){
+			if (terminal(rr) && terminal(ll) && ll != rr){
+				return true;
+			} else if (ll != rr){
+				processSuffix = false;
+			}
+		}
+		if(!processPrefix && !processSuffix){
+			return false;
+		}
+	}
+	return false;
+}
+
+// check if length is aligning, but characters aren't
+bool lengthArgumentFail(map<char,vector<int>> lhs_pm, map<char,vector<int>> rhs_pm, int lSize, int rSize){
+	int minSize = min(rSize,lSize);
+	int sri = 0;
+	int sli = 0;
+	// prefix && suffix check
+	bool processPrefix = true;
+	bool processSuffix = false;
+	bool terminalsAlignPrefix = true;
+	bool terminalsAlignSuffix = true;
+	for (int i = 0; i < minSize; i++){
+		sri = (rSize-1)-i;
+		sli = (lSize-1)-i;
+		for(auto x : lhs_pm){
+			// crap code
+			if(processPrefix){
+				if(terminal(x.first)){
+					if(lhs_pm[x.first][i] != rhs_pm[x.first][i]){
+						terminalsAlignPrefix = false;
+					}
+				} else {
+					if(lhs_pm[x.first][i] != rhs_pm[x.first][i]){
+						processPrefix = false;
+					}
+				}
+			}
+
+			// DEBUG TOMORROW!
+			/*if(processSuffix){
+				if(terminal(x.first)){
+					if(lhs_pm[x.first][sli] != rhs_pm[x.first][sri]){
+						terminalsAlignSuffix = false;
+					}
+				} else {
+					if(lhs_pm[x.first][sli] != rhs_pm[x.first][sri]){
+						processSuffix = false;
+					}
+				}
+			}
+			if(!processPrefix && !processSuffix){
+				break;
+			}*/
+		}
+		if ((processPrefix && !terminalsAlignPrefix) || (processSuffix && !terminalsAlignSuffix)){
+			return true;
+		}
+		processPrefix = true;
+		processSuffix = false;
+		terminalsAlignPrefix = true;
+		terminalsAlignSuffix = true;
+	}
+	return false;
+}
+
+/*
+ * TODO: Add easy terminal/variable prefix elimination (Not unsat lemma)
+ */
+
+// quick unsat preprocessing
+bool checkForUnsat(){
+	set<char> variableAlphabet;
+	set<char> terminalAlphabet;
+
+	for(int i=0; i<input_equations_lhs.size();i++){
+		string lhs = input_equations_lhs[i];
+		string rhs = input_equations_rhs[i];
+
+		// prefix/suffix
+		if(characterMismatch(lhs,rhs)){
+			return true;
+		}
+		// fetch parikhimages
+		map<char,vector<int>> lhs_pm,rhs_pm;
+		getAlphabets(lhs,rhs,variableAlphabet,terminalAlphabet);
+		getParikhMatrix(lhs,variableAlphabet,terminalAlphabet,lhs_pm);
+		getParikhMatrix(rhs,variableAlphabet,terminalAlphabet,rhs_pm);
+
+		if(lengthArgumentFail(lhs_pm,rhs_pm,lhs.size(),rhs.size())){
+			return true;
+		}
+
+	}
+	return false;
+}
+
 template<bool newencode = true>
 ::Words::Solvers::Result runSolver (const bool squareAuto, size_t bound, const Words::Context& context, Words::Substitution& substitution,
 									Words::Solvers::Timing::Keeper& tkeeper, std::ostream* odia = nullptr) {
 
   clear ();
+
+  // quick unsat preprocessing
+  if(checkForUnsat()){
+	  return Words::Solvers::Result::DefinitelyNoSolution;
+  }
+
+
   globalMaxPadding = static_cast<int> (bound);
   for (size_t i = 0; i< variableIndices.size();i++) {
 	  maxPadding[i] = globalMaxPadding;

@@ -169,8 +169,12 @@ int main (int argc, char** argv) {
 		Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
 	  }
 	  case Words::Solvers::Result::NoSolution: {
-		std::cout << "No solution" << std::endl;
+		std::cout << "No solution due to set bounds" << std::endl;
 		Words::Host::Terminate (Words::Host::ExitCode::NoSolution,std::cout);
+	  }
+	  case Words::Solvers::Result::DefinitelyNoSolution: {
+	  		std::cout << "No solution" << std::endl;
+	  		Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
 	  }
 		
 	  default:
