@@ -41,3 +41,4 @@ target_include_directories(parser PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/pubinclude
 								  PRIVATE $<TARGET_PROPERTY:solvers,INTERFACE_INCLUDE_DIRECTORIES>
 								  		  )
 
+target_compile_options (parser PRIVATE -Wall -Wpedantic -Wextra)

@@ -145,7 +145,7 @@ void clearLinears() {
 
 
 void readSymbols(string & s){
-  for(int j = 0 ; j < s.size();j++){
+  for(size_t j = 0 ; j < s.size();j++){
 	if(terminal(s[j])){
 	  if(terminalIndices.count(s[j]) == 0){
 		terminalIndices[s[j]]=sigmaSize++;
@@ -235,7 +235,7 @@ void addOneHotEncoding(Solver & s){
 
 void getCoefficients(string & lhs, string & rhs, map<int, int> & coefficients, int & c, map<int,int> & letter_coefficients){
     assert(c == 0);
-    for(int j = 0 ; j < lhs.size();j++){
+    for(size_t j = 0 ; j < lhs.size();j++){
         if(terminal(lhs[j])){
 			letter_coefficients[terminalIndices[lhs[j]]]++;
             c++;
@@ -245,7 +245,7 @@ void getCoefficients(string & lhs, string & rhs, map<int, int> & coefficients, i
             coefficients[variableIndices[lhs[j]]]--;
         }
     }
-    for(int j = 0 ; j < rhs.size();j++){
+    for(size_t j = 0 ; j < rhs.size();j++){
         if(terminal(rhs[j])){
 			letter_coefficients[terminalIndices[lhs[j]]]--;
             c--;

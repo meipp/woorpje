@@ -8,6 +8,7 @@ SET (MAINDEVELOPEREMAIL "{mku,dbp,the}@informatik.uni-kiel.de")
 SET (ORGANISATION "Dependable Systems Group, Kiel Univeristy")
 SET (DEPSACK "${ToolName} is a word equation solver based on Glucose.")
 
+
 # when building, don't use the install RPATH already
 # (but later on when installing)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 

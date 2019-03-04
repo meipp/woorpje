@@ -9,7 +9,7 @@
 namespace Words {
   namespace Host {
 
-	void cpu_limit_reached (int signum) {
+	void cpu_limit_reached (int) {
 	  Terminate (ExitCode::TimeOut,std::cerr);
 	}
 	

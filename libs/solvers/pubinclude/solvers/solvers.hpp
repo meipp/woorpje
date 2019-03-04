@@ -62,8 +62,8 @@ namespace Words {
 	class DummyResultGatherer : public ResultGatherer {
 	public:
 	  virtual void setSubstitution (Words::Substitution&) {}
-	  virtual void diagnosticString (const std::string& s) {}
-	  virtual void timingInfo (const Timing::Keeper& s) {} 
+	  virtual void diagnosticString (const std::string&) {}
+	  virtual void timingInfo (const Timing::Keeper&) {} 
 	};
 	
 	class Solver {
