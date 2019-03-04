@@ -77,6 +77,15 @@ namespace Words {
   size_t Context::nbTerms () const {
 	return _internal->terminals.size();
   }
+
+  IEntry* Context::getTerminal (size_t s) const {
+	return _internal->terminals[s];
+  }
+  
+  IEntry* Context::getVariable (size_t s) const {
+	return _internal->vars[s];
+  }
+
   
   IEntry* Context::findSymbol (char c) const {
 	auto it = _internal->reprToEntry.find(c);

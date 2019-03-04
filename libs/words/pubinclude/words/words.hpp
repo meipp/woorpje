@@ -62,6 +62,7 @@ namespace Words {
 	size_t characters () const {return word.size();}
 	auto begin () const {return word.begin();}
 	auto end () const {return word.end();}
+	IEntry** data ()  {return word.data ();}
   protected:
 	void append (IEntry* e) {word.push_back(e);}
 	void clear () {word.clear ();}
@@ -94,6 +95,8 @@ namespace Words {
 	bool conformsToConventions () const;
 	size_t nbVars () const;
 	size_t nbTerms () const;
+	IEntry* getTerminal (size_t) const;
+	IEntry* getVariable (size_t s) const;
   private:
 	struct Internals;
 	std::unique_ptr<Internals> _internal;
