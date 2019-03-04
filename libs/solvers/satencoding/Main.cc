@@ -115,7 +115,7 @@ int getIndex(int numCols, int row, int col){
 map<pair<int, int>, Lit> oneHotEncoding;
 
 int sigmaSize;
-int gammaSize; // Variable Alphabet size
+//int gammaSize; // Variable Alphabet size
 
 Var trueConst, falseConst;
 
@@ -132,8 +132,7 @@ void clear () {
   variableIndices.clear ();
   variableVars.clear ();
   oneHotEncoding.clear ();
-  equations_lhs.clear();
-  equations_rhs.clear();
+  sigmaSize = 0;
 }
 
 void clearLinears() {
@@ -1070,7 +1069,7 @@ static void SIGINT_exit(int signum) {
 // Main:
 
 void setupSolverMain (std::vector<std::string>& mlhs, std::vector<std::string>& mrhs) {
-  clear ();
+ 
   input_equations_lhs = mlhs;
   input_equations_rhs = mrhs;
 }
@@ -1088,6 +1087,8 @@ void addLinearConstraint (vector<pair<char, int>> lhs, int rhs) {
 template<bool newencode = true>
 ::Words::Solvers::Result runSolver (const bool squareAuto, size_t bound, const Words::Context& context, Words::Substitution& substitution,
 									Words::Solvers::Timing::Keeper& tkeeper, std::ostream* odia = nullptr) {
+
+  clear ();
   globalMaxPadding = static_cast<int> (bound);
   StreamWrapper wrap (odia);
   Solver S;
