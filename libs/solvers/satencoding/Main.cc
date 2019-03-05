@@ -1070,31 +1070,6 @@ static void SIGINT_exit(int signum) {
 
 //=================================================================================================
 // Main:
-
-void setupSolverMain (std::vector<std::string>& mlhs, std::vector<std::string>& mrhs) {
- clearIndexMaps();
-  input_equations_lhs = mlhs;
-  input_equations_rhs = mrhs;
-
-  // Encode problem here
-   // assume for aXbY, i.e. terminal symbols small, variables capital letters
-  for(int i = 0 ; i < input_equations_lhs.size();i++){
- 	readSymbols(input_equations_lhs[i]);
- 	readSymbols(input_equations_rhs[i]);
-
-   }
-
-}
-
-void addLinearConstraint (vector<pair<char, int>> lhs, int rhs) {
-	map<int,int> coefficients;
-	for (auto x : lhs){
-		coefficients[variableIndices.at(x.first)] = x.second;
-	}
-	input_linears_lhs.push_back (coefficients);
-	input_linears_rhs.push_back (rhs);
-}
-
 void getAlphabetsAUX(string w, set<char> & variableAlphabet, set<char> & terminalAlphabet){
 	for (auto a : w){
 		if (terminal(a)){
@@ -1131,23 +1106,33 @@ void initializeParikhMatrix(int stringSize, set<char> variableAlphabet, set<char
 }
 
 // calculate parikh matrix
-void getParikhMatrix(const string w,const set<char> variableAlphabet,const set<char> terminalAlphabet,map<char,vector<int>> & parikhMatrix){
-	initializeParikhMatrix(w.size(), variableAlphabet, terminalAlphabet, parikhMatrix);
+void getParikhMatrix(const string w,const set<char> variableAlphabet,const set<char> terminalAlphabet,map<char,vector<int>> & pParikhMatrix,map<char,vector<int>> & sParikhMatrix){
+	initializeParikhMatrix(w.size(), variableAlphabet, terminalAlphabet, pParikhMatrix);
+	initializeParikhMatrix(w.size(), variableAlphabet, terminalAlphabet, sParikhMatrix);
+	int wSizeM = w.size()-1;
 	// first step
-	parikhMatrix[w[0]][0] = 1;
+	pParikhMatrix[w[0]][0] = 1;
+	pParikhMatrix[w[wSizeM]][0] = 1;
 	for (int i=1; i < w.size();i++){
-		for(auto x : parikhMatrix){
+		for(auto x : pParikhMatrix){
+			// prefix
 			if (x.first == w[i]){
-				parikhMatrix[x.first][i] = x.second[i-1]+1;
+				pParikhMatrix[x.first][i] = pParikhMatrix[x.first][i-1]+1;
 			} else {
-				parikhMatrix[x.first][i]= x.second[i-1];
+				pParikhMatrix[x.first][i]= pParikhMatrix[x.first][i-1];
+			}
+			//suffix
+			if (x.first == w[wSizeM-i]){
+				sParikhMatrix[x.first][i] = sParikhMatrix[x.first][i-1]+1;
+			} else {
+				sParikhMatrix[x.first][i]= sParikhMatrix[x.first][i-1];
 			}
 		}
 	}
 }
 
 // Prefix and suffix mismatch check
-bool characterMismatch(string rhs, string lhs){
+bool characterMismatch(const string & rhs, const string & lhs){
 	int rSize = rhs.size();
 	int lSize = lhs.size();
 	int minSize = min(rSize,lSize);
@@ -1182,51 +1167,68 @@ bool characterMismatch(string rhs, string lhs){
 }
 
 // check if length is aligning, but characters aren't
-bool lengthArgumentFail(map<char,vector<int>> lhs_pm, map<char,vector<int>> rhs_pm, int lSize, int rSize){
+bool lengthArgumentFail(string lhs, string rhs,map<char,vector<int>> p_lhs_pm, map<char,vector<int>> p_rhs_pm,map<char,vector<int>> s_lhs_pm, map<char,vector<int>> s_rhs_pm){
+	int rSize = rhs.size();
+	int lSize = lhs.size();
+
 	int minSize = min(rSize,lSize);
 	int sri = 0;
 	int sli = 0;
+
 	// prefix && suffix check
 	bool processPrefix = true;
 	bool processSuffix = false;
 	bool terminalsAlignPrefix = true;
 	bool terminalsAlignSuffix = true;
-	for (int i = 0; i < minSize; i++){
+	for (int i = 1; i < minSize; i++){
 		sri = (rSize-1)-i;
 		sli = (lSize-1)-i;
-		for(auto x : lhs_pm){
-			// crap code
+		for(auto x : p_lhs_pm){
 			if(processPrefix){
 				if(terminal(x.first)){
-					if(lhs_pm[x.first][i] != rhs_pm[x.first][i]){
+					if(p_lhs_pm[x.first][i] != p_rhs_pm[x.first][i]){
 						terminalsAlignPrefix = false;
 					}
 				} else {
-					if(lhs_pm[x.first][i] != rhs_pm[x.first][i]){
+					if(p_lhs_pm[x.first][i] != p_rhs_pm[x.first][i]){
 						processPrefix = false;
 					}
 				}
 			}
-
-			// DEBUG TOMORROW!
-			/*if(processSuffix){
+			if(processSuffix){
 				if(terminal(x.first)){
-					if(lhs_pm[x.first][sli] != rhs_pm[x.first][sri]){
+					if(s_lhs_pm[x.first][i] != s_rhs_pm[x.first][i]){
 						terminalsAlignSuffix = false;
 					}
 				} else {
-					if(lhs_pm[x.first][sli] != rhs_pm[x.first][sri]){
+					if(s_lhs_pm[x.first][i] != s_rhs_pm[x.first][i]){
 						processSuffix = false;
 					}
 				}
 			}
 			if(!processPrefix && !processSuffix){
 				break;
-			}*/
+			}
 		}
 		if ((processPrefix && !terminalsAlignPrefix) || (processSuffix && !terminalsAlignSuffix)){
 			return true;
 		}
+
+		continue;
+		// mismatch prefix/suffix
+		if (processPrefix && i > 0){
+			//cout << "PREFIX MATCH: " << rhs.substr(0,i)  << " " << lhs.substr(0,i) << endl;
+			if (characterMismatch(rhs.substr(0,i+1),lhs.substr(0,i+1))){
+				return true;
+			}
+		}
+		if (processSuffix  && i > 0){
+			//cout << "SUFFIX MATCH: " << rhs.substr(rSize-i) <<  " " << lhs.substr(lSize-i) << endl;
+			if(characterMismatch(rhs.substr(rSize-i),lhs.substr(lSize-i))){
+				return true;
+			}
+		}
+
 		processPrefix = true;
 		processSuffix = false;
 		terminalsAlignPrefix = true;
@@ -1235,9 +1237,35 @@ bool lengthArgumentFail(map<char,vector<int>> lhs_pm, map<char,vector<int>> rhs_
 	return false;
 }
 
-/*
- * TODO: Add easy terminal/variable prefix elimination (Not unsat lemma)
- */
+bool unweightedEquation(map<char,vector<int>> lhs_pm, map<char,vector<int>> rhs_pm, int lSize, int rSize){
+	bool allPositive,allNegative;
+	bool assignedOnce = false;
+	for (auto x : lhs_pm){
+		int l = lhs_pm[x.first][lSize-1];
+		int r = rhs_pm[x.first][rSize-1];
+		if(!assignedOnce){
+			if(l - r > 0){
+				assignedOnce = true;
+				allPositive = true;
+				allNegative = false;
+				continue;
+			} else if (l - r < 0) {
+				assignedOnce = true;
+				allPositive = false;
+				allNegative = true;
+				continue;
+			}
+		} else if ((l - r > 0 && allNegative) || (l - r < 0 && allPositive)) {
+			return false;
+		}
+	}
+
+	if(!assignedOnce){
+		return false;
+	} else {
+		return true;
+	}
+}
 
 // quick unsat preprocessing
 bool checkForUnsat(){
@@ -1248,17 +1276,21 @@ bool checkForUnsat(){
 		string lhs = input_equations_lhs[i];
 		string rhs = input_equations_rhs[i];
 
+		if (lhs.size() == 0 || rhs.size() == 0){
+			return false;
+		}
+
+
 		// prefix/suffix
 		if(characterMismatch(lhs,rhs)){
 			return true;
 		}
 		// fetch parikhimages
-		map<char,vector<int>> lhs_pm,rhs_pm;
+		map<char,vector<int>> p_lhs_pm,p_rhs_pm,s_lhs_pm,s_rhs_pm;
 		getAlphabets(lhs,rhs,variableAlphabet,terminalAlphabet);
-		getParikhMatrix(lhs,variableAlphabet,terminalAlphabet,lhs_pm);
-		getParikhMatrix(rhs,variableAlphabet,terminalAlphabet,rhs_pm);
-
-		if(lengthArgumentFail(lhs_pm,rhs_pm,lhs.size(),rhs.size())){
+		getParikhMatrix(lhs,variableAlphabet,terminalAlphabet,p_lhs_pm,s_lhs_pm);
+		getParikhMatrix(rhs,variableAlphabet,terminalAlphabet,p_rhs_pm,s_rhs_pm);
+		if(lengthArgumentFail(lhs, rhs,p_lhs_pm,p_rhs_pm,s_lhs_pm, s_rhs_pm) || unweightedEquation(p_lhs_pm,p_rhs_pm,lhs.size(),rhs.size())){
 			return true;
 		}
 
@@ -1266,17 +1298,146 @@ bool checkForUnsat(){
 	return false;
 }
 
+//
+void removeLeadingAndEndingSymbols(string & lhs, string & rhs){
+		int rSize = rhs.size();
+		int lSize = lhs.size();
+		int minSize = min(rSize,lSize);
+
+		// prefix && suffix check
+		bool processPrefix = true;
+		bool processSuffix = true;
+		int prefixPos = 0;
+		int suffixPos = 0;
+
+		for (int i = 0; i < minSize; i++){
+			char r = rhs[i];
+			char l = lhs[i];
+			char rr = rhs[(rSize-1)-i];
+			char ll = lhs[(lSize-1)-i];
+			if(processPrefix){
+				if (l != r){
+					prefixPos = i;
+					processPrefix = false;
+				}
+			}
+			if(processSuffix){
+				if (ll != rr){
+					processSuffix = false;
+					suffixPos = i;
+				}
+			}
+			if(!processPrefix && !processSuffix){
+				break;
+			}
+		}
+		if(processPrefix){
+			prefixPos = minSize;
+		}
+		if(processSuffix){
+			suffixPos = minSize;
+		}
+
+		rhs = rhs.substr (prefixPos,(rSize-suffixPos)-prefixPos);
+		lhs = lhs.substr (prefixPos,(lSize-suffixPos)-prefixPos);
+}
+
+bool noVariableWord(string const w){
+	for (auto a : w){
+		if (!terminal(a)){
+			return false;
+		}
+	}
+	return true;
+}
+
+
+bool clearlySAT(string const & lhs, string const & rhs){
+	if (noVariableWord(lhs) && noVariableWord(rhs)){
+		return lhs == rhs;
+	}
+
+	// one side empty needed..
+	if (lhs.size() == 0 && rhs.size() == 0){
+		return true;
+	}
+
+
+
+
+
+
+
+}
+
+
+
+Words::Solvers::Result setupSolverMain (std::vector<std::string>& mlhs, std::vector<std::string>& mrhs) {
+ clearIndexMaps();
+  //input_equations_lhs = mlhs;
+  //input_equations_rhs = mrhs;
+
+  // Naive preprocessing
+  for(int i=0; i<mlhs.size();i++){
+	  string rhs = mlhs[i];
+	  string lhs = mrhs[i];
+	  removeLeadingAndEndingSymbols(lhs,rhs);
+	  if (noVariableWord(lhs) && noVariableWord(rhs)){
+		  if (lhs != rhs){
+			  return Words::Solvers::Result::DefinitelyNoSolution;
+		  }
+	  } else {
+		  input_equations_lhs.push_back(lhs);
+		  input_equations_rhs.push_back(rhs);
+	  }
+  }
+
+  // if empty it's ez sat
+  assert(input_equations_lhs.size() == input_equations_rhs.size());
+  if (input_equations_lhs.size() == 0){
+	  return Words::Solvers::Result::HasSolution;
+  }
+
+  // Encode problem here
+   // assume for aXbY, i.e. terminal symbols small, variables capital letters
+  for(int i = 0 ; i < input_equations_lhs.size();i++){
+ 	readSymbols(input_equations_lhs[i]);
+ 	readSymbols(input_equations_rhs[i]);
+
+   }
+  return  Words::Solvers::Result::NoIdea;
+
+}
+
+void addLinearConstraint (vector<pair<char, int>> lhs, int rhs) {
+	map<int,int> coefficients;
+	for (auto x : lhs){
+		coefficients[variableIndices.at(x.first)] = x.second;
+	}
+	input_linears_lhs.push_back (coefficients);
+	input_linears_rhs.push_back (rhs);
+}
+
 template<bool newencode = true>
 ::Words::Solvers::Result runSolver (const bool squareAuto, size_t bound, const Words::Context& context, Words::Substitution& substitution,
 									Words::Solvers::Timing::Keeper& tkeeper, std::ostream* odia = nullptr) {
 
   clear ();
+  /*
+  // Naive preprocessing
+  removeLeadingAndEndingSymbols();
+
+
+  cout << input_equations_rhs[0]  << " " << input_equations_lhs[0] << endl;
+  */
+
+
 
   // quick unsat preprocessing
+  // this is only needed once; bounds have no impact
   if(checkForUnsat()){
 	  return Words::Solvers::Result::DefinitelyNoSolution;
   }
-
 
   globalMaxPadding = static_cast<int> (bound);
   for (size_t i = 0; i< variableIndices.size();i++) {
