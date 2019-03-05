@@ -71,12 +71,11 @@ namespace Words {
 																[] (size_t s, const Words::Equation& eq) {return eq.lhs.characters()+eq.rhs.characters()+s;})
 											   )
 							 ); 
-		int currentBound = 0;
 		int i = 0;
 		Words::Solvers::Result ret = Words::Solvers::Result::NoSolution;
-		while(currentBound < actualb){
+		while(i < actualb){
 		  i++;
-		  currentBound = std::pow(i,2);
+		  int currentBound = std::pow(i,2);
 		  try {
 			ret =  runSolver<encoding> (false,static_cast<size_t> (currentBound),opt.context,sub,timekeep,(diagnostic ? &diagStr : nullptr));
 			if(ret == Words::Solvers::Result::HasSolution){
