@@ -1,4 +1,5 @@
-= Woorpje:Bounded Word Equation Solver
+= Woorpje:
+Bounded Word Equation Solver
 :toc: left
 
 
