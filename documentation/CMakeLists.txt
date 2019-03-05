@@ -1,4 +1,9 @@
 find_program(ASCIIDOC asciidoc)
+find_program(ASCIIDOCTOR asciidoctor)
+
+if (ASCIIDOCTOR)
+set(ASCIIDOC ${ASCIIDOCTOR})
+endif(ASCIIDOCTOR)
 
 if (ASCIIDOC)
 add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/woorpje.html

@@ -1,5 +1,6 @@
-= Woorpje:
-Bounded Word Equation Solver
+= Woorpje:Bounded Word Equation Solver
+:toc: left
+
 
 Woorpje is a string solver for word equations where variables can be substituted only finite length strings.
 As variables can only be replaced by finite length strings over a finite alphabet, there are only finitely many substitutions to consider, rendering the question: _is this equation solvable_ trivially solvable by a reachability check.
@@ -50,6 +51,7 @@ include::examples/linexample.out[]
 
 reveals that there is indeed a solution. It also shows, that Woorpje encoded the word equation problem into SAT four times.  
 
+include::benchmarks.adoc[]
 
 == People involved
 - https://www.zs.informatik.uni-kiel.de/de/mitarbeiter/b-sc-joel-day[Joel Day]
