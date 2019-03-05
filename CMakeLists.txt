@@ -1,4 +1,5 @@
 project(wordsolver)
+cmake_minimum_required(VERSION 3.10)
 
 SET (ToolName woorpje)
 SET (VERSION_MAJOR 0)
@@ -33,7 +34,7 @@ configure_file (
  "${PROJECT_BINARY_DIR}/config.h"
 )
 add_subdirectory(libs)
-
+add_subdirectory(documentation)
 SET(Boost_USE_STATIC_LIBS ON)
 FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
 
@@ -41,6 +42,7 @@ FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
 add_executable (${ToolName} main.cpp)
 target_link_libraries (${ToolName}  host parser words solvers glucose ${Boost_LIBRARIES} )
 target_include_directories(${ToolName} PRIVATE ${PROJECT_BINARY_DIR})
+									 
 
 SET(CPACK_GENERATOR "ZIP")									   
 SET(CPACK_PACKAGE_FILE_NAME ${ToolName}-${VERSION_MAJOR}_${VERSION_MINOR})

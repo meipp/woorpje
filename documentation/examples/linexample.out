@@ -1,0 +1,25 @@
+woorpje 0.1 (Mar  4 2019)
+Revision: 7621932
+woorpje is a word equation solver based on Glucose.
+Dependable Systems Group, Kiel Univeristy
+Mitja Kulczynski, Danny Boegsted Poulsen and Thorsten Ehlers - {mku,dbp,the}@informatik.uni-kiel.de
+
+SatSolver Ready
+c last restart ## conflicts  :  0 12 
+
+
+Substitution: 
+X: baaaaaaab
+Y: abaaaaaaa
+
+Equations after substition
+abaaaaaaab == abaaaaaaab
+
+Timing info
+Encoding  : 0 milliseconds
+Encoding  : 0 milliseconds
+Encoding  : 0 milliseconds
+Solving : 0 milliseconds
+Overall Solving Time : 0 milliseconds
+
+Found a solution

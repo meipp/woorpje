@@ -1,0 +1,62 @@
+= Woorpje:
+Bounded Word Equation Solver
+
+Woorpje is a string solver for word equations where variables can be substituted only finite length strings.
+As variables can only be replaced by finite length strings over a finite alphabet, there are only finitely many substitutions to consider, rendering the question: _is this equation solvable_ trivially solvable by a reachability check.
+Preliminary experiments with a naive reachability search revealed however, that the search space quickly becomes intractable thus 
+Woorpje translates the Bounded Word Equation problem to a satisfiability problem of propositional logic, and uses the award-winning SAT-solver http://www.labri.fr/perso/lsimon/glucose/[Glucose] as its SAT-Solving backend. 
+
+
+== Using Woorpje: 
+Woorpje is invoked from the command line with `./woorpje equation.eq` where `equation.eq` is configuration file for Woorpje.
+
+=== Simple Example
+Using Woorpje to solve the equation `aX = YB` is as simple as providing the below configuration file to Woorpje. 
+
+----
+include::examples/example.eq[]
+----
+The lines `Variables` `Terminals` and `Equation` must be written in
+that order, and they have the obvious semantics. The last line
+`SatGlucose(10)` invokes the solver and pass the number 10 as
+parameter to the solver.  The `10` informs the solver to try increase
+the exponentially ten times. If the parameter is `0`, Woorpje will guess a suitable value. 
+
+[TIP]
+It is possible to specify a system of equations, where all equations must be true, by specifying several `Equation` lines
+
+
+As can be seen from the output below, Woorpje finds a solution to the equation where it sets `X = b` and `Y = a`. Woorpje also provides a proof that the substitution is correct by outputting the left hand side and right hand side with the variables replaced.  
+
+----
+include::examples/example.out[]
+----
+
+=== Linear Constraints
+Woorpje supports constraining the set of potential solutions by specifying constraints between linear arithmetic expressions over the length of the variables. As an example, consider that want solution to `aX = Yb` where `X` is longer than 5, we can add the constraint  `LinConstraint: [ >= +1|X|, +5]` to the configuration file. Linear Constraints must be specified after the word equations. Giving us the configuration file
+
+----
+include::examples/linexample.eq[]
+----
+
+[TIP]
+Linear Constraints are specified in prefix form where the comparison operator (`>=,<=, >, <`) is first specified and after that the left hand side and then the right hand side of comparison.
+
+The output from Woorpje 
+
+----
+include::examples/linexample.out[]
+----
+
+reveals that there is indeed a solution. It also shows, that Woorpje encoded the word equation problem into SAT four times.  
+
+
+== People involved
+- https://www.zs.informatik.uni-kiel.de/de/mitarbeiter/b-sc-joel-day[Joel Day]
+- https://www.zs.informatik.uni-kiel.de/de/mitarbeiter/thorsten-ehlers-msc[Thorsten Ehlers]
+- https://www.zs.informatik.uni-kiel.de/de/mitarbeiter/mitja-kulczynski[Mitja Kulczynski]
+- http://flmanea.blogspot.com/[Florin Manea]
+- https://www.zs.informatik.uni-kiel.de/de/mitarbeiter/nowotka[Dirk Nowotka]
+- https://www.boegstedpoulsen.dk[Danny Bøgsted Poulsem]
+
+
