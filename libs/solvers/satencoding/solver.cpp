@@ -1,6 +1,8 @@
 #include <sstream>
 #include <iostream>
 
+#include <numeric>
+
 #include "words/exceptions.hpp"
 #include "words/words.hpp"
 #include "words/linconstraint.hpp"
@@ -57,12 +59,22 @@ namespace Words {
 		}
 		Words::Solvers::Timing::Timer overalltimer (timekeep,"Overall Solving Time");
 
-		int b = static_cast<int> (bound);
+	   
+		
+		const int actualb = (bound ?
+							 static_cast<int> (bound) :
+							 
+							 static_cast<int> (std::accumulate (
+																opt.equations.begin(),
+																opt.equations.end(),
+																0,
+																[] (size_t s, const Words::Equation& eq) {return eq.lhs.characters()+eq.rhs.characters()+s;})
+											   )
+							 ); 
 		int currentBound = 0;
 		int i = 0;
 		Words::Solvers::Result ret = Words::Solvers::Result::NoSolution;
-		
-		while(i < b){
+		while(currentBound < actualb){
 		  i++;
 		  currentBound = std::pow(i,2);
 		  try {
