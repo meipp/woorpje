@@ -17,12 +17,13 @@ namespace po = boost::program_options;
 
 class CoutResultGatherer : public Words::Solvers::DummyResultGatherer {
 public:
-  CoutResultGatherer (std::vector<Words::Equation>& eqs) : eqs(eqs) {}
+  CoutResultGatherer (const Words::Options& opt) : opt(opt) {}
   void setSubstitution (Words::Substitution& w) {
 	std::cout << "Substitution: " << std::endl;
-	for (auto& it : w) {
-	  std::cout << it.first->getRepr () << ": ";
-	  for (auto c : it.second) {
+	for (size_t var = 0; var < opt.context.nbVars(); var++) {
+	  auto variable = opt.context.getVariable (var);
+	  std::cout << variable->getRepr () << ": ";
+	  for (auto c : w[variable]) {
 		std::cout << c->getRepr ();
 	  }
 	  std::cout << std::endl;
@@ -30,7 +31,7 @@ public:
 	std::cout << std::endl;
 	
 	std::cout << "Equations after substition" <<std::endl;
-	for (auto& eq : eqs) {
+	for (auto& eq : opt.equations) {
 	  printWordWithSubstitution (eq.lhs,w);
 	  std::cout << " == ";
 	  printWordWithSubstitution (eq.rhs,w);
@@ -53,7 +54,7 @@ public:
   }
   
 private:  
-  void printWordWithSubstitution (Words::Word& word, Words::Substitution& w) {
+  void printWordWithSubstitution (const Words::Word& word, Words::Substitution& w) {
 	for (auto c : word) {
 	  if (c->isTerminal ())
 		std::cout << c->getRepr ();
@@ -66,7 +67,7 @@ private:
 	}
   }
   
-  std::vector<Words::Equation> eqs;
+  const Words::Options& opt;
 };
 
 void printContactDetails (std::ostream& os) {
@@ -164,7 +165,7 @@ int main (int argc, char** argv) {
 	  
 	  
 	  case Words::Solvers::Result::HasSolution: {
-		CoutResultGatherer gatherer (opt.equations);
+		CoutResultGatherer gatherer (opt);
 		solver->getResults (gatherer);
 		Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
 	  }

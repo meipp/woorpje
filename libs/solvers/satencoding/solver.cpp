@@ -10,7 +10,7 @@
 #include "core/Solver.h"
 #include "solver.hpp"
 
-void setupSolverMain (std::vector<std::string>&, std::vector<std::string>&);
+Words::Solvers::Result setupSolverMain (std::vector<std::string>&, std::vector<std::string>&);
 void clearLinears();
 void addLinearConstraint (std::vector<std::pair<char, int>> lhs, int rhs);
 
@@ -50,7 +50,12 @@ namespace Words {
 		  }
 		  rhs.push_back (str.str());
 		}
-		setupSolverMain (lhs,rhs);
+		Words::Solvers::Result retPreprocessing = setupSolverMain (lhs,rhs);
+		// preprocessing match
+		if (retPreprocessing != Words::Solvers::Result::NoIdea){
+			return retPreprocessing;
+		}
+
 		clearLinears();
 		
 		for (auto& constraint : opt.constraints) {
