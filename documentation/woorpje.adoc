@@ -50,9 +50,12 @@ The output from Woorpje
 include::examples/linexample.out[]
 ----
 
-reveals that there is indeed a solution. It also shows, that Woorpje encoded the word equation problem into SAT four times.  
+reveals that there is indeed a solution. It also shows, that Woorpje encoded the word equation problem into SAT three times.  
 
 include::benchmarks.adoc[]
+
+== Availability
+We distribute precompiled binaries of Woorpje for Linux  https://www.informatik.uni-kiel.de/~mku/woorpje/download[here]
 
 == People involved
 - https://www.zs.informatik.uni-kiel.de/de/mitarbeiter/b-sc-joel-day[Joel Day]

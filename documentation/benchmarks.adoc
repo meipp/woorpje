@@ -3,7 +3,7 @@ For evaluating the performance of Woorpje, we automatically generated
 two  collections of word equations that exhibit a special
 structure. The collections both contain 200 word equations that are guaranteed to be satisfiable. The
 equations are solved with Woorpje and state of the art string solvers
-(http://cvc4.cs.stanford.edu/web/[CVC4],https://github.com/z3str/Z3-str[Z3str], Z3Seg and http://user.it.uu.se/~jarst116/norn/[Norn].
+(http://cvc4.cs.stanford.edu/web/[CVC4], https://github.com/z3str/Z3-str[Z3str], Z3Seg and http://user.it.uu.se/~jarst116/norn/[Norn]).
 
 For each word equation we ran the solvers and noted if they gave the
 correct result, if they timed out and we measured the total time for
