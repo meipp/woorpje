@@ -1361,15 +1361,7 @@ bool clearlySAT(string const & lhs, string const & rhs){
 	if (lhs.size() == 0 && rhs.size() == 0){
 		return true;
 	}
-
-
-
-
-
-
-
 }
-
 
 
 Words::Solvers::Result setupSolverMain (std::vector<std::string>& mlhs, std::vector<std::string>& mrhs) {
@@ -1412,7 +1404,11 @@ Words::Solvers::Result setupSolverMain (std::vector<std::string>& mlhs, std::vec
 void addLinearConstraint (vector<pair<char, int>> lhs, int rhs) {
 	map<int,int> coefficients;
 	for (auto x : lhs){
-		coefficients[variableIndices.at(x.first)] = x.second;
+
+		// NOT CORRECT, THIS NEEDS A FIX!!!!
+		if(variableIndices.count(x.first)){
+			coefficients[variableIndices.at(x.first)] = x.second;
+		}
 	}
 	input_linears_lhs.push_back (coefficients);
 	input_linears_rhs.push_back (rhs);
