@@ -3,7 +3,7 @@ For evaluating the performance of Woorpje, we automatically generated
 two  collections of word equations that exhibit a special
 structure. The collections both contain 200 word equations that are guaranteed to be satisfiable. The
 equations are solved with Woorpje and state of the art string solvers
-(http://cvc4.cs.stanford.edu/web/[CVC4], https://github.com/z3str/Z3-str[Z3str], Z3Seg and http://user.it.uu.se/~jarst116/norn/[Norn]).
+(http://cvc4.cs.stanford.edu/web/[CVC4], https://github.com/z3str/Z3-str[Z3str], Z3Seg and http://user.it.uu.se/~jarst116/norn/[Norn]). The benchmarks are available https://www.informatik.uni-kiel.de/~mku/woorpje/download[here].
 
 For each word equation we ran the solvers and noted if they gave the
 correct result, if they timed out and we measured the total time for
@@ -11,17 +11,37 @@ solving all equations. The solvers were allowed to run for 30
 seconds.
 
 
-=== Random Formulas
-The collection of word equations are completely random word
-equations.
+=== First Track
+The first track (I) is based on completely random generated string,
+where randomly picked string of arbitrary length were replaced by
+variables. This guarantees the existence of a solution.The generated
+word equations have an upper bound of 15 variables, 10 constants, and
+length 300. 
+include::bechmark1.txt.table[]
 
-.Random Formula Results
-|===
-| | Woorpje | CVC4 | Z3str | Z3Seq | Norn
-|Sat | 200 | 182 | 196 | 184 | 176 
-| Unsat | 0 | 1 |1 | 0| 5
-|Unknwon | 0 |0 | 0 | 0 | 0 
-|timeout | 0 | 17 |3 |16|20
-|Time (s) | 26.08 | 515.44 |147.86 | 533.82 | 1043.52  
-|Time without timeout (s) | 27.08 | 4.84 | 57.73|53.27 |442.10
-|===
+
+
+=== Second Track
+ The second track (II) is based on the idea in Proposition 1 of \cite{MFCS2017}, where the equation  \[X_naX_nbX_{n-1}bX_{n-2}\cdots bX_1 =	aX_nX_{n-1}X_{n-1}bX_{n-2}X_{n-2}b \cdots b X_{1}X_{1}baa\] is shown to have a minimal solution of exponential length w.r.t. the length of the equation.
+include::bechmark2.txt.table[]
+
+
+=== Third Track
+The third track (III) is based on the second track, but each letter
+$b$ is replaced by the left hand side or the right hand side of some
+randomly generated word equation (e.g., with the methods from track
+(I))
+include::bechmark3.txt.table[]
+
+
+=== Fourth Track
+The fourth track (IV) consists of a system of 100 small random word
+equations with at most 6 constant letters, 10 variables and length
+60. The hard aspect of this track is solving multiple equations at the
+same time.
+include::bechmark4.txt.table[]
+
+
+=== Fifth Track
+The fifth track (V) enriches a system of 30 word equations by suitable linear constraints, as presented in this paper. This track is influenced by the Kaluza benchmark set.
+include::bechmark5.txt.table[]
