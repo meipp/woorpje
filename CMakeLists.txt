@@ -39,8 +39,9 @@ SET(Boost_USE_STATIC_LIBS ON)
 FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
 
 
+set(CMAKE_EXE_LINKER_FLAGS " -static")
 add_executable (${ToolName} main.cpp)
-target_link_libraries (${ToolName}  host parser words solvers glucose ${Boost_LIBRARIES} )
+target_link_libraries (${ToolName}  host parser words solvers glucose ${Boost_LIBRARIES}  )
 target_include_directories(${ToolName} PRIVATE ${PROJECT_BINARY_DIR})
 									 
 
