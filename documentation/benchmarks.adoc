@@ -22,7 +22,11 @@ include::bechmark1.txt.table[]
 
 
 === Second Track
- The second track (II) is based on the idea in Proposition 1 of \cite{MFCS2017}, where the equation  \[X_naX_nbX_{n-1}bX_{n-2}\cdots bX_1 =	aX_nX_{n-1}X_{n-1}bX_{n-2}X_{n-2}b \cdots b X_{1}X_{1}baa\] is shown to have a minimal solution of exponential length w.r.t. the length of the equation.
+
+The second track (II) is based on the idea in Proposition 1 of https://arxiv.org/abs/1702.07922[MFCS2017], where the equation
+
+latexmath:[X_naX_nbX_{n-1}bX_{n-2}\cdots bX_1 =	aX_nX_{n-1}X_{n-1}bX_{n-2}X_{n-2}b \cdots b X_{1}X_{1}baa] is shown to have a minimal solution of exponential length w.r.t. the length of the equation.
+
 include::bechmark2.txt.table[]
 
 

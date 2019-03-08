@@ -1,6 +1,7 @@
 = Woorpje:
 Bounded Word Equation Solver
 :toc: left
+:stem:
 
 
 Woorpje is a string solver for word equations where variables can be substituted only finite length strings.
