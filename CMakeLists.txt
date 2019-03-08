@@ -9,6 +9,9 @@ SET (MAINDEVELOPEREMAIL "{mku,dbp,the}@informatik.uni-kiel.de")
 SET (ORGANISATION "Dependable Systems Group, Kiel Univeristy")
 SET (DEPSACK "${ToolName} is a word equation solver based on Glucose.")
 
+option (ENABLE_STATIC "STATIC_LINKING")
+
+
 
 # when building, don't use the install RPATH already
 # (but later on when installing)
@@ -38,10 +41,12 @@ add_subdirectory(documentation)
 SET(Boost_USE_STATIC_LIBS ON)
 FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
 
-
+if (ENABLE_STATIC)
 set(CMAKE_EXE_LINKER_FLAGS " -static")
+endif(ENABLE_STATIC)
+
 add_executable (${ToolName} main.cpp)
-target_link_libraries (${ToolName}  host parser words solvers glucose ${Boost_LIBRARIES}  )
+target_link_libraries (${ToolName}  host parser words solvers glucose ${Boost_LIBRARIES} )
 target_include_directories(${ToolName} PRIVATE ${PROJECT_BINARY_DIR})
 									 
 
