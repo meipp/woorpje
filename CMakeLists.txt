@@ -12,18 +12,17 @@ SET (DEPSACK "${ToolName} is a word equation solver based on Glucose.")
 option (ENABLE_STATIC "STATIC_LINKING")
 
 
-
+if (NOT ENABLE_STATIC)
 # when building, don't use the install RPATH already
 # (but later on when installing)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
-
 #SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 SET(CMAKE_INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/")
 
 # add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
+endif()
 
 execute_process(COMMAND
   git describe --always --dirty

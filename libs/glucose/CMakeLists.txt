@@ -6,6 +6,7 @@ if (ENABLE_STATIC)
 add_library (glucose STATIC $<TARGET_OBJECTS:core>  $<TARGET_OBJECTS:utils>)
 else()
 add_library (glucose SHARED $<TARGET_OBJECTS:core>  $<TARGET_OBJECTS:utils>)
+INSTALL (TARGETS glucose DESTINATION lib)
 endif(ENABLE_STATIC)
 
 
