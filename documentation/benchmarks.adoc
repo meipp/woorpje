@@ -1,9 +1,10 @@
 == Benchmarks
-For evaluating the performance of Woorpje, we automatically generated
-two  collections of word equations that exhibit a special
-structure. The collections both contain 200 word equations that are guaranteed to be satisfiable. The
-equations are solved with Woorpje and state of the art string solvers
-(http://cvc4.cs.stanford.edu/web/[CVC4], https://github.com/z3str/Z3-str[Z3str], Z3Seg and http://user.it.uu.se/~jarst116/norn/[Norn]). The benchmarks are available https://www.informatik.uni-kiel.de/~mku/woorpje/download[here].
+For evaluating the performance of Woorpje, we generated
+five collections of word equations benchmarks that exhibit a special
+structure. The equations are solved with Woorpje and state of the art string solvers
+(http://cvc4.cs.stanford.edu/web/[CVC4], https://github.com/z3str/Z3-str[Z3str], Z3Seg and
+http://user.it.uu.se/~jarst116/norn/[Norn]).
+The benchmarks are available in our Availability section.
 
 For each word equation we ran the solvers and noted if they gave the
 correct result, if they timed out and we measured the total time for
@@ -16,7 +17,7 @@ The first track (I) is based on completely random generated string,
 where randomly picked string of arbitrary length were replaced by
 variables. This guarantees the existence of a solution.The generated
 word equations have an upper bound of 15 variables, 10 constants, and
-length 300. 
+length 300.
 include::bechmark1.txt.table[]
 
 

@@ -1404,8 +1404,6 @@ Words::Solvers::Result setupSolverMain (std::vector<std::string>& mlhs, std::vec
 void addLinearConstraint (vector<pair<char, int>> lhs, int rhs) {
 	map<int,int> coefficients;
 	for (auto x : lhs){
-
-		// NOT CORRECT, THIS NEEDS A FIX!!!!
 		if(variableIndices.count(x.first)){
 			coefficients[variableIndices.at(x.first)] = x.second;
 		}
