@@ -1,5 +1,5 @@
 |===
-|Program |Satis | NSatis | Unknown | Error |Timeout | Total | Time | TimeWO
+|Program |Satis | NSatis |  Error | Unknown | Timeout | Total | Time | TimeWO
 |CVC4|0|0|0|0|9|9|270.326185464859|0.0
 |Norn|0|0|0|0|9|9|270.8590910434723|0.0
 |WoorpjeSAT|5|0|0|0|4|9|128.07440376281738|6.674044609069824

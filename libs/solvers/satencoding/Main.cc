@@ -1112,7 +1112,7 @@ void getParikhMatrix(const string w,const set<char> variableAlphabet,const set<c
 	int wSizeM = w.size()-1;
 	// first step
 	pParikhMatrix[w[0]][0] = 1;
-	pParikhMatrix[w[wSizeM]][0] = 1;
+	sParikhMatrix[w[wSizeM]][0] = 1;
 	for (int i=1; i < w.size();i++){
 		for(auto x : pParikhMatrix){
 			// prefix
@@ -1174,6 +1174,32 @@ bool lengthArgumentFail(string lhs, string rhs,map<char,vector<int>> p_lhs_pm, m
 	int minSize = min(rSize,lSize);
 	int sri = 0;
 	int sli = 0;
+
+	/*
+	cout << lhs << " " << rhs << endl;
+
+
+	cout << "LHS:" << endl;
+	for(auto x : p_lhs_pm){
+		cout << x.first << ": ";
+		for(auto y : p_lhs_pm[x.first]){
+			cout << y << ", ";
+		}
+		cout << endl;
+	}
+
+	cout << "RHS:" << endl;
+	for(auto x : p_rhs_pm){
+		cout << x.first << ": ";
+		for(auto y : p_rhs_pm[x.first]){
+			cout << y << ", ";
+		}
+		cout << endl;
+	}
+
+	cout << "-------" << endl;
+	*/
+
 
 	// prefix && suffix check
 	bool processPrefix = true;
@@ -1271,12 +1297,12 @@ bool unweightedEquation(map<char,vector<int>> lhs_pm, map<char,vector<int>> rhs_
 bool checkForUnsat(){
 	set<char> variableAlphabet;
 	set<char> terminalAlphabet;
-
 	for(int i=0; i<input_equations_lhs.size();i++){
 		string lhs = input_equations_lhs[i];
 		string rhs = input_equations_rhs[i];
 
 		if (lhs.size() == 0 || rhs.size() == 0){
+
 			return false;
 		}
 
@@ -1404,9 +1430,11 @@ Words::Solvers::Result setupSolverMain (std::vector<std::string>& mlhs, std::vec
 void addLinearConstraint (vector<pair<char, int>> lhs, int rhs) {
 	map<int,int> coefficients;
 	for (auto x : lhs){
+		// NOT CORRECT, THIS NEEDS A FIX!!!!
 		if(variableIndices.count(x.first)){
 			coefficients[variableIndices.at(x.first)] = x.second;
 		}
+
 	}
 	input_linears_lhs.push_back (coefficients);
 	input_linears_rhs.push_back (rhs);
