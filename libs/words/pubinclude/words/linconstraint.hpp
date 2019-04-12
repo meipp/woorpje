@@ -28,7 +28,7 @@ namespace Words {
 		o << " <= " << rhs;
 		return o;
 	  }
-	  virtual bool isLinear () override {return false;}
+	  virtual bool isLinear () override {return true;}
 	  virtual LinearConstraint* getLinconstraint () override {return this;}
 	  
 	private: 
