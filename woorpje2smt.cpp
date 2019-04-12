@@ -28,7 +28,6 @@ void encodePreamble (std::ostream& os, Words::Context& c) {
 
 void encodeEnd (std::ostream& os) {
   os << "(check-sat)" << std::endl;
-  os << "(get-model)" << std::endl;
 }
 void encodeWord (std::ostream& os, const Words::Word& w) {
   std::stringstream str;
@@ -39,7 +38,7 @@ void encodeWord (std::ostream& os, const Words::Word& w) {
 		os << " \"" << str.str() << "\" ";
 		str.str("");
 	  }
-	  os << c->getRepr ();
+	  os << c->getRepr ()<< " ";
 	}
 	else {
 	  str << c->getRepr ();
