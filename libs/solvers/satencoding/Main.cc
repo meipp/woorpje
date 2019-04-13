@@ -1302,8 +1302,7 @@ bool checkForUnsat(){
 		string rhs = input_equations_rhs[i];
 
 		if (lhs.size() == 0 || rhs.size() == 0){
-
-			return false;
+			continue;
 		}
 
 
@@ -1389,11 +1388,21 @@ bool clearlySAT(string const & lhs, string const & rhs){
 	}
 }
 
+bool substitude(std::string& str, const char& from, const std::string& to) {
+    size_t start_pos = str.find(from);
+    if(start_pos == std::string::npos)
+        return false;
+    str.replace(start_pos, 1, to);
+    return true;
+}
+
 
 Words::Solvers::Result setupSolverMain (std::vector<std::string>& mlhs, std::vector<std::string>& mrhs) {
  clearIndexMaps();
   //input_equations_lhs = mlhs;
   //input_equations_rhs = mrhs;
+
+  std::map<char, std::string> subsitutions;
 
   // Naive preprocessing
   for(int i=0; i<mlhs.size();i++){
@@ -1407,6 +1416,27 @@ Words::Solvers::Result setupSolverMain (std::vector<std::string>& mlhs, std::vec
 	  } else {
 		  input_equations_lhs.push_back(lhs);
 		  input_equations_rhs.push_back(rhs);
+
+		  // check if we found an actual subsitution
+		 /* if (noVariableWord(lhs) && rhs.size() == 1 && !terminal(rhs[0])){
+			  auto it = subsitutions.find(rhs[0]);
+			  if(it != subsitutions.end()) {
+			     if(it->second != lhs){
+			    	 return Words::Solvers::Result::DefinitelyNoSolution;
+			     }
+			  }
+			  subsitutions[rhs[0]] = lhs;
+		  }
+
+		  if (noVariableWord(rhs) && lhs.size() == 1 && !terminal(lhs[0])){
+			  auto it = subsitutions.find(rhs[0]);
+			  if(it != subsitutions.end()) {
+				 if(it->second != rhs){
+					 return Words::Solvers::Result::DefinitelyNoSolution;
+				 }
+			  }
+			  subsitutions[lhs[0]] = rhs;
+		  }*/
 	  }
   }
 
@@ -1419,6 +1449,15 @@ Words::Solvers::Result setupSolverMain (std::vector<std::string>& mlhs, std::vec
   // Encode problem here
    // assume for aXbY, i.e. terminal symbols small, variables capital letters
   for(int i = 0 ; i < input_equations_lhs.size();i++){
+	  // put in the substitution
+	  // Do not remove all variables due to subsitution ~> posibility to modify the substitution here? @DBP
+	  /*if (subsitutions.size() > 0){
+		for(auto s : subsitutions){
+			input_equations_lhs[i] = substitude(input_equations_lhs[i],s.first,s.second);
+			input_equations_rhs[i] = substitude(input_equations_rhs[i],s.first,s.second);
+		}
+	  }*/
+
  	readSymbols(input_equations_lhs[i]);
  	readSymbols(input_equations_rhs[i]);
 
