@@ -170,6 +170,9 @@ int main (int argc, char** argv) {
 	}
 	encodeEnd (*out);
   }
+  else {
+	std::cerr << "Configuration Error" << std::endl;
+  }
   
 }
 
