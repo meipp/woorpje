@@ -5,6 +5,7 @@
 #include <ostream>
 
 #include "words/words.hpp"
+#include "words/exceptions.hpp"
 #include "solvers/solvers.hpp"
 #include "parser/tokens.hpp"
 
@@ -17,7 +18,10 @@ int getColumn ();
 
 
 namespace Words {
-
+  class ParserException : public WordException {
+  public:
+	ParserException () : WordException ("Parser  Error") {}
+  };
   
   class Parser {
   public:
@@ -26,40 +30,45 @@ namespace Words {
 	}
 	
 	Solvers::Solver_ptr Parse (Words::Options& opt,std::ostream& err) {
-	  this->err = &err; 
-	  options = &opt;
-	  if (parseVariablesDecl () && 
-		  parseTerminalsDecl ()
-		  ) {
-		while(parseEquation ()) {}
-		while(parseLinConstraint ()) {}
-		if (tryacceptKeyword (SatGlucose)) {
-		  std::string text;
-		  if (accept(Tokens::LPARAN) && 
+	  try {
+		this->err = &err; 
+		options = &opt;
+		if (parseVariablesDecl () && 
+			parseTerminalsDecl ()
+			) {
+		  while(parseEquation ()) {}
+		  while(parseLinConstraint ()) {}
+		  if (tryacceptKeyword (SatGlucose)) {
+			std::string text;
+			if (accept(Tokens::LPARAN) && 
+				accept(Tokens::NUMBER,text) && 
+				accept(Tokens::RPARAN)
+				)
+			  return Solvers::makeSolver<Solvers::Types::SatEncoding> (static_cast<size_t> (std::atoi (text.c_str ())));
+		  }
+		  if (tryacceptKeyword (SatGlucoseOld)) {
+			std::string text;
+			if (accept(Tokens::LPARAN) && 
+				accept(Tokens::NUMBER,text) && 
+				accept(Tokens::RPARAN)
+				)
+			  
+			  return Solvers::makeSolver<Solvers::Types::SatEncodingOld> (static_cast<size_t> (std::atoi (text.c_str ())));
+		  }
+		  
+		  if (tryacceptKeyword (Reachability)) {
+			std::string text;
+			if (accept(Tokens::LPARAN) && 
 			  accept(Tokens::NUMBER,text) && 
-			  accept(Tokens::RPARAN)
-			  )
-			return Solvers::makeSolver<Solvers::Types::SatEncoding> (static_cast<size_t> (std::atoi (text.c_str ())));
+				accept(Tokens::RPARAN)
+				)
+			  
+			  return Solvers::makeSolver<Solvers::Types::Reachability> (static_cast<size_t> (std::atoi (text.c_str ())));
+		  }
+		  
 		}
-		if (tryacceptKeyword (SatGlucoseOld)) {
-		  std::string text;
-		  if (accept(Tokens::LPARAN) && 
-			  accept(Tokens::NUMBER,text) && 
-			  accept(Tokens::RPARAN)
-			  )
-			
-			return Solvers::makeSolver<Solvers::Types::SatEncodingOld> (static_cast<size_t> (std::atoi (text.c_str ())));
-		}
-
-		if (tryacceptKeyword (Reachability)) {
-		  std::string text;
-		  if (accept(Tokens::LPARAN) && 
-			  accept(Tokens::NUMBER,text) && 
-			  accept(Tokens::RPARAN)
-			  )
-			
-			return Solvers::makeSolver<Solvers::Types::Reachability> (static_cast<size_t> (std::atoi (text.c_str ())));
-		}
+	  }
+	  catch (ParserException& p) {
 		
 	  }
 	  return nullptr;

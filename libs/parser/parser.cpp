@@ -6,11 +6,13 @@
 bool Words::Parser::parseVariablesDecl (){
   std::string t;
 
-  if (acceptKeyword (Keywords::Variables) && accept (LBRACE) && accept (STRING,t),accept (RBRACE)) {
-	for (auto c : t) 
-	  options->context.addVariable (c);
-	
-	return true;
+  if (acceptKeyword (Keywords::Variables) && accept (LBRACE)) {
+	if (tryaccept(STRING,t)) {
+	  for (auto c : t) 
+		options->context.addVariable (c);
+	  accept(RBRACE);
+	  return true;
+	}
   }
   return false;
 }
@@ -19,10 +21,13 @@ bool Words::Parser::parseVariablesDecl (){
 bool Words::Parser::parseTerminalsDecl (){
   std::string t;
 
-  if (acceptKeyword (Keywords::Terminals) && accept (LBRACE) && accept (STRING,t),accept (RBRACE)) {
-	
-	for (auto c : t) 
-	  options->context.addTerminal (c);
+  if (acceptKeyword (Keywords::Terminals) && accept (LBRACE)) {
+	if (tryaccept (STRING,t)) {
+	  for (auto c : t) 
+		options->context.addTerminal (c);
+	  
+	}
+	accept(RBRACE);
 	return true;
   }
   return false;
@@ -183,5 +188,6 @@ bool Words::Parser::tryacceptKeyword (Keywords k) {
 }
 
 void Words::Parser::unexpected () {
-  *err << "On " << lexobject.lineno << "." << lexobject.colStart <<": " << " unexpected " << lexobject.text << std::endl;  
+  *err << "On " << lexobject.lineno << "." << lexobject.colStart <<": " << " unexpected " << lexobject.text << std::endl;
+  throw ParserException ();
 }
