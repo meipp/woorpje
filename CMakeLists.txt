@@ -2,6 +2,7 @@ project(wordsolver)
 cmake_minimum_required(VERSION 3.10)
 
 SET (ToolName woorpje)
+SET (Translator ${ToolName}2SMT)
 SET (VERSION_MAJOR 0)
 SET (VERSION_MINOR 2)
 SET (MAINDEVELOPERNAME "Mitja Kulczynski, Danny Boegsted Poulsen and Thorsten Ehlers")
@@ -47,10 +48,15 @@ endif(ENABLE_STATIC)
 add_executable (${ToolName} main.cpp)
 target_link_libraries (${ToolName}  host parser words solvers glucose ${Boost_LIBRARIES} )
 target_include_directories(${ToolName} PRIVATE ${PROJECT_BINARY_DIR})
-									 
+
+add_executable (${Translator} woorpje2smt.cpp)
+target_link_libraries (${Translator}  host parser words solvers glucose ${Boost_LIBRARIES} )
+target_include_directories(${Translator} PRIVATE ${PROJECT_BINARY_DIR})
 
 SET(CPACK_GENERATOR "ZIP")									   
 SET(CPACK_PACKAGE_FILE_NAME ${ToolName}-${VERSION_MAJOR}_${VERSION_MINOR})
 INSTALL (TARGETS ${ToolName} DESTINATION bin)
+INSTALL (TARGETS ${Translator} DESTINATION bin)
+
 
 INCLUDE(CPack)
