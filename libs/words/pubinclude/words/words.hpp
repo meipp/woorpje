@@ -62,6 +62,8 @@ namespace Words {
 	size_t characters () const {return word.size();}
 	auto begin () const {return word.begin();}
 	auto end () const {return word.end();}
+	auto rbegin () const {return word.rbegin();}
+	auto rend () const {return word.rend();}
 	IEntry** data ()  {return word.data ();}
   protected:
 	void append (IEntry* e) {word.push_back(e);}
@@ -112,7 +114,7 @@ namespace Words {
 	std::vector<Equation> equations;
 	std::vector<Constraints::Constraint_ptr> constraints;
   };
-
+  
   using Substitution = std::map<IEntry*, std::vector<IEntry*> >;
 
   std::ostream& operator<< (std::ostream&, const Word& w);

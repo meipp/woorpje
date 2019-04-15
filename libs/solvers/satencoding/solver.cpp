@@ -6,6 +6,7 @@
 #include "words/exceptions.hpp"
 #include "words/words.hpp"
 #include "words/linconstraint.hpp"
+#include "solvers/simplifiers.hpp"
 #include "solvers/exceptions.hpp"
 #include "core/Solver.h"
 #include "solver.hpp"
@@ -22,6 +23,7 @@ namespace Words {
 	namespace SatEncoding {
 	  template<bool encoding>
 	  ::Words::Solvers::Result Solver<encoding>::Solve (Words::Options& opt,::Words::Solvers::MessageRelay& relay)   {
+		Words::Solvers::CoreSimplifier reducer;
 		relay.pushMessage ("SatSolver Ready");
 		if (!opt.context.conformsToConventions ())  {
 		  relay.pushMessage ("Context does not conform to Upper/Lower-case convention");
@@ -34,22 +36,32 @@ namespace Words {
 		std::vector<std::string> lhs;
 		std::vector<std::string> rhs;
 		
-		for (auto& eq : opt.equations) {
-		  str.str("");
-		  for (auto e : eq.lhs) {
-			if (!entry && e->isTerminal ())
-			  entry = e;
-			str << e->getRepr ();
+		for (auto& eqq : opt.equations) {
+		  ::Words::Equation eq = eqq;
+		  auto res = reducer.solverReduceEquation (eq);
+		  if (res == Simplified::ReducedNsatis) {
+			return ::Words::Solvers::Result::NoSolution;
 		  }
-		  lhs.push_back (str.str());
-		  str.str("");
-		  for (auto e : eq.rhs) {
-			if (!entry && e->isTerminal ())
-			  entry = e;
-			str << e->getRepr ();
+		  if (res == Simplified::JustReduced) {
+			str.str("");
+			for (auto e : eq.lhs) {
+			  if (!entry && e->isTerminal ())
+				entry = e;
+			  str << e->getRepr ();
+			}
+			lhs.push_back (str.str());
+			str.str("");
+			for (auto e : eq.rhs) {
+			  if (!entry && e->isTerminal ())
+				entry = e;
+			  str << e->getRepr ();
+			}
+			rhs.push_back (str.str());
 		  }
-		  rhs.push_back (str.str());
 		}
+		if (lhs.size () == 0 &&
+			rhs.size () == 0)
+		  return Words::Solvers::Result::HasSolution;
 		Words::Solvers::Result retPreprocessing = setupSolverMain (lhs,rhs);
 		// preprocessing match
 		if (retPreprocessing != Words::Solvers::Result::NoIdea){
