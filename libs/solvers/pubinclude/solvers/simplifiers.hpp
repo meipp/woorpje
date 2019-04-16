@@ -10,32 +10,65 @@ namespace Words {
 	  JustReduced,
 	  ReducedNsatis
 	};
-	
+
+	template<class T>
 	class Simplifier {
 	public:
 	  ~Simplifier () {}
 	  
-	  virtual Simplified solverReduceEquation  (Words::Equation&) {return Simplified::JustReduced;}
+	  virtual Simplified solverReduce  (T&) {return Simplified::JustReduced;}
 	};
 
-	template<class First, class Second>
-	class SequenceSimplifier : Simplifier {
+	using EquationSimplifier = Simplifier<Words::Equation>;
+	using EquationSystemSimplifier = Simplifier<Words::Options>;
+
+	
+	
+	template<class First, class Second,class T = Words::Equation>
+	class SequenceSimplifier  {
 	public:
-	  Simplified solverReduceEquation  (Words::Equation& eq) {
-		auto res = first.solverReduceEquation (eq);
+	  Simplified solverReduce  (T& eq) {
+		auto res = first.solverReduce (eq);
 		if (res == Simplified::ReducedSatis || res==Simplified::ReducedNsatis)
 		  return res;
 		else
-		  return second.solverReduceEquation (eq);
+		  return second.solverReduce (eq);
 	  }
 	private:
 	  First first;
 	  Second second;
 	};
-	
-	class PrefixReducer : public Simplifier{
+
+	template<class Sub>
+	class RunAllEq : public EquationSystemSimplifier {
 	public:
-	  virtual Simplified solverReduceEquation  (Words::Equation& eq) {
+	  Simplified solverReduce  (Words::Options& opt) {
+		std::vector<Equation> eqs;
+		for (auto& eq :  opt.equations) {
+		  auto res = sub.solverReduce (eq);
+		  switch (res) {
+		  case Simplified::JustReduced:
+			eqs.push_back (eq);
+			break;
+		  case Simplified::ReducedNsatis:
+			return Simplified::ReducedNsatis;
+			break;
+		  case Simplified::ReducedSatis:
+			break;
+		  }
+		  
+		}
+		opt.equations.clear();
+		opt.equations = eqs;
+		return Simplified::JustReduced;
+	  }
+	private:
+	  Sub sub;
+	};
+	
+	class PrefixReducer : public EquationSimplifier{
+	public:
+	  virtual Simplified solverReduce  (Words::Equation& eq) {
 		std::vector<Words::IEntry*> left;
 		std::vector<Words::IEntry*> right;
 		bool match = true;
@@ -44,7 +77,8 @@ namespace Words {
 		auto rrit = eq.rhs.begin();
 		auto rrend = eq.rhs.end();
 		for (; llit != llend && rrit!=rrend; ++llit,++rrit) {
-		  if (*llit != *rrit) {			break;
+		  if (*llit != *rrit) {
+			break;
 		  }
 		}
 		for (;llit != llend; ++llit)
@@ -66,7 +100,13 @@ namespace Words {
 	  }
 	};
 
-	using CoreSimplifier = SequenceSimplifier<PrefixReducer,Simplifier> ;
+	
+	
+	using CoreSimplifier = SequenceSimplifier<
+	  RunAllEq<PrefixReducer> ,
+	  Simplifier<Words::Options>,
+	  Words::Options
+	  >;
 	
 	
   }

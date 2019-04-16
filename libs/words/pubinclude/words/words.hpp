@@ -108,7 +108,7 @@ namespace Words {
 	Word lhs;
 	Word rhs;
   };
-
+  
   struct Options {
 	Context context;
 	std::vector<Equation> equations;

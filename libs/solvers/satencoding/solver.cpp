@@ -23,7 +23,6 @@ namespace Words {
 	namespace SatEncoding {
 	  template<bool encoding>
 	  ::Words::Solvers::Result Solver<encoding>::Solve (Words::Options& opt,::Words::Solvers::MessageRelay& relay)   {
-		Words::Solvers::CoreSimplifier reducer;
 		relay.pushMessage ("SatSolver Ready");
 		if (!opt.context.conformsToConventions ())  {
 		  relay.pushMessage ("Context does not conform to Upper/Lower-case convention");
@@ -35,39 +34,33 @@ namespace Words {
 		std::stringstream str;
 		std::vector<std::string> lhs;
 		std::vector<std::string> rhs;
+
 		
-		for (auto& eqq : opt.equations) {
-		  ::Words::Equation eq = eqq;
-		  auto res = reducer.solverReduceEquation (eq);
-		  if (res == Simplified::ReducedNsatis) {
-			return ::Words::Solvers::Result::NoSolution;
+		
+		
+		for (auto& eq : opt.equations) {
+		  str.str("");
+		  for (auto e : eq.lhs) {
+			if (!entry && e->isTerminal ())
+			  entry = e;
+			str << e->getRepr ();
 		  }
-		  if (res == Simplified::JustReduced) {
-			str.str("");
-			for (auto e : eq.lhs) {
-			  if (!entry && e->isTerminal ())
-				entry = e;
-			  str << e->getRepr ();
-			}
-			lhs.push_back (str.str());
-			str.str("");
-			for (auto e : eq.rhs) {
-			  if (!entry && e->isTerminal ())
-				entry = e;
-			  str << e->getRepr ();
-			}
-			rhs.push_back (str.str());
+		  lhs.push_back (str.str());
+		  str.str("");
+		  for (auto e : eq.rhs) {
+			if (!entry && e->isTerminal ())
+			  entry = e;
+			str << e->getRepr ();
 		  }
+		  rhs.push_back (str.str());
 		}
-		if (lhs.size () == 0 &&
-			rhs.size () == 0)
-		  return Words::Solvers::Result::HasSolution;
+
 		Words::Solvers::Result retPreprocessing = setupSolverMain (lhs,rhs);
 		// preprocessing match
 		if (retPreprocessing != Words::Solvers::Result::NoIdea){
-			return retPreprocessing;
+		  return retPreprocessing;
 		}
-
+		
 		clearLinears();
 		
 		for (auto& constraint : opt.constraints) {
@@ -75,38 +68,38 @@ namespace Words {
 			return ::Words::Solvers::Result::NoIdea;
 		}
 		Words::Solvers::Timing::Timer overalltimer (timekeep,"Overall Solving Time");
-
-	   
+		
+		
 		
 		const int actualb = (bound ?
 							 static_cast<int> (bound) :
 							 
-							 static_cast<int> (std::accumulate (
-																opt.equations.begin(),
-																opt.equations.end(),
-																0,
-																[] (size_t s, const Words::Equation& eq) {return eq.lhs.characters()+eq.rhs.characters()+s;})
-											   )
-							 ); 
+						   static_cast<int> (std::accumulate (
+															  opt.equations.begin(),
+															  opt.equations.end(),
+															  0,
+															  [] (size_t s, const Words::Equation& eq) {return eq.lhs.characters()+eq.rhs.characters()+s;})
+											 )
+						   ); 
 		int i = 0;
 		Words::Solvers::Result ret = Words::Solvers::Result::NoSolution;
 		while(i < actualb){
 		  i++;
 		  int currentBound = std::pow(i,2);
-		  try {
-			ret =  runSolver<encoding> (false,static_cast<size_t> (currentBound),opt.context,sub,timekeep,(diagnostic ? &diagStr : nullptr));
-			if(ret == Words::Solvers::Result::HasSolution){
-			  return ret;
-			}
-		  }catch(Glucose::OutOfMemoryException& e) {
-			throw Words::Solvers::OutOfMemoryException ();
+		try {
+		  ret =  runSolver<encoding> (false,static_cast<size_t> (currentBound),opt.context,sub,timekeep,(diagnostic ? &diagStr : nullptr));
+		  if(ret == Words::Solvers::Result::HasSolution){
+			return ret;
 		  }
+		}catch(Glucose::OutOfMemoryException& e) {
+		  throw Words::Solvers::OutOfMemoryException ();
 		}
+	  }
 		return ret;
 		
 	  }
-	  
-	  //Should only be called if Result returned HasSolution
+	
+	//Should only be called if Result returned HasSolution
 	  template<bool encoding>
 	  void Solver<encoding>::getResults (Words::Solvers::ResultGatherer& r)  {
 		r.setSubstitution (sub);

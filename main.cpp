@@ -9,6 +9,7 @@
 #include "host/exitcodes.hpp"
 #include "parser/parser.hpp"
 #include "solvers/solvers.hpp"
+#include "solvers/simplifiers.hpp"
 #include "solvers/exceptions.hpp"
 
 #include "config.h"
@@ -94,6 +95,7 @@ int main (int argc, char** argv) {
   bool diagnostic = false;
   bool suppressbanner = false;
   bool help = false;
+  bool simplifier = false;
   size_t cpulim = 0;
   size_t vmlim = 0;
   std::string conffile;
@@ -104,6 +106,7 @@ int main (int argc, char** argv) {
 	("diagnostics,d",po::bool_switch(&diagnostic), "Enable Diagnostic Data.")
 	("configuration,c",po::value<std::string>(&conffile), "Configuration file")
 	("cpulim,C",po::value<size_t>(&cpulim), "CPU Limit in seconds")
+	("simplify",po::bool_switch(&simplifier), "Enable simplifications")
 	("vmlim,V",po::value<size_t>(&vmlim), "VM Limit in MBytes");
   
   po::positional_options_description positionalOptions; 
@@ -156,6 +159,21 @@ int main (int argc, char** argv) {
   }
   
   if (solver) {
+	if (simplifier) {
+	  std::cout << "Running Simplifier" << std::endl;
+	  Words::Solvers::CoreSimplifier reducer;
+	  auto res = reducer.solverReduce (opt);
+	  switch (res) {
+		case ::Words::Solvers::Simplified::JustReduced:
+		  break;
+		case ::Words::Solvers::Simplified::ReducedNsatis:
+		  Words::Host::Terminate (Words::Host::ExitCode::NoSolution,std::cout);
+		case ::Words::Solvers::Simplified::ReducedSatis:
+		  Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
+	  }
+	  
+	}
+	
 	if (diagnostic)
 	  solver->enableDiagnosticOutput ();	
 	try {
@@ -174,8 +192,8 @@ int main (int argc, char** argv) {
 		Words::Host::Terminate (Words::Host::ExitCode::NoSolution,std::cout);
 	  }
 	  case Words::Solvers::Result::DefinitelyNoSolution: {
-	  		std::cout << "No solution" << std::endl;
-	  		Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
+		std::cout << "No solution" << std::endl;
+		Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
 	  }
 		
 	  default:
