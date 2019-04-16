@@ -1389,11 +1389,16 @@ bool clearlySAT(string const & lhs, string const & rhs){
 }
 
 bool substitude(std::string& str, const char& from, const std::string& to) {
-    size_t start_pos = str.find(from);
-    if(start_pos == std::string::npos)
-        return false;
-    str.replace(start_pos, 1, to);
-    return true;
+    bool replaced = false;
+    size_t start_pos;
+    while(true){
+    	start_pos = str.find(from);
+		if(start_pos == std::string::npos)
+			return replaced;
+		str.replace(start_pos, 1, to);
+		replaced = true;
+    }
+    return replaced;
 }
 
 
@@ -1401,6 +1406,9 @@ Words::Solvers::Result setupSolverMain (std::vector<std::string>& mlhs, std::vec
  clearIndexMaps();
   //input_equations_lhs = mlhs;
   //input_equations_rhs = mrhs;
+  vector<std::string> input_equations_lhs_tmp;
+  vector<std::string> input_equations_rhs_tmp;
+
 
   std::map<char, std::string> subsitutions;
 
@@ -1414,11 +1422,11 @@ Words::Solvers::Result setupSolverMain (std::vector<std::string>& mlhs, std::vec
 			  return Words::Solvers::Result::DefinitelyNoSolution;
 		  }
 	  } else {
-		  input_equations_lhs.push_back(lhs);
-		  input_equations_rhs.push_back(rhs);
+		  input_equations_lhs_tmp.push_back(lhs);
+		  input_equations_rhs_tmp.push_back(rhs);
 
 		  // check if we found an actual subsitution
-		 /* if (noVariableWord(lhs) && rhs.size() == 1 && !terminal(rhs[0])){
+		 if (noVariableWord(lhs) && rhs.size() == 1 && !terminal(rhs[0])){
 			  auto it = subsitutions.find(rhs[0]);
 			  if(it != subsitutions.end()) {
 			     if(it->second != lhs){
@@ -1436,31 +1444,74 @@ Words::Solvers::Result setupSolverMain (std::vector<std::string>& mlhs, std::vec
 				 }
 			  }
 			  subsitutions[lhs[0]] = rhs;
-		  }*/
+		  }
 	  }
   }
 
   // if empty it's ez sat
-  assert(input_equations_lhs.size() == input_equations_rhs.size());
-  if (input_equations_lhs.size() == 0){
+  assert(input_equations_lhs_tmp.size() == input_equations_rhs_tmp.size());
+  if (input_equations_lhs_tmp.size() == 0){
 	  return Words::Solvers::Result::HasSolution;
   }
 
   // Encode problem here
    // assume for aXbY, i.e. terminal symbols small, variables capital letters
-  for(int i = 0 ; i < input_equations_lhs.size();i++){
+/*  for(int i = 0 ; i < input_equations_lhs.size();i++){
+
+   }*/
+  //cout << "==============" <<endl;
+
+   bool skipEquation = false;
+   for(int i = 0 ; i < input_equations_lhs_tmp.size();i++){
 	  // put in the substitution
 	  // Do not remove all variables due to subsitution ~> posibility to modify the substitution here? @DBP
-	  /*if (subsitutions.size() > 0){
-		for(auto s : subsitutions){
-			input_equations_lhs[i] = substitude(input_equations_lhs[i],s.first,s.second);
-			input_equations_rhs[i] = substitude(input_equations_rhs[i],s.first,s.second);
+	  if (subsitutions.size() > 0){
+			  string lhs = input_equations_lhs_tmp[i];
+			  string rhs = input_equations_rhs_tmp[i];
+
+			for(auto s : subsitutions){
+				bool rSubs = substitude(rhs,s.first,s.second);
+				bool lSubs = substitude(lhs,s.first,s.second);
+				if (rSubs || lSubs){
+					if (lhs != rhs) {
+						removeLeadingAndEndingSymbols(lhs,rhs);
+						if (noVariableWord(lhs) && noVariableWord(rhs)){
+							  if (lhs != rhs){
+								  return Words::Solvers::Result::DefinitelyNoSolution;
+							  }
+						  }
+						input_equations_lhs_tmp[i] = lhs;
+						input_equations_rhs_tmp[i] = rhs;
+						//input_equations_lhs.push_back(lhs);
+						//input_equations_rhs.push_back(rhs);
+					} else {
+						skipEquation = true;
+					}
+				}
+			}
 		}
-	  }*/
 
- 	readSymbols(input_equations_lhs[i]);
- 	readSymbols(input_equations_rhs[i]);
+	 if (!skipEquation){
+		readSymbols(input_equations_lhs_tmp[i]);
+		readSymbols(input_equations_rhs_tmp[i]);
+		input_equations_lhs.push_back(input_equations_lhs_tmp[i]);
+		input_equations_rhs.push_back(input_equations_rhs_tmp[i]);
+		cout << input_equations_lhs_tmp[i] << " = " << input_equations_rhs_tmp[i] << endl;
+	 }
 
+	 skipEquation = false;
+
+   }
+
+   // Add trivial equations out of substitution
+   for(auto s : subsitutions){
+	   	string var = "";
+	   	var.push_back(s.first);
+		readSymbols(var);
+		readSymbols(s.second);
+		input_equations_lhs.push_back(var);
+		input_equations_rhs.push_back(s.second);
+		cout << var << " = " << s.second << endl;
    }
   return  Words::Solvers::Result::NoIdea;
 
@@ -1520,11 +1571,18 @@ template<bool newencode = true>
 
   //sigmaSize = terminalIndices.size();
   // TODO: Optimise order!
-  
+  //cout << "ALL used equations:" << endl;
   for(int i = 0 ; i < input_equations_lhs.size();i++){
 	// TODO: Derive bounds on lengths here?
+
+
+	//cout << input_equations_lhs[i] << " " << input_equations_rhs[i] << endl;
+
+
 	sharpenBounds(S, input_equations_lhs[i], input_equations_rhs[i],wrap);
   }
+
+
   int numVars;
   {
 	Words::Solvers::Timing::Timer overalltimer (tkeeper,"Encoding ");
