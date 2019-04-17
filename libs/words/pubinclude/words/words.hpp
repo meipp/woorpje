@@ -8,7 +8,6 @@
 #include <initializer_list>
 
 #include "words/constraints.hpp"
-#include "words/algorithms.hpp"
 
 namespace Words {
   class Variable;

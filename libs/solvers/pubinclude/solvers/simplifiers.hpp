@@ -2,7 +2,7 @@
 #define _SIMPLIFIER__
 
 #include "words/words.hpp"
-//#include "words/algorithms.hpp"
+#include "words/algorithms.hpp"
 
 namespace Words {
   namespace Solvers {
@@ -139,17 +139,17 @@ namespace Words {
 
 
 		/// TEST
-		/*
+		
 		Words::Algorithms::ParikhMatrix p_pm;
 		Words::Algorithms::ParikhMatrix s_pm;
 		Words::Algorithms::calculateParikhMatrices(eq.lhs,p_pm,s_pm);
 
 		for (auto v : p_pm){
-			for (auto x : v){
-				std::cout << x.first << " : " << x.second << std::endl;
-			}
-			std::cout << "-----" << std::endl;
-		}*/
+		  for (auto x : v){
+			std::cout << x.first->getRepr() << " : " << x.second << std::endl;
+		  }
+		  std::cout << "-----" << std::endl;
+		}
 
 
 
