@@ -1653,10 +1653,22 @@ template<bool newencode = true>
 	}
 	// linears
 	for(int i = 0 ; i < input_linears_lhs.size();i++){
-	  bool succ = addLinearEqualityConstraint(S, input_linears_lhs[i], input_linears_rhs[i],wrap);
-	  if(!succ){
-		return Words::Solvers::Result::NoSolution;
-	  }
+		 // quick check whether a linear constraint can be satisfiable using the given bounds
+		/* int lhsValue = 0;
+		 for (auto x : input_linears_lhs[i]){
+			 lhsValue=lhsValue+(maxPadding[x.first]*x.second);
+		 }
+		 cout << lhsValue << " " << input_linears_rhs[i] << endl;
+		*/
+		 // true?
+		/* if (lhsValue > input_linears_rhs[i]){
+			 return Words::Solvers::Result::NoSolution; //DefinitelyNoSolution;
+		 }*/
+
+		  bool succ = addLinearEqualityConstraint(S, input_linears_lhs[i], input_linears_rhs[i],wrap);
+		  if(!succ){
+			return Words::Solvers::Result::NoSolution;
+		  }
 	}
 	
 	
