@@ -139,7 +139,6 @@ namespace Words {
 
 
 		/// TEST
-		
 		Words::Algorithms::ParikhMatrix p_pm;
 		Words::Algorithms::ParikhMatrix s_pm;
 		Words::Algorithms::calculateParikhMatrices(eq.lhs,p_pm,s_pm);
@@ -166,12 +165,120 @@ namespace Words {
 	  }
 	};
 
+	// Uses the length arguments for unsat check
+	class ParikhMatrixMismatch : public EquationSimplifier{
+	public:
+	  virtual Simplified solverReduce  (Words::Equation& eq) {
+		  Words::Algorithms::ParikhMatrix lhs_p_pm;
+		  Words::Algorithms::ParikhMatrix lhs_s_pm;
+		  Words::Algorithms::ParikhMatrix rhs_p_pm;
+		  Words::Algorithms::ParikhMatrix rhs_s_pm;
+		  Words::Algorithms::calculateParikhMatrices(eq.lhs,lhs_p_pm,lhs_s_pm);
+		  Words::Algorithms::calculateParikhMatrices(eq.rhs,rhs_p_pm,rhs_s_pm);
+		  bool processPrefix = true;
+		  bool processSuffix = false;
+		  bool terminalsAlignPrefix = true;
+		  bool terminalsAlignSuffix = true;
+		  int rSize = eq.rhs.characters();
+		  int lSize = eq.lhs.characters();
+		  int minSize = std::min(rSize,lSize);
+		  int sri = 0;
+		  int sli = 0;
+		  auto terminalAlphabet  = eq.ctxt->getTerminalAlphabet();
+		  auto variableAlphabet = eq.ctxt->getVariableAlphabet();
+
+		  for (int i = 1; i < minSize; i++){
+			sri = (rSize-1)-i;
+			sli = (lSize-1)-i;
+
+			Words::Algorithms::ParikhImage lhs_p_pi = lhs_p_pm[i];
+			Words::Algorithms::ParikhImage rhs_p_pi = rhs_p_pm[i];
+			Words::Algorithms::ParikhImage lhs_s_pi = lhs_s_pm[i];
+			Words::Algorithms::ParikhImage rhs_s_pi = rhs_s_pm[i];
 
 
+			// Process variables
+			for (auto x : variableAlphabet){
+				if(processPrefix){
+					if(lhs_p_pi[x] != rhs_p_pi[x]){
+						processPrefix = false;
+					}
+				}
+				if(processSuffix){
+					if(lhs_s_pi[x] != rhs_s_pi[x]){
+						processSuffix = false;
+					}
+				}
+				if(!processPrefix && !processSuffix){
+					break;
+				}
+			}
+			// Process terminals
+			for (auto x : terminalAlphabet){
+				if(processPrefix){
+					if(lhs_p_pi[x] != rhs_p_pi[x]){
+						terminalsAlignPrefix = false;
+					}
+				}
+				if(processSuffix){
+					if(lhs_s_pi[x] != rhs_s_pi[x]){
+						terminalsAlignSuffix = false;
+					}
+				}
+				if(!processPrefix && !processSuffix){
+					break;
+				}
+			}
 
+			if ((processPrefix && !terminalsAlignPrefix) || (processSuffix && !terminalsAlignSuffix)){
+				return Simplified::ReducedNsatis;
+			}
 
+			processPrefix = true;
+			processSuffix = false;
+			terminalsAlignPrefix = true;
+			terminalsAlignSuffix = true;
+		}
+		return Simplified::JustReduced;;
+	  }
+	};
 
+	// Checks for pre/suffix mismatching terminals
+	class CharacterMismatchDetection : public EquationSimplifier{
+	public:
+	  virtual Simplified solverReduce  (Words::Equation& eq) {
+		bool processPrefix = true;
+		bool processSuffix = true;
+		int rSize = eq.rhs.characters();
+		int lSize = eq.lhs.characters();
+		int minSize = std::min(rSize,lSize);
 
+		for (int i = 0; i < minSize; i++){
+			IEntry* r = eq.rhs[i];
+			IEntry* l = eq.lhs[i];
+			IEntry* rr = eq.rhs[(rSize-1)-i];
+			IEntry* ll = eq.lhs[(lSize-1)-i];
+			if(processPrefix){
+				if (r->isTerminal() && l->isTerminal()  && l != r){
+					return Simplified::ReducedNsatis;
+				} else if (l != r){
+					processPrefix = false;
+				}
+			}
+			if(processSuffix){
+				if (rr->isTerminal() && ll->isTerminal() && ll != rr){
+					return Simplified::ReducedNsatis;
+				} else if (ll != rr){
+					processSuffix = false;
+				}
+			}
+			if(!processPrefix && !processSuffix){
+				return Simplified::JustReduced;;
+			}
+		}
+		return Simplified::JustReduced;;
+	  }
+	};
 
 	
 	

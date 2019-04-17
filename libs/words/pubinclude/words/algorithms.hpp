@@ -15,8 +15,6 @@ namespace Words {
 	
 	void calculateParikhMatrices (Word& w, ParikhMatrix& p_pm, ParikhMatrix& s_pm);
 
-
-
   }
 }
 

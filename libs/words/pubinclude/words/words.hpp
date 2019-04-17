@@ -99,6 +99,8 @@ namespace Words {
 	size_t nbTerms () const;
 	IEntry* getTerminal (size_t) const;
 	IEntry* getVariable (size_t s) const;
+	const std::vector<Terminal*>& getTerminalAlphabet() const;
+	const std::vector<Variable*>& getVariableAlphabet() const;
   private:
 	struct Internals;
 	std::unique_ptr<Internals> _internal;
@@ -107,6 +109,7 @@ namespace Words {
   struct Equation {
 	Word lhs;
 	Word rhs;
+	Context* ctxt;
   };
   
   struct Options {
