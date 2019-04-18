@@ -166,6 +166,8 @@ int main (int argc, char** argv) {
 	  std::cout << "Running Simplifier" << std::endl;
 	  Words::Solvers::CoreSimplifier reducer;
 	  auto res = reducer.solverReduce (opt);
+	  std::cout << "Equation System after simplification" << std::endl << opt << std::endl;;
+	  
 	  switch (res) {
 		case ::Words::Solvers::Simplified::JustReduced:
 		  break;
