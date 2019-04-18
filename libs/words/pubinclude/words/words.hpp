@@ -55,6 +55,7 @@ namespace Words {
 
   class Word  {
   public:
+	  using iterator = std::vector<IEntry*>::iterator;
 	friend class WordBuilder;
 	Word () {}
 	Word (std::initializer_list<IEntry*> list) : word (list) {}
@@ -65,6 +66,11 @@ namespace Words {
 	auto end () const {return word.end();}
 	auto rbegin () const {return word.rbegin();}
 	auto rend () const {return word.rend();}
+
+	auto begin () {return word.begin();}
+	auto end () {return word.end();}
+	auto rbegin () {return word.rbegin();}
+	auto rend () {return word.rend();}
 	IEntry** data ()  {return word.data ();}
 	auto get(size_t index) {return word[index];}
 	bool noVariableWord() const {
@@ -77,37 +83,41 @@ namespace Words {
 	bool substitudeVariable(IEntry*& variable, Word& to) {
 	    bool replaced = false;
 	    auto last_pos = word.begin();
-	    std::vector<IEntry*> newWord; // predict size
+	    Word newWord; // predict size
 	    bool ranOnce = false;
 	    auto it = word.begin();
 	    auto end = word.end();
 	    for(;it!=end;++it){
-
 	    	if(*it == variable){
 	    		if(ranOnce){
-	    			newWord.insert(newWord.end(), last_pos, it-1);
+	    			newWord.insert(newWord.end(), last_pos, it);
 	    		}
 	    		newWord.insert(newWord.end(),to.begin(),to.end());
-	    		last_pos = it;
+	    		last_pos = it+1;
 	    		replaced = true;
 	    	}
 	    	ranOnce = true;
 	    }
 
 	    if (replaced) {
-	    	word = newWord;
+		    if (last_pos != word.begin() && last_pos != word.end()){
+		    	newWord.insert(newWord.end(), last_pos, it);
+		    }
+	    	word = newWord.word;
 	    }
 	    return replaced;
 	}
 
+	template <class iter>
+	void insert(iterator start, iter b, iter e) {
+		word.insert(start,b,e);
+	}
 	bool operator==(Word const& rhs) const {
 		return word == rhs.word;
 	}
-
 	bool operator!=(Word const& rhs) const {
 		return !(*this == rhs);
 	}
-	
   protected:
 	void append (IEntry* e) {word.push_back(e);}
 	void clear () {word.clear ();}

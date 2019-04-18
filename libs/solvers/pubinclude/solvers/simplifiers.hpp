@@ -166,12 +166,13 @@ namespace Words {
 				for (auto s : substitution){
 					IEntry* var = s.first;
 					Word w = s.second;
+
 					bool rSubs = rhs.substitudeVariable(var,w);
 					bool lSubs = lhs.substitudeVariable(var,w);
 
 					if (rSubs || lSubs){
 						if (lhs != rhs) {
-							//auto res = this->innerSolverReduce(*it);
+							auto res = this->innerSolverReduce(*it);
 							if (lhs.noVariableWord() && rhs.noVariableWord()){
 								  if (lhs != rhs){
 									  return Simplified::ReducedNsatis;
@@ -184,16 +185,14 @@ namespace Words {
 						}
 					}
 				}
-
 				if (!skipEquation){
+					std::cout << *it << std::endl;
 					eqs.push_back(*it);
 				}
 				skipEquation = false;
 			}
-		}
-		std::cout << "HIX" << std::endl;
-		opt.equations = eqs;
-		std::cout << "HI" << std::endl;
+			opt.equations = eqs;
+	  	  }
 
 		return Simplified::JustReduced;
 	  }
@@ -348,8 +347,9 @@ namespace Words {
 	  }
 	};
 	
-	using CoreSimplifier =  SequenceSimplifier<
+	using CoreSimplifier = SequenceSimplifier<
 			RunAllEq<SequenceSimplifier<PreSuffixReducer, SequenceSimplifier<CharacterMismatchDetection,ParikhMatrixMismatch>>>,
+			//RunAllEq<PreSuffixReducer>,
 			SubstitutionReasoning<PreSuffixReducer>,
 			Words::Options>;
 
