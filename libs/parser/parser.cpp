@@ -46,7 +46,7 @@ bool Words::Parser::parseEquation (){
 	auto wb2 = options->context.makeWordBuilder (eq.rhs);
 	for (auto c : word2)
 	  *wb2 << c;
-	eq.ctxt = *options->context;
+	eq.ctxt = &options->context;
 	return true;
   }
   return false;

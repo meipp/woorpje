@@ -60,7 +60,6 @@ namespace Words {
 		return false;
 	  }
 	}
-
 	for (auto v : _internal->terminals) {
 	  if (std::isupper (v->getRepr ())) {
 		std::cerr << v->getRepr ()<< std::endl;
@@ -69,7 +68,7 @@ namespace Words {
 	}
 	return true;
   }
-  
+
   size_t Context::nbVars () const {
 	return _internal->vars.size();
   }

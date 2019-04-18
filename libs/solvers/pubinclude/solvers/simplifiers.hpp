@@ -40,6 +40,16 @@ namespace Words {
 	  Second second;
 	};
 
+	template<class First, class T = Words::Equation>
+	class InnerSequenceSimplifier  {
+	protected:
+		Simplified innerSolverReduce  (T& eq) {
+				return first.solverReduce (eq);
+		  }
+		private:
+		First first;
+	};
+
 	template<class Sub>
 	class RunAllEq : public EquationSystemSimplifier {
 	public:
@@ -67,41 +77,6 @@ namespace Words {
 	  Sub sub;
 	};
 	
-	class PrefixReducer : public EquationSimplifier{
-	public:
-	  virtual Simplified solverReduce  (Words::Equation& eq) {
-		std::vector<Words::IEntry*> left;
-		std::vector<Words::IEntry*> right;
-		bool match = true;
-		auto llit = eq.lhs.begin();
-		auto llend = eq.lhs.end();
-		auto rrit = eq.rhs.begin();
-		auto rrend = eq.rhs.end();
-		for (; llit != llend && rrit!=rrend; ++llit,++rrit) {
-		  if (*llit != *rrit) {
-			break;
-		  }
-		}
-		for (;llit != llend; ++llit)
-		  left.push_back (*llit);
-		for (;rrit != rrend; ++rrit)
-		  right.push_back (*rrit);
-		
-		eq.lhs = std::move(left);
-		eq.rhs = std::move(right);
-		if (eq.lhs.characters () == 0 &&
-			eq.rhs.characters () == 0)
-		  return Simplified::ReducedSatis;
-		else if (eq.lhs.characters () == 0 ||
-				 eq.rhs.characters () == 0)
-		  return Simplified::ReducedNsatis;
-		else
-		  return Simplified::JustReduced;
-		
-	  }
-	};
-
-
 	// Strips equal pre-/sufficies of an equation
 	class PreSuffixReducer : public EquationSimplifier{
 	public:
@@ -137,22 +112,6 @@ namespace Words {
 		eq.lhs = std::move(left);
 		eq.rhs = std::move(right);
 
-
-		/// TEST
-		Words::Algorithms::ParikhMatrix p_pm;
-		Words::Algorithms::ParikhMatrix s_pm;
-		Words::Algorithms::calculateParikhMatrices(eq.lhs,p_pm,s_pm);
-
-		for (auto v : p_pm){
-		  for (auto x : v){
-			std::cout << x.first->getRepr() << " : " << x.second << std::endl;
-		  }
-		  std::cout << "-----" << std::endl;
-		}
-
-
-
-
 		if (eq.lhs.characters () == 0 &&
 			eq.rhs.characters () == 0)
 		  return Simplified::ReducedSatis;
@@ -162,6 +121,116 @@ namespace Words {
 		else
 		  return Simplified::JustReduced;
 
+	  }
+	};
+
+
+
+	template<class T>
+	class SubstitutionReasoning : public InnerSequenceSimplifier<T,Words::Equation> {
+	public:
+	  Simplified solverReduce  (Words::Options& opt) {
+		std::vector<Equation> eqs;
+		std::unordered_map<IEntry*,Word> substitution;
+
+		// Assumes that equation are minimized due to prefix and suffix
+		for (auto& eq :  opt.equations) {
+			if(eq.rhs.noVariableWord() && eq.lhs.characters() == 1 && eq.lhs.get(0)->isVariable()){
+				auto it = substitution.find(eq.lhs.get(0));
+				if (it != substitution.end()){
+					if(it->second != eq.rhs){
+						return Simplified::ReducedNsatis;
+					}
+				}
+				substitution[eq.lhs.get(0)] = eq.rhs;
+			}
+			if(eq.lhs.noVariableWord() && eq.rhs.characters() == 1 && eq.rhs.get(0)->isVariable()){
+				auto it = substitution.find(eq.rhs.get(0));
+				if (it != substitution.end()){
+					if(it->second != eq.lhs){
+						return Simplified::ReducedNsatis;
+					}
+				}
+				substitution[eq.rhs.get(0)] = eq.lhs;
+			}
+		}
+
+		if (substitution.size() > 0){
+			bool skipEquation = false;
+			auto it = opt.equations.begin();
+			auto end = opt.equations.end();
+
+			for (;it != end; ++it) {
+				Word& lhs = it->lhs;
+				Word& rhs = it->rhs;
+				for (auto s : substitution){
+					IEntry* var = s.first;
+					Word w = s.second;
+					bool rSubs = rhs.substitudeVariable(var,w);
+					bool lSubs = lhs.substitudeVariable(var,w);
+
+					if (rSubs || lSubs){
+						if (lhs != rhs) {
+							//auto res = this->innerSolverReduce(*it);
+							if (lhs.noVariableWord() && rhs.noVariableWord()){
+								  if (lhs != rhs){
+									  return Simplified::ReducedNsatis;
+								  }
+							  }
+							it->lhs = lhs;
+							it->rhs = rhs;
+						} else {
+							skipEquation = true;
+						}
+					}
+				}
+
+				if (!skipEquation){
+					eqs.push_back(*it);
+				}
+				skipEquation = false;
+			}
+		}
+		std::cout << "HIX" << std::endl;
+		opt.equations = eqs;
+		std::cout << "HI" << std::endl;
+
+		return Simplified::JustReduced;
+	  }
+	};
+
+
+	class PrefixReducer : public EquationSimplifier{
+	public:
+	  virtual Simplified solverReduce  (Words::Equation& eq) {
+		std::vector<Words::IEntry*> left;
+		std::vector<Words::IEntry*> right;
+		bool match = true;
+		auto llit = eq.lhs.begin();
+		auto llend = eq.lhs.end();
+		auto rrit = eq.rhs.begin();
+		auto rrend = eq.rhs.end();
+		for (; llit != llend && rrit!=rrend; ++llit,++rrit) {
+		  if (*llit != *rrit) {
+			break;
+		  }
+		}
+		for (;llit != llend; ++llit)
+		  left.push_back (*llit);
+		for (;rrit != rrend; ++rrit)
+		  right.push_back (*rrit);
+		
+		eq.lhs = std::move(left);
+		eq.rhs = std::move(right);
+		if (eq.lhs.characters () == 0 &&
+			eq.rhs.characters () == 0)
+		  return Simplified::ReducedSatis;
+		else if (eq.lhs.characters () == 0 ||
+				 eq.rhs.characters () == 0)
+		  return Simplified::ReducedNsatis;
+		else
+		  return Simplified::JustReduced;
+		
 	  }
 	};
 
@@ -195,7 +264,6 @@ namespace Words {
 			Words::Algorithms::ParikhImage rhs_p_pi = rhs_p_pm[i];
 			Words::Algorithms::ParikhImage lhs_s_pi = lhs_s_pm[i];
 			Words::Algorithms::ParikhImage rhs_s_pi = rhs_s_pm[i];
-
 
 			// Process variables
 			for (auto x : variableAlphabet){
@@ -254,10 +322,10 @@ namespace Words {
 		int minSize = std::min(rSize,lSize);
 
 		for (int i = 0; i < minSize; i++){
-			IEntry* r = eq.rhs[i];
-			IEntry* l = eq.lhs[i];
-			IEntry* rr = eq.rhs[(rSize-1)-i];
-			IEntry* ll = eq.lhs[(lSize-1)-i];
+			IEntry* r = eq.rhs.get(i);
+			IEntry* l = eq.lhs.get(i);
+			IEntry* rr = eq.rhs.get((rSize-1)-i);
+			IEntry* ll = eq.lhs.get((lSize-1)-i);
 			if(processPrefix){
 				if (r->isTerminal() && l->isTerminal()  && l != r){
 					return Simplified::ReducedNsatis;
@@ -279,15 +347,25 @@ namespace Words {
 		return Simplified::JustReduced;;
 	  }
 	};
+	
+	using CoreSimplifier =  SequenceSimplifier<
+			RunAllEq<SequenceSimplifier<PreSuffixReducer, SequenceSimplifier<CharacterMismatchDetection,ParikhMatrixMismatch>>>,
+			SubstitutionReasoning<PreSuffixReducer>,
+			Words::Options>;
 
-	
-	
-	using CoreSimplifier = SequenceSimplifier<
-	  RunAllEq<PreSuffixReducer> ,
-	  Simplifier<Words::Options>,
+
+
+
+	/*using CoreSimplifier = SequenceSimplifier<
+	  RunAllEq<reSuffixReducer> ,
+	  SequenceSimplifier<
+	  	  RunAllEq<CharacterMismatchDetection>,
+		  RunAllEq<ParikhMatrixMismatch>,
+	  	  Words::Options
+	  	  >,
 	  Words::Options
 	  >;
-	
+		*/
 	
   }
 }

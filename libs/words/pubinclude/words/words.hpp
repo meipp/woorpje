@@ -6,6 +6,7 @@
 #include <ostream>
 #include <map>
 #include <initializer_list>
+#include <iostream>
 
 #include "words/constraints.hpp"
 
@@ -65,6 +66,48 @@ namespace Words {
 	auto rbegin () const {return word.rbegin();}
 	auto rend () const {return word.rend();}
 	IEntry** data ()  {return word.data ();}
+	auto get(size_t index) {return word[index];}
+	bool noVariableWord() const {
+		for (auto a : word){
+			if (a->isVariable())
+				return false;
+		}
+		return true;
+	  }
+	bool substitudeVariable(IEntry*& variable, Word& to) {
+	    bool replaced = false;
+	    auto last_pos = word.begin();
+	    std::vector<IEntry*> newWord; // predict size
+	    bool ranOnce = false;
+	    auto it = word.begin();
+	    auto end = word.end();
+	    for(;it!=end;++it){
+
+	    	if(*it == variable){
+	    		if(ranOnce){
+	    			newWord.insert(newWord.end(), last_pos, it-1);
+	    		}
+	    		newWord.insert(newWord.end(),to.begin(),to.end());
+	    		last_pos = it;
+	    		replaced = true;
+	    	}
+	    	ranOnce = true;
+	    }
+
+	    if (replaced) {
+	    	word = newWord;
+	    }
+	    return replaced;
+	}
+
+	bool operator==(Word const& rhs) const {
+		return word == rhs.word;
+	}
+
+	bool operator!=(Word const& rhs) const {
+		return !(*this == rhs);
+	}
+
   protected:
 	void append (IEntry* e) {word.push_back(e);}
 	void clear () {word.clear ();}
