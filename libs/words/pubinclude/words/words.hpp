@@ -107,7 +107,7 @@ namespace Words {
 	bool operator!=(Word const& rhs) const {
 		return !(*this == rhs);
 	}
-
+	
   protected:
 	void append (IEntry* e) {word.push_back(e);}
 	void clear () {word.clear ();}
@@ -164,7 +164,21 @@ namespace Words {
   using Substitution = std::map<IEntry*, std::vector<IEntry*> >;
 
   std::ostream& operator<< (std::ostream&, const Word& w);
-  
+
+  inline std::ostream& operator<< (std::ostream& os, const Equation& w) {
+	return os << w.lhs << " == " << w.rhs; 
   }
+
+  inline std::ostream& operator<< (std::ostream& os, const Options& opt) {
+	for (auto& eq : opt.equations)
+	  os << eq << std::endl;
+	for (auto& c : opt.constraints)
+	  os << *c << std::endl;
+	return os;
+  }
+
+  
+  
+}
 
 #endif
