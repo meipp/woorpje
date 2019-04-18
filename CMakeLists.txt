@@ -60,3 +60,6 @@ INSTALL (TARGETS ${Translator} DESTINATION bin)
 
 
 INCLUDE(CPack)
+
+enable_testing()
+add_subdirectory(test)
