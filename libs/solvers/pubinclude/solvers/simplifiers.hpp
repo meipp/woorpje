@@ -125,6 +125,32 @@ namespace Words {
 	};
 
 
+	class ConstSequenceMismatch : public EquationSimplifier{
+	public:
+	  virtual Simplified solverReduce  (Words::Equation& eq) {
+		Words::Word constSide;
+		Words::Word variableSide;
+		std::vector<Words::Word> constSequences;
+		if(eq.lhs.noVariableWord() && !eq.rhs.noVariableWord()){
+			constSide = eq.lhs;
+			variableSide = eq.rhs;
+		} else if(eq.rhs.noVariableWord() && !eq.lhs.noVariableWord()){
+			constSide = eq.rhs;
+			variableSide = eq.lhs;
+		} else
+			return Simplified::JustReduced;
+
+		constSequences = variableSide.getConstSequences();
+		for (Word w : constSequences){
+			if(!constSide.isFactor(w)){
+				return Simplified::ReducedNsatis;
+			}
+		}
+		return Simplified::JustReduced;
+	  }
+	};
+
+
 
 	template<class T>
 	class SubstitutionReasoning : public InnerSequenceSimplifier<T,Words::Equation> {
@@ -173,6 +199,11 @@ namespace Words {
 					if (rSubs || lSubs){
 						if (lhs != rhs) {
 							auto res = this->innerSolverReduce(*it);
+
+							if (res == Simplified::ReducedNsatis){
+								return res;
+							}
+
 							if (lhs.noVariableWord() && rhs.noVariableWord()){
 								  if (lhs != rhs){
 									  return Simplified::ReducedNsatis;
@@ -186,7 +217,6 @@ namespace Words {
 					}
 				}
 				if (!skipEquation){
-					std::cout << *it << std::endl;
 					eqs.push_back(*it);
 				}
 				skipEquation = false;
@@ -350,7 +380,7 @@ namespace Words {
 	using CoreSimplifier = SequenceSimplifier<
 			RunAllEq<SequenceSimplifier<PreSuffixReducer, SequenceSimplifier<CharacterMismatchDetection,ParikhMatrixMismatch>>>,
 			//RunAllEq<PreSuffixReducer>,
-			SubstitutionReasoning<PreSuffixReducer>,
+			SubstitutionReasoning<SequenceSimplifier<PreSuffixReducer,ConstSequenceMismatch>>,
 			Words::Options>;
 
 

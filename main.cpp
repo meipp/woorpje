@@ -172,7 +172,7 @@ int main (int argc, char** argv) {
 		case ::Words::Solvers::Simplified::JustReduced:
 		  break;
 		case ::Words::Solvers::Simplified::ReducedNsatis:
-		  Words::Host::Terminate (Words::Host::ExitCode::NoSolution,std::cout);
+		  Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
 		case ::Words::Solvers::Simplified::ReducedSatis:
 		  Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
 	  }

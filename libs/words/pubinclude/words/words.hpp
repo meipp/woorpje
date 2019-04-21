@@ -108,6 +108,38 @@ namespace Words {
 	    return replaced;
 	}
 
+	std::vector<Word> getConstSequences(){
+		std::vector<Word> words;
+		Word currentWord;
+		for (IEntry* x : word){
+			if (x->isVariable()){
+				if (currentWord.characters() == 0)
+					continue;
+				words.push_back(currentWord);
+				currentWord.clear();
+			} else {
+				currentWord.append(x);
+			}
+		}
+		return words;
+	}
+
+	bool isFactor(Word other){
+		size_t tSize = this->characters();
+		size_t oSize = other.characters();
+		for(size_t i = 0; i <= tSize-oSize; i++ ){
+			size_t j;
+			for(j = 0; j < oSize; j++){
+				if (this->get(i+j) != other.get(j))
+					break;
+			}
+
+			if (j == oSize)
+				return true;
+		}
+		return false;
+	}
+
 	template <class iter>
 	void insert(iterator start, iter b, iter e) {
 		word.insert(start,b,e);

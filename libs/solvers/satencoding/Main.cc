@@ -1416,11 +1416,6 @@ Words::Solvers::Result setupSolverMain (std::vector<std::string>& mlhs, std::vec
 	  } else {
 		  input_equations_lhs.push_back(lhs);
 		  input_equations_rhs.push_back(rhs);
-
-		  std::cout << lhs << " = " << rhs << std::endl;
-
-
-
 		  // check if we found an actual subsitution
 		 /* if (noVariableWord(lhs) && rhs.size() == 1 && !terminal(rhs[0])){
 			  auto it = subsitutions.find(rhs[0]);
