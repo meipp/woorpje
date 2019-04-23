@@ -188,7 +188,7 @@ namespace Words {
 	const std::vector<Variable*>& getVariableAlphabet() const;
   private:
 	struct Internals;
-	std::unique_ptr<Internals> _internal;
+	std::shared_ptr<Internals> _internal;
   };
 
   struct Equation {
@@ -203,7 +203,7 @@ namespace Words {
 	std::vector<Constraints::Constraint_ptr> constraints;
   };
   
-  using Substitution = std::map<IEntry*, std::vector<IEntry*> >;
+  using Substitution = std::map<IEntry*, Word >;
 
   std::ostream& operator<< (std::ostream&, const Word& w);
 

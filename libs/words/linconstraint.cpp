@@ -44,23 +44,23 @@ namespace Words {
 
 	template<>
 	Constraint_ptr Helper<Cmp::LEq>::makeConstraint () {
-	  return std::make_unique<LinearConstraint> (makeMultiVector (),rhs);
+	  return std::make_shared<LinearConstraint> (makeMultiVector (),rhs);
 	}
 
 	template<>
 	Constraint_ptr Helper<Cmp::Lt>::makeConstraint () {
-	  return std::make_unique<LinearConstraint> (makeMultiVector (),rhs-1);
+	  return std::make_shared<LinearConstraint> (makeMultiVector (),rhs-1);
 	}
 
 	template<>
 	Constraint_ptr Helper<Cmp::GEq>::makeConstraint () {
 	  
-	  return std::make_unique<LinearConstraint> (makeNegMultiVector (),-rhs);
+	  return std::make_shared<LinearConstraint> (makeNegMultiVector (),-rhs);
 	}
 
 	template<>
 	Constraint_ptr Helper<Cmp::Gt>::makeConstraint () {
-	  return std::make_unique<LinearConstraint> (makeNegMultiVector (),-rhs-1);
+	  return std::make_shared<LinearConstraint> (makeNegMultiVector (),-rhs-1);
 	}
 
 

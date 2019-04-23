@@ -148,24 +148,28 @@ int main (int argc, char** argv) {
   
   
   Words::Options opt;
+  Words::Options foroutput;
   bool parsesucc = false;
   Words::Solvers::Solver_ptr solver = nullptr;
+  
   try {
 	std::fstream inp;
 	inp.open (conffile);
 	auto parser = Words::Parser::Create (inp);
 	solver = parser->Parse (opt,std::cout);
+	foroutput = opt;
 	inp.close ();
   }catch (Words::WordException& e) {
 	std::cerr << e.what () << std::endl;
 	return -1;
   }
-  
+  CoutResultGatherer gatherer (foroutput);
   if (solver) {
 	if (simplifier) {
-	  std::cout << "Running Simplifier" << std::endl;
+	  std::cout << "Running Simplifiers" << std::endl;
 	  Words::Solvers::CoreSimplifier reducer;
-	  auto res = reducer.solverReduce (opt);
+	  Words::Substitution sub;
+	  auto res = reducer.solverReduce (opt,sub);
 	  std::cout << "Equation System after simplification" << std::endl << opt << std::endl;;
 	  
 	  switch (res) {
@@ -174,6 +178,7 @@ int main (int argc, char** argv) {
 		case ::Words::Solvers::Simplified::ReducedNsatis:
 		  Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
 		case ::Words::Solvers::Simplified::ReducedSatis:
+		  gatherer.setSubstitution (sub);
 		  Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
 	  }
 	  
@@ -185,10 +190,8 @@ int main (int argc, char** argv) {
 	  Words::Solvers::StreamRelay relay (std::cout);
 	  auto ret =  solver->Solve (opt,relay);
 	  switch (ret) {
-	  
-	  
+		
 	  case Words::Solvers::Result::HasSolution: {
-		CoutResultGatherer gatherer (opt);
 		solver->getResults (gatherer);
 		Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
 	  }

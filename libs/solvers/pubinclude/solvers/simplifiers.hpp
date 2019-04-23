@@ -12,28 +12,30 @@ namespace Words {
 	  ReducedNsatis
 	};
 
-	template<class T>
+	template<class T,class Substitution = Words::Substitution>
 	class Simplifier {
 	public:
 	  ~Simplifier () {}
 	  
-	  virtual Simplified solverReduce  (T&) {return Simplified::JustReduced;}
+	  virtual Simplified solverReduce  (T&, Words::Substitution& s) {return Simplified::JustReduced;}
 	};
 
-	using EquationSimplifier = Simplifier<Words::Equation>;
-	using EquationSystemSimplifier = Simplifier<Words::Options>;
+	using EquationSimplifier = Simplifier<Words::Equation, Words::Substitution>;
+	using EquationSystemSimplifier = Simplifier<Words::Options, Words::Substitution>;
 
 	
 	
 	template<class First, class Second,class T = Words::Equation>
 	class SequenceSimplifier  {
 	public:
-	  Simplified solverReduce  (T& eq) {
-		auto res = first.solverReduce (eq);
+	  Simplified solverReduce  (T& eq,Substitution& s) {
+		auto res = first.solverReduce (eq,s);
 		if (res == Simplified::ReducedSatis || res==Simplified::ReducedNsatis)
 		  return res;
-		else
-		  return second.solverReduce (eq);
+		else {
+		  s.clear ();
+		  return second.solverReduce (eq,s);
+		}
 	  }
 	private:
 	  First first;
@@ -43,20 +45,23 @@ namespace Words {
 	template<class First, class T = Words::Equation>
 	class InnerSequenceSimplifier  {
 	protected:
-		Simplified innerSolverReduce  (T& eq) {
-				return first.solverReduce (eq);
-		  }
-		private:
-		First first;
+	  Simplified innerSolverReduce  (T& eq) {
+		static Words::Substitution s;
+		s.clear ();
+		return first.solverReduce (eq,s);
+	  }
+	private:
+	  First first;
 	};
 
 	template<class Sub>
 	class RunAllEq : public EquationSystemSimplifier {
 	public:
-	  Simplified solverReduce  (Words::Options& opt) {
+	  Simplified solverReduce  (Words::Options& opt, Substitution& s) {
 		std::vector<Equation> eqs;
 		for (auto& eq :  opt.equations) {
-		  auto res = sub.solverReduce (eq);
+		  s.clear();
+		  auto res = sub.solverReduce (eq,s);
 		  switch (res) {
 		  case Simplified::JustReduced:
 			eqs.push_back (eq);
@@ -80,7 +85,7 @@ namespace Words {
 	// Strips equal pre-/sufficies of an equation
 	class PreSuffixReducer : public EquationSimplifier{
 	public:
-	  virtual Simplified solverReduce  (Words::Equation& eq) {
+	  virtual Simplified solverReduce  (Words::Equation& eq, Substitution& s) {
 		std::vector<Words::IEntry*> left;
 		std::vector<Words::IEntry*> right;
 		bool match = true;
@@ -127,7 +132,7 @@ namespace Words {
 
 	class ConstSequenceMismatch : public EquationSimplifier{
 	public:
-	  virtual Simplified solverReduce  (Words::Equation& eq) {
+	  virtual Simplified solverReduce  (Words::Equation& eq,Substitution& s) {
 		Words::Word constSide;
 		Words::Word variableSide;
 		std::vector<Words::Word> constSequences;
@@ -155,9 +160,9 @@ namespace Words {
 	template<class T>
 	class SubstitutionReasoning : public InnerSequenceSimplifier<T,Words::Equation> {
 	public:
-	  Simplified solverReduce  (Words::Options& opt) {
+	  Simplified solverReduce  (Words::Options& opt, Substitution& substitution) {
 		std::vector<Equation> eqs;
-		std::unordered_map<IEntry*,Word> substitution;
+		//std::unordered_map<IEntry*,Word> substitution;
 
 		// Assumes that equation are minimized due to prefix and suffix
 		for (auto& eq :  opt.equations) {
@@ -223,50 +228,18 @@ namespace Words {
 			}
 			opt.equations = eqs;
 	  	  }
-
-		return Simplified::JustReduced;
-	  }
-	};
-
-
-	class PrefixReducer : public EquationSimplifier{
-	public:
-	  virtual Simplified solverReduce  (Words::Equation& eq) {
-		std::vector<Words::IEntry*> left;
-		std::vector<Words::IEntry*> right;
-		bool match = true;
-		auto llit = eq.lhs.begin();
-		auto llend = eq.lhs.end();
-		auto rrit = eq.rhs.begin();
-		auto rrend = eq.rhs.end();
-		for (; llit != llend && rrit!=rrend; ++llit,++rrit) {
-		  if (*llit != *rrit) {
-			break;
-		  }
-		}
-		for (;llit != llend; ++llit)
-		  left.push_back (*llit);
-		for (;rrit != rrend; ++rrit)
-		  right.push_back (*rrit);
-		
-		eq.lhs = std::move(left);
-		eq.rhs = std::move(right);
-		if (eq.lhs.characters () == 0 &&
-			eq.rhs.characters () == 0)
-		  return Simplified::ReducedSatis;
-		else if (eq.lhs.characters () == 0 ||
-				 eq.rhs.characters () == 0)
-		  return Simplified::ReducedNsatis;
-		else
+		if (opt.equations.size ()) 
 		  return Simplified::JustReduced;
-		
+		else
+		  return Simplified::ReducedSatis;
 	  }
 	};
+
 
 	// Uses the length arguments for unsat check
 	class ParikhMatrixMismatch : public EquationSimplifier{
 	public:
-	  virtual Simplified solverReduce  (Words::Equation& eq) {
+	  virtual Simplified solverReduce  (Words::Equation& eq,Substitution&) {
 		  Words::Algorithms::ParikhMatrix lhs_p_pm;
 		  Words::Algorithms::ParikhMatrix lhs_s_pm;
 		  Words::Algorithms::ParikhMatrix rhs_p_pm;
@@ -343,7 +316,7 @@ namespace Words {
 	// Checks for pre/suffix mismatching terminals
 	class CharacterMismatchDetection : public EquationSimplifier{
 	public:
-	  virtual Simplified solverReduce  (Words::Equation& eq) {
+	  virtual Simplified solverReduce  (Words::Equation& eq, Substitution& ) {
 		bool processPrefix = true;
 		bool processSuffix = true;
 		int rSize = eq.rhs.characters();
