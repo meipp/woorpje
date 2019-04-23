@@ -199,7 +199,6 @@ namespace Words {
 					if (rSubs || lSubs){
 						if (lhs != rhs) {
 							auto res = this->innerSolverReduce(*it);
-
 							if (res == Simplified::ReducedNsatis){
 								return res;
 							}
@@ -380,7 +379,7 @@ namespace Words {
 	using CoreSimplifier = SequenceSimplifier<
 			RunAllEq<SequenceSimplifier<PreSuffixReducer, SequenceSimplifier<CharacterMismatchDetection,ParikhMatrixMismatch>>>,
 			//RunAllEq<PreSuffixReducer>,
-			SubstitutionReasoning<SequenceSimplifier<PreSuffixReducer,ConstSequenceMismatch>>,
+			SubstitutionReasoning<SequenceSimplifier<PreSuffixReducer,SequenceSimplifier<ConstSequenceMismatch,SequenceSimplifier<CharacterMismatchDetection,ParikhMatrixMismatch>>>>,
 			Words::Options>;
 
 
