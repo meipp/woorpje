@@ -17,21 +17,25 @@ namespace Words {
 
   
   struct Context::Internals {
+	~Internals () {
+	  for (auto v : vars)
+		delete v;
+	  for (auto v : terminals)
+		delete v;
+	}
+	
 	std::unordered_map<char,IEntry*> reprToEntry;
 	std::vector<Variable*> vars;
 	std::vector<Terminal*> terminals;
   };
   
   Context::Context () {
-	_internal = std::make_unique<Internals> ();
+	_internal = std::make_shared<Internals> ();
 	addTerminal ('_');
   }
 
   Context::~Context () {
-	for (auto v : _internal->vars)
-	  delete v;
-	for (auto v : _internal->terminals)
-	  delete v;
+	
   }
   
   IEntry* Context::addVariable (char c) {
@@ -116,6 +120,4 @@ namespace Words {
 	}
 	return os;
   }
-  
-  
 }

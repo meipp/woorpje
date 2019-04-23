@@ -14,7 +14,7 @@ namespace Words  {
 	  virtual std::ostream& output (std::ostream&) const = 0;
 	};
 
-	using Constraint_ptr = std::unique_ptr<Constraint>;
+	using Constraint_ptr = std::shared_ptr<Constraint>;
 
 	inline std::ostream& operator<< (std::ostream& os, const Constraint& c) {
 	  return c.output(os);

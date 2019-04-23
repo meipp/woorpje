@@ -1692,7 +1692,7 @@ template<bool newencode = true>
 		  }
 		}
 	  }
-	  substitution[context.findSymbol (index2Varible[i])] = sub;
+	  substitution[context.findSymbol (index2Varible[i])] = std::move(sub);
 	}
 
 	//To be handled by external solver
