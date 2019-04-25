@@ -21,6 +21,9 @@ namespace Words {
 		os << "Found a solution" << std::endl;
 		  break;
 	  case ExitCode::NoSolution:
+		os << "Equation has no solution due to set bounds" << std::endl;
+		break;
+	  case ExitCode::DefinitelyNoSolution:
 		os << "Equation has no solution" << std::endl;
 		break;
 	  case ExitCode::NoIdea:

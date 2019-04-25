@@ -249,8 +249,8 @@ namespace Words {
 		  bool processSuffix = false;
 		  bool terminalsAlignPrefix = true;
 		  bool terminalsAlignSuffix = true;
-		  int rSize = eq.rhs.characters();
-		  int lSize = eq.lhs.characters();
+		  size_t rSize = eq.rhs.characters();
+		  size_t lSize = eq.lhs.characters();
 		  int minSize = std::min(rSize,lSize);
 		  int sri = 0;
 		  int sli = 0;
@@ -265,6 +265,31 @@ namespace Words {
 			Words::Algorithms::ParikhImage rhs_p_pi = rhs_p_pm[i];
 			Words::Algorithms::ParikhImage lhs_s_pi = lhs_s_pm[i];
 			Words::Algorithms::ParikhImage rhs_s_pi = rhs_s_pm[i];
+
+
+			// Quick linear unsat check based on the parik image of the equation
+			bool seenTwoVariables = false;
+			int sumRhs = 0;
+			int coefficentLhs = 0;
+
+			for (auto a : eq.ctxt->getVariableAlphabet()){
+				if(coefficentLhs != 0){
+						seenTwoVariables = true;
+						break; //  saw two variables, we can not do anything at this point
+					} else {
+						coefficentLhs = (lhs_p_pm[lSize-1][a]-rhs_p_pm[rSize-1][a]);
+					}
+			}
+
+			if (!seenTwoVariables){
+				for (auto a : eq.ctxt->getTerminalAlphabet()){
+					sumRhs = sumRhs+(lhs_p_pm[lSize-1][a]-rhs_p_pm[rSize-1][a]);
+				}
+
+				if (sumRhs % coefficentLhs != 0){
+					return Simplified::ReducedNsatis;
+				}
+			}
 
 			// Process variables
 			for (auto x : variableAlphabet){
