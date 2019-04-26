@@ -286,7 +286,7 @@ namespace Words {
 					sumRhs = sumRhs+(lhs_p_pm[lSize-1][a]-rhs_p_pm[rSize-1][a]);
 				}
 
-				if (sumRhs % coefficentLhs != 0){
+				if (coefficentLhs != 0 && sumRhs % coefficentLhs != 0){
 					return Simplified::ReducedNsatis;
 				}
 			}
