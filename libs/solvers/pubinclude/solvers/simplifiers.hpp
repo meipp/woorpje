@@ -164,69 +164,145 @@ namespace Words {
 		std::vector<Equation> eqs;
 		//std::unordered_map<IEntry*,Word> substitution;
 
-		// Assumes that equation are minimized due to prefix and suffix
-		for (auto& eq :  opt.equations) {
-			if(eq.rhs.noVariableWord() && eq.lhs.characters() == 1 && eq.lhs.get(0)->isVariable()){
-				auto it = substitution.find(eq.lhs.get(0));
-				if (it != substitution.end()){
-					if(it->second != eq.rhs){
-						return Simplified::ReducedNsatis;
-					}
+		bool foundNewSubstition = true;
+
+		// quick hack to avoid endless loops
+		int maxIterations = 5;
+		int iterations = 0;
+
+		while(foundNewSubstition && maxIterations >= iterations){
+
+			foundNewSubstition = false;
+			iterations++;
+
+			// Assumes that equation are minimized due to prefix and suffix
+			for (auto& eq :  opt.equations) {
+				/*
+				// NEW SETUP
+				 IEntry* variable;
+				Word subsWord;
+				bool setUp = false;
+
+				if(eq.rhs.noVariableWord() && eq.lhs.characters() == 1 && eq.lhs.get(0)->isVariable()){
+					variable = eq.lhs.get(0);
+					subsWord = eq.rhs;
+					setUp = true;
+
 				}
-				substitution[eq.lhs.get(0)] = eq.rhs;
-			}
-			if(eq.lhs.noVariableWord() && eq.rhs.characters() == 1 && eq.rhs.get(0)->isVariable()){
-				auto it = substitution.find(eq.rhs.get(0));
-				if (it != substitution.end()){
-					if(it->second != eq.lhs){
-						return Simplified::ReducedNsatis;
-					}
+				if(eq.lhs.noVariableWord() && eq.rhs.characters() == 1 && eq.rhs.get(0)->isVariable()){
+					variable = eq.rhs.get(0);
+					subsWord = eq.lhs;
+					setUp = true;
+
 				}
-				substitution[eq.rhs.get(0)] = eq.lhs;
-			}
-		}
-
-		if (substitution.size() > 0){
-			bool skipEquation = false;
-			auto it = opt.equations.begin();
-			auto end = opt.equations.end();
-
-			for (;it != end; ++it) {
-				Word& lhs = it->lhs;
-				Word& rhs = it->rhs;
-				for (auto s : substitution){
-					IEntry* var = s.first;
-					Word w = s.second;
-
-					bool rSubs = rhs.substitudeVariable(var,w);
-					bool lSubs = lhs.substitudeVariable(var,w);
-
-					if (rSubs || lSubs){
-						if (lhs != rhs) {
-							auto res = this->innerSolverReduce(*it);
-							if (res == Simplified::ReducedNsatis){
-								return res;
-							}
-
-							if (lhs.noVariableWord() && rhs.noVariableWord()){
-								  if (lhs != rhs){
-									  return Simplified::ReducedNsatis;
-								  }
-							  }
-							it->lhs = lhs;
-							it->rhs = rhs;
-						} else {
-							skipEquation = true;
+				if (setUp){
+					auto it = substitution.find(variable);
+					if (it != substitution.end()){
+						if(it->second != subsWord){
+							return Simplified::ReducedNsatis;
 						}
 					}
+					substitution[variable] = subsWord;
+				}*/
+
+				IEntry* variable;
+				Word subsWord;
+				bool setUp = false;
+
+				if(eq.lhs.characters() == 1 && eq.lhs.get(0)->isVariable()){
+					variable = eq.lhs.get(0);
+					subsWord = eq.rhs;
+					setUp = true;
+
 				}
-				if (!skipEquation){
-					eqs.push_back(*it);
+				if(eq.rhs.characters() == 1 && eq.rhs.get(0)->isVariable()){
+					variable = eq.rhs.get(0);
+					subsWord = eq.lhs;
+					setUp = true;
+
 				}
-				skipEquation = false;
+				if (setUp){
+					auto it = substitution.find(variable);
+					if (it != substitution.end()){
+						if (it->second.noVariableWord() && subsWord.noVariableWord()){
+							if(it->second != subsWord){
+								return Simplified::ReducedNsatis;
+							}
+						} else if ((it->second.noVariableWord() && !subsWord.noVariableWord())){
+							subsWord = it->second;
+						}
+					}
+					substitution[variable] = subsWord;
+				}
+				/*
+				if(eq.rhs.noVariableWord() && eq.lhs.characters() == 1 && eq.lhs.get(0)->isVariable()){
+					auto it = substitution.find(eq.lhs.get(0));
+					if (it != substitution.end()){
+						if(it->second != eq.rhs){
+							return Simplified::ReducedNsatis;
+						}
+					}
+					substitution[eq.lhs.get(0)] = eq.rhs;
+				}
+				if(eq.lhs.noVariableWord() && eq.rhs.characters() == 1 && eq.rhs.get(0)->isVariable()){
+					auto it = substitution.find(eq.rhs.get(0));
+					if (it != substitution.end()){
+						if(it->second != eq.lhs){
+							return Simplified::ReducedNsatis;
+						}
+					}
+					substitution[eq.rhs.get(0)] = eq.lhs;
+				} */
+
+
 			}
-			opt.equations = eqs;
-	  	  }
+
+			if (substitution.size() > 0){
+				bool skipEquation = false;
+				auto it = opt.equations.begin();
+				auto end = opt.equations.end();
+
+				for (;it != end; ++it) {
+					Word& lhs = it->lhs;
+					Word& rhs = it->rhs;
+					for (auto s : substitution){
+						IEntry* var = s.first;
+						Word w = s.second;
+						bool rSubs = rhs.substitudeVariable(var,w);
+						bool lSubs = lhs.substitudeVariable(var,w);
+
+						if (rSubs || lSubs){
+							if (lhs != rhs) {
+								auto res = this->innerSolverReduce(*it);
+								if (res == Simplified::ReducedNsatis){
+									return res;
+								}
+
+								if (lhs.noVariableWord() && rhs.noVariableWord()){
+									  if (lhs != rhs){
+										  return Simplified::ReducedNsatis;
+									  }
+								}
+								//lhs.noVariableWord() && // rhs.noVariableWord() &&
+								if ((rhs.characters() == 1 && rhs.get(0)->isVariable()) ||
+										(lhs.characters() == 1 && lhs.get(0)->isVariable()))
+										foundNewSubstition = true;
+
+								it->lhs = lhs;
+								it->rhs = rhs;
+							} else {
+								skipEquation = true;
+							}
+						}
+					}
+					if (!skipEquation){
+						eqs.push_back(*it);
+					}
+					skipEquation = false;
+				}
+				opt.equations = eqs;
+			  }
+		}
 		if (opt.equations.size ()) 
 		  return Simplified::JustReduced;
 		else
@@ -257,17 +333,7 @@ namespace Words {
 		  auto terminalAlphabet  = eq.ctxt->getTerminalAlphabet();
 		  auto variableAlphabet = eq.ctxt->getVariableAlphabet();
 
-		  for (int i = 1; i < minSize; i++){
-			sri = (rSize-1)-i;
-			sli = (lSize-1)-i;
-
-			Words::Algorithms::ParikhImage lhs_p_pi = lhs_p_pm[i];
-			Words::Algorithms::ParikhImage rhs_p_pi = rhs_p_pm[i];
-			Words::Algorithms::ParikhImage lhs_s_pi = lhs_s_pm[i];
-			Words::Algorithms::ParikhImage rhs_s_pi = rhs_s_pm[i];
-
-
-			// Quick linear unsat check based on the parik image of the equation
+		  // Quick linear unsat check based on the parik image of the equation
 			bool seenTwoVariables = false;
 			int sumRhs = 0;
 			int coefficentLhs = 0;
@@ -277,19 +343,39 @@ namespace Words {
 						seenTwoVariables = true;
 						break; //  saw two variables, we can not do anything at this point
 					} else {
-						coefficentLhs = (lhs_p_pm[lSize-1][a]-rhs_p_pm[rSize-1][a]);
+						if (rhs_p_pm[rSize-1].count(a) == 1 && lhs_p_pm[lSize-1].count(a) == 1){
+							coefficentLhs = (lhs_p_pm[lSize-1][a]-rhs_p_pm[rSize-1][a]);
+						} else if (lhs_p_pm[lSize-1].count(a) == 1){
+							coefficentLhs = lhs_p_pm[lSize-1][a];
+						} else if (rhs_p_pm[rSize-1].count(a) == 1){
+							coefficentLhs = -rhs_p_pm[rSize-1][a];
+						}
 					}
 			}
-
 			if (!seenTwoVariables){
 				for (auto a : eq.ctxt->getTerminalAlphabet()){
-					sumRhs = sumRhs+(lhs_p_pm[lSize-1][a]-rhs_p_pm[rSize-1][a]);
+					if (rhs_p_pm[rSize-1].count(a) == 1 && lhs_p_pm[lSize-1].count(a) == 1){
+						sumRhs = sumRhs+(lhs_p_pm[lSize-1][a]-rhs_p_pm[rSize-1][a]);
+					} else if (lhs_p_pm[lSize-1].count(a) == 1){
+						sumRhs = sumRhs+lhs_p_pm[lSize-1][a];
+					} else if (rhs_p_pm[rSize-1].count(a) == 1){
+						sumRhs = sumRhs-rhs_p_pm[rSize-1][a];
+					}
 				}
 
 				if (coefficentLhs != 0 && sumRhs % coefficentLhs != 0){
 					return Simplified::ReducedNsatis;
 				}
 			}
+
+		for (int i = 1; i < minSize; i++){
+			sri = (rSize-1)-i;
+			sli = (lSize-1)-i;
+
+			Words::Algorithms::ParikhImage lhs_p_pi = lhs_p_pm[i];
+			Words::Algorithms::ParikhImage rhs_p_pi = rhs_p_pm[i];
+			Words::Algorithms::ParikhImage lhs_s_pi = lhs_s_pm[i];
+			Words::Algorithms::ParikhImage rhs_s_pi = rhs_s_pm[i];
 
 			// Process variables
 			for (auto x : variableAlphabet){
