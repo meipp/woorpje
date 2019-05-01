@@ -2,8 +2,8 @@
 For evaluating the performance of Woorpje, we generated
 five collections of word equations benchmarks that exhibit a special
 structure. The equations are solved with Woorpje and state of the art string solvers
-(http://cvc4.cs.stanford.edu/web/[CVC4], https://github.com/z3str/Z3-str[Z3str], Z3Seg and
-http://user.it.uu.se/~jarst116/norn/[Norn]).
+(http://cvc4.cs.stanford.edu/web/[CVC4], https://github.com/z3str/Z3-str[Z3str], https://github.com/mtrberzi/z3/tree/develop[Z3Seq] and
+http://user.it.uu.se/~jarst116/norn/[Norn], https://github.com/uuverifiers/sloth[Sloth]).
 The benchmarks are available in our Availability section.
 
 For each word equation we ran the solvers and noted if they gave the
