@@ -177,34 +177,6 @@ namespace Words {
 
 			// Assumes that equation are minimized due to prefix and suffix
 			for (auto& eq :  opt.equations) {
-				/*
-				// NEW SETUP
-				 IEntry* variable;
-				Word subsWord;
-				bool setUp = false;
-
-				if(eq.rhs.noVariableWord() && eq.lhs.characters() == 1 && eq.lhs.get(0)->isVariable()){
-					variable = eq.lhs.get(0);
-					subsWord = eq.rhs;
-					setUp = true;
-
-				}
-				if(eq.lhs.noVariableWord() && eq.rhs.characters() == 1 && eq.rhs.get(0)->isVariable()){
-					variable = eq.rhs.get(0);
-					subsWord = eq.lhs;
-					setUp = true;
-
-				}
-				if (setUp){
-					auto it = substitution.find(variable);
-					if (it != substitution.end()){
-						if(it->second != subsWord){
-							return Simplified::ReducedNsatis;
-						}
-					}
-					substitution[variable] = subsWord;
-				}*/
-
 				IEntry* variable;
 				Word subsWord;
 				bool setUp = false;
@@ -234,27 +206,6 @@ namespace Words {
 					}
 					substitution[variable] = subsWord;
 				}
-				/*
-				if(eq.rhs.noVariableWord() && eq.lhs.characters() == 1 && eq.lhs.get(0)->isVariable()){
-					auto it = substitution.find(eq.lhs.get(0));
-					if (it != substitution.end()){
-						if(it->second != eq.rhs){
-							return Simplified::ReducedNsatis;
-						}
-					}
-					substitution[eq.lhs.get(0)] = eq.rhs;
-				}
-				if(eq.lhs.noVariableWord() && eq.rhs.characters() == 1 && eq.rhs.get(0)->isVariable()){
-					auto it = substitution.find(eq.rhs.get(0));
-					if (it != substitution.end()){
-						if(it->second != eq.lhs){
-							return Simplified::ReducedNsatis;
-						}
-					}
-					substitution[eq.rhs.get(0)] = eq.lhs;
-				} */
-
-
 			}
 
 			if (substitution.size() > 0){
@@ -303,10 +254,22 @@ namespace Words {
 				opt.equations = eqs;
 			  }
 		}
-		if (opt.equations.size ()) 
+		if (opt.equations.size ()){
+			for (auto x : substitution){
+				Words::Equation eq;
+				eq.lhs = { x.first };
+				eq.rhs = x.second;
+				eq.ctxt = &opt.context;
+				opt.equations.push_back(eq);
+			}
+
+
+
 		  return Simplified::JustReduced;
-		else
+
+		} else {
 		  return Simplified::ReducedSatis;
+		}
 	  }
 	};
 

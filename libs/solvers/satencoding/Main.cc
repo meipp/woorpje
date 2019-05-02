@@ -1495,9 +1495,9 @@ template<bool newencode = true>
 
   // quick unsat preprocessing
   // this is only needed once; bounds have no impact
-  if(checkForUnsat()){
+  /*if(checkForUnsat()){
 	  return Words::Solvers::Result::DefinitelyNoSolution;
-  }
+  }*/
 
   globalMaxPadding = static_cast<int> (bound);
   for (size_t i = 0; i< variableIndices.size();i++) {
