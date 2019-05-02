@@ -1,6 +1,6 @@
 |===
 |Program |Satis | NSatis | Error | Unknown | Timeout | Total | Time | TimeWO
-|woorpje|5|0|0|0|4|9|124.94|4.94
+|woorpje|5|0|0|0|4|9|123.85|3.85
 |cvc4|1|0|0|0|8|9|240.03|0.03
 |z3str3|0|0|0|9|0|9|0.33|0.33
 |z3seq|9|0|0|0|0|9|1.81|1.81

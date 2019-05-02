@@ -124,7 +124,8 @@ namespace Words {
 			  int coefficient = vm.number;
 			  lhs.push_back(std::make_pair(variableName,coefficient));
 		  }
-		  //addLinearConstraint(lhs,rhs);
+		  addLinearConstraint(lhs,rhs);
+
 		  return true;
 		}
 		else {

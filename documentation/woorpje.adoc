@@ -63,7 +63,7 @@ include::benchmarks.adoc[]
 
 == Availability
 === Binary
-We distribute the precompiled binary of Woorpje 0.1 for Linux  https://www.informatik.uni-kiel.de/~mku/woorpje/files/woorpje-0_1.zip[here].
+We distribute the precompiled binary of Woorpje 0.2 for Linux  https://www.informatik.uni-kiel.de/~mku/woorpje/files/woorpje-0_2.zip[here].
 
 === Benchmarks
 The benchmarks in SMT2 and woorpje format are available here:
