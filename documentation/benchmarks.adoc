@@ -51,7 +51,7 @@ include::bechmark3.txt.table[]
 
 
 === Fourth Track
-The fourth track (IV) consists of a system of 100 small random word
+Within the fourth track (IV) each instance consists of a system of 100 small random word
 equations with at most 6 constant letters, 10 variables and length
 60. The hard aspect of this track is solving multiple equations at the
 same time.
@@ -63,7 +63,7 @@ include::bechmark4.txt.table[]
 
 
 === Fifth Track
-The fifth track (V) enriches a system of 30 word equations by suitable linear constraints, as presented in this paper. This track is influenced by the Kaluza benchmark set.
+Within the fifth track (V) each instance is an enriched system of 30 word equations with suitable linear constraints, as presented in this paper. This track is influenced by the Kaluza benchmark set.
 
 [.text-center]
 image::images/benchmark5.png[Track 5]
