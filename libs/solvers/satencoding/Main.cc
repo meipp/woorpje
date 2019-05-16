@@ -1416,21 +1416,8 @@ Words::Solvers::Result setupSolverMain (std::vector<std::string>& mlhs, std::vec
   for(int i=0; i<mlhs.size();i++){
 	  string rhs = mlhs[i];
 	  string lhs = mrhs[i];
-	  removeLeadingAndEndingSymbols(lhs,rhs);
-	  if (noVariableWord(lhs) && noVariableWord(rhs)){
-		  if (lhs != rhs){
-			  return Words::Solvers::Result::DefinitelyNoSolution;
-		  }
-	  } else {
-		  input_equations_lhs.push_back(lhs);
-		  input_equations_rhs.push_back(rhs);
-	  }
-  }
-
-  // if empty it's ez sat
-  assert(input_equations_lhs_tmp.size() == input_equations_rhs_tmp.size());
-  if (input_equations_lhs_tmp.size() == 0){
-	  return Words::Solvers::Result::HasSolution;
+	  input_equations_lhs.push_back(lhs);
+	  input_equations_rhs.push_back(rhs);
   }
 
   // Encode problem here
