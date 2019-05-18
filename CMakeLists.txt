@@ -12,6 +12,8 @@ SET (DEPSACK "${ToolName} is a word equation solver based on Glucose.")
 
 option (ENABLE_STATIC "STATIC_LINKING")
 
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules;${CMAKE_MODULE_PATH}")
+
 
 if (NOT ENABLE_STATIC)
 # when building, don't use the install RPATH already
@@ -46,11 +48,11 @@ set(CMAKE_EXE_LINKER_FLAGS " -static")
 endif(ENABLE_STATIC)
 
 add_executable (${ToolName} main.cpp)
-target_link_libraries (${ToolName}  host parser words solvers glucose ${Boost_LIBRARIES} )
+target_link_libraries (${ToolName}  libs ${Boost_LIBRARIES} )
 target_include_directories(${ToolName} PRIVATE ${PROJECT_BINARY_DIR})
 
 add_executable (${Translator} woorpje2smt.cpp)
-target_link_libraries (${Translator}  host parser words solvers glucose ${Boost_LIBRARIES} )
+target_link_libraries (${Translator}  libs ${Boost_LIBRARIES} )
 target_include_directories(${Translator} PRIVATE ${PROJECT_BINARY_DIR})
 
 SET(CPACK_GENERATOR "ZIP")									   
