@@ -1,8 +1,14 @@
 #include <memory>
+#include "words/exceptions.hpp"
 #include "words/words.hpp"
 
 namespace Words {
   namespace SMT {
+	class SMTSolverUnavailable : public Words::WordException {
+	public:
+	  SMTSolverUnavailable () : WordException ("SMT Solver not available") {}
+	};
+	
 	enum class SMTSolver {
 				Z3
 	};

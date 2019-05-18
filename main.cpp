@@ -208,10 +208,11 @@ int main (int argc, char** argv) {
 	}catch (Words::Solvers::OutOfMemoryException&) {
 	  Words::Host::Terminate (Words::Host::ExitCode::OutOfMemory,std::cout);
 	}
-	catch (Words::ConstraintUnsupported& o) {
+	catch (Words::WordException& o) {
 	  std::cout << o.what () << std::endl;
 	  Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
 	}
+	
   }
   else {
 	Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
