@@ -2,6 +2,7 @@
 #include <memory>
 #include <sstream>
 #include <unordered_map>
+#include "words/exceptions.hpp"
 #include "smt/smtsolvers.hpp"
 
 namespace Words {
@@ -43,7 +44,9 @@ namespace Words {
 	  
 	  virtual void addTerminal (Words::Terminal* ) {}
 
-	  virtual void addConstraint (const Constraints::Constraint& ) {}
+	  virtual void addConstraint (const Constraints::Constraint& ) {
+		throw Words::ConstraintUnsupported ();
+	  }
 
 	  virtual void evaluate (Words::Variable* v, Words::WordBuilder& wb) {
 		Z3_ast ast;
