@@ -65,7 +65,9 @@ namespace Words {
 			  
 			  return Solvers::makeSolver<Solvers::Types::Reachability> (static_cast<size_t> (std::atoi (text.c_str ())));
 		  }
-		  
+		  if (tryacceptKeyword (SMT)) {
+			return Solvers::makeSolver<Solvers::Types::PureSMT> ();
+		  }
 		}
 	  }
 	  catch (ParserException& p) {

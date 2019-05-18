@@ -1,5 +1,6 @@
 add_subdirectory (satencoding)
 add_subdirectory (reachability)
+add_subdirectory (puresmt)
 
-add_library (solvers STATIC $<TARGET_OBJECTS:satsolver> $<TARGET_OBJECTS:reachability>)
+add_library (solvers STATIC $<TARGET_OBJECTS:satsolver> $<TARGET_OBJECTS:reachability> $<TARGET_OBJECTS:puresmt>)
 target_include_directories (solvers PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/pubinclude)

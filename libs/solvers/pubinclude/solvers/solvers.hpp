@@ -14,7 +14,8 @@ namespace Words {
 	enum class Types {
 					  SatEncoding,
 					  SatEncodingOld,
-					  Reachability
+					  Reachability,
+					  PureSMT
 	};
 
 	enum class Result {
