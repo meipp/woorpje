@@ -9,8 +9,8 @@ namespace Words  {
 	class LinearConstraint;
 	class Constraint {
 	public:
-	  virtual bool isLinear () {return false;}
-	  virtual LinearConstraint* getLinconstraint () {return nullptr;}
+	  virtual bool isLinear () const  {return false;}
+	  virtual const LinearConstraint* getLinconstraint () const {return nullptr;}
 	  virtual std::ostream& output (std::ostream&) const = 0;
 	};
 

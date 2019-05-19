@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include "words/exceptions.hpp"
 #include "smt/smtsolvers.hpp"
+#include "words/linconstraint.hpp"
 
 namespace Words {
   namespace Z3 {
@@ -14,6 +15,7 @@ namespace Words {
 		context = Z3_mk_context(cfg);
 		solver = Z3_mk_solver(context);
 		strsort = Z3_mk_string_sort (context);
+		intsort = Z3_mk_int_sort (context);
 	  }
 	  
 	  virtual ~Z3Solver () {}
@@ -26,7 +28,7 @@ namespace Words {
 		  return Words::SMT::SolverResult::Satis;
 		  break;
 		case Z3_L_FALSE:
-		  return Words::SMT::SolverResult::Satis;
+		  return Words::SMT::SolverResult::NSatis;
 		  break;
 		case Z3_L_UNDEF:
 		default:
@@ -44,8 +46,23 @@ namespace Words {
 	  
 	  virtual void addTerminal (Words::Terminal* ) {}
 
-	  virtual void addConstraint (const Constraints::Constraint& ) {
-		throw Words::ConstraintUnsupported ();
+	  virtual void addConstraint (const Constraints::Constraint& l) {
+		if (l.isLinear ()) {
+		  std::vector<Z3_ast> ast;
+		  auto lin = l.getLinconstraint ();
+		  for (auto& mult : *lin) {
+			Z3_ast muls[2];
+			muls[0] = Z3_mk_seq_length (context,asts.at(mult.entry));
+			muls[1] = Z3_mk_int (context,mult.number,intsort);
+			ast.push_back (Z3_mk_mul (context,2,muls));
+		  }
+		  auto added = Z3_mk_add (context,ast.size(),ast.data ());
+		  auto rhs = Z3_mk_int (context,lin->getRHS (),intsort);
+		  auto comp = Z3_mk_le (context,added,rhs);
+		  Z3_solver_assert (context,solver,comp);
+		}
+		else 
+		  throw Words::ConstraintUnsupported ();
 	  }
 
 	  virtual void evaluate (Words::Variable* v, Words::WordBuilder& wb) {
@@ -98,12 +115,13 @@ namespace Words {
 	  }
 
 	private:
-	Z3_context context;
-	Z3_config cfg;
-	std::unordered_map<Words::IEntry*,Z3_ast> asts;
-	Z3_sort strsort;
-	Z3_solver solver;
-	Z3_model model;
+	  Z3_context context;
+	  Z3_config cfg;
+	  std::unordered_map<Words::IEntry*,Z3_ast> asts;
+	  Z3_sort strsort;
+	  Z3_sort intsort;
+	  Z3_solver solver;
+	  Z3_model model;
   };
   
 	Words::SMT::Solver_ptr makeZ3Solver () {

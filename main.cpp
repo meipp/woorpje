@@ -9,6 +9,7 @@
 #include "host/exitcodes.hpp"
 #include "parser/parser.hpp"
 #include "solvers/solvers.hpp"
+#include "smt/smtsolvers.hpp"
 
 
 #include "solvers/simplifiers.hpp"
@@ -94,6 +95,18 @@ void printHelp (std::ostream& os,po::options_description& desc) {
   os << desc;
 }
 
+void setSMTSolver (size_t i) {
+  switch (i) {
+  case 0:
+	Words::SMT::setSMTSolver (Words::SMT::SMTSolver::Z3);
+	break;
+  case 1: [[fallthrough]]
+  default:
+	Words::SMT::setSMTSolver (Words::SMT::SMTSolver::CVC4);
+	break;
+  }
+}
+
 int main (int argc, char** argv) {
   bool diagnostic = false;
   bool suppressbanner = false;
@@ -111,6 +124,16 @@ int main (int argc, char** argv) {
 	("cpulim,C",po::value<size_t>(&cpulim), "CPU Limit in seconds")
 	("simplify",po::bool_switch(&simplifier), "Enable simplifications")
 	("vmlim,V",po::value<size_t>(&vmlim), "VM Limit in MBytes");
+
+  size_t smtsolver = 0;
+  po::options_description smdesc("SMT Options");
+  smdesc.add_options()
+	("smtsolver,S",po::value<size_t> (&smtsolver), "SMT Solver\n"
+	"\t 0 Z3\n"
+	"\t 1 CVC4\n"
+	 );
+
+  desc.add (smdesc);
   
   po::positional_options_description positionalOptions; 
   positionalOptions.add("configuration", 1); 
@@ -119,7 +142,7 @@ int main (int argc, char** argv) {
 	po::store(po::command_line_parser(argc, argv).options(desc) 
 			  .positional(positionalOptions).run(), vm);
 	po::notify (vm);
-   
+	
   }
   catch(po::error& e) {
 	if (help)
@@ -132,6 +155,7 @@ int main (int argc, char** argv) {
 	printHelp (std::cout,desc);
 	return -1;
   }
+  setSMTSolver (smtsolver);
   if (!suppressbanner)
 	printBanner (std::cout);
   if (conffile == "" ) {

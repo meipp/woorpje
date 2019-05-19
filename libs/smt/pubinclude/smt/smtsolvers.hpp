@@ -10,7 +10,8 @@ namespace Words {
 	};
 	
 	enum class SMTSolver {
-				Z3
+						  Z3,
+						  CVC4
 	};
 
 	enum class SolverResult {

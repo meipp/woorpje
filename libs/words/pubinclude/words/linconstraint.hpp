@@ -28,8 +28,8 @@ namespace Words {
 		o << " <= " << rhs;
 		return o;
 	  }
-	  virtual bool isLinear () override {return true;}
-	  virtual LinearConstraint* getLinconstraint () override {return this;}
+	  virtual bool isLinear () const override {return true;}
+	  virtual const LinearConstraint* getLinconstraint () const override {return this;}
 	  
 	private: 
 	  std::vector<VarMultiplicity> variables;

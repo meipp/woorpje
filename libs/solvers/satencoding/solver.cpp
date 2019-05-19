@@ -111,7 +111,7 @@ namespace Words {
 	  template<bool encoding>
 	  bool Solver<encoding>::handleConstraint (Words::Constraints::Constraint& c, ::Words::Solvers::MessageRelay& relay,Words::IEntry* e ) {
 		//std::cerr << "Handle " << c << std::endl; 
-		Words::Constraints::LinearConstraint* lc = c.getLinconstraint ();
+		const Words::Constraints::LinearConstraint* lc = c.getLinconstraint ();
 		if (lc) {
 		  if (!e) {
 			relay.pushMessage ("Missing Dummy Variable");
