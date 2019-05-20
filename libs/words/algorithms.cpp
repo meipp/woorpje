@@ -22,7 +22,8 @@ void Words::Algorithms::calculateParikhMatrices (Word& w, ParikhMatrix& p_pm, Pa
   resetParikImage(s_start);
   s_pm[0] = s_start;
   auto itBegin = w.begin();
-  auto it = w.end()-1;
+  auto it = w.end();
+  --it;
   int wSize = w.characters()-1;
   int iSize = w.characters()-1;
   for (; it != itBegin; --it) {

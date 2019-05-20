@@ -12,7 +12,8 @@
 
 namespace Words {
   class Variable;
-  class Terminal;	
+  class Terminal;
+  class Sequence;
   class IEntry {
   public:
 	IEntry (char repr,size_t i) : index(i),repr(repr) {}
@@ -20,10 +21,14 @@ namespace Words {
 	virtual size_t getIndex ()  {return index;}
 	virtual bool isVariable () const {return false;}	
 	virtual bool isTerminal () const {return false;}
+	virtual bool isSequence () const {return false;} 
 	virtual Variable* getVariable () {return nullptr;}	
 	virtual Terminal* getTerminal () {return nullptr;}
+	virtual Sequence* getSequence () {return nullptr;}
 	virtual const Variable* getVariable () const {return nullptr;}	
 	virtual const Terminal* getTerminal () const {return nullptr;}
+	virtual const Sequence* getSequence () const {return nullptr;}
+	virtual std::ostream& output (std::ostream& os) const  {return  os << getRepr ();}
 	char getRepr () const {return repr;}
   private:
 	size_t index;
@@ -40,6 +45,44 @@ namespace Words {
 	Variable (char repr, size_t index) : IEntry(repr,index) {}
   };
 
+  class Sequence : public IEntry {
+  public:
+	using iterator = std::vector<IEntry*>::iterator;
+	using reverse_iterator = std::vector<IEntry*>::reverse_iterator;
+	using const_iterator = std::vector<IEntry*>::const_iterator;
+	using const_reverse_iterator = std::vector<IEntry*>::const_reverse_iterator;
+	friend class Context;
+	bool isSequence () const override {return true;}
+	virtual Sequence* getSequence () {return this;}
+	virtual const Sequence* getSequence () const {return this;}
+    const_iterator begin () const {return entries.begin();}
+    const_iterator end () const {return entries.end();}
+	const_reverse_iterator rbegin () const {return entries.rbegin();}
+	const_reverse_iterator rend () const {return entries.rend();}
+
+	iterator begin ()  {return entries.begin();}
+	iterator end ()  {return entries.end();}
+	reverse_iterator rbegin ()  {return entries.rbegin();}
+	reverse_iterator rend ()  {return entries.rend();}
+	
+	std::ostream& output (std::ostream& os) const  override {
+	  for (auto i : entries) {
+		i->output (os);
+	  }
+	  return os;
+	}
+
+	bool operator== (const Sequence& s) {
+	  return entries == s.entries;
+	}
+	
+  protected:
+	Sequence (size_t index,std::vector<IEntry*> e) : IEntry('#',index),entries(e) {}
+  private:
+	std::vector<IEntry*> entries;
+  };
+
+  
   
   class Terminal : public IEntry {
   public:
@@ -50,29 +93,96 @@ namespace Words {
 	virtual bool isEpsilon () const {return false;}
   protected:
 	Terminal (char repr, size_t index) : IEntry(repr,index) {}
-  };
-
-
+  };  
+  
+  
   class Word  {
   public:
-	using iterator = std::vector<IEntry*>::iterator;
+
+	template<class base_iter,class innerIter>
+	class Iterator {
+	public:
+	  using value_type = IEntry*; //almost always T
+	  using reference = value_type&; //almost always T& or const T&
+	  using pointer = value_type*; //almost always T* or const T*
+	  
+	  Iterator (const base_iter& cur, const base_iter& end) : cur(cur),end(end) {
+		seqCheck ();
+	  }
+	  value_type operator* () {
+		if (internal)
+		  return *internal->it;
+		return *cur;
+	  }
+	  bool operator== (const Iterator<base_iter,innerIter>& oth) {
+		if (internal && oth.internal)
+		  return internal->it == oth.internal->it && cur == oth.cur;
+		if (internal || oth.internal)
+		  return false;
+		return cur == oth.cur;
+		
+	  }
+	  bool operator!= (const Iterator<base_iter,innerIter>& oth) {
+		return !(*this == oth);
+	  }
+	  void operator= (value_type t) {cur = t;}
+	  Iterator& operator++ () {increment();return *this;}
+	  Iterator& operator-- () {--cur;return *this;}
+	private:
+	  void increment () {
+		if (internal) {
+		  ++internal->it;
+		  if (internal->it != internal->end)
+			return;
+		}
+		internal.reset();
+		++cur;
+		seqCheck ();
+	  }
+
+	  
+	  void seqCheck ()  {
+		if (cur != end && (*cur)->isSequence ()) {
+		  auto seq  = (*cur)->getSequence ();
+		  //	  internal =  std::make_unique<Internal> (IterConstr<innerIter>::begin(*seq),  IterConstr<innerIter>::end(*seq));
+		}
+	  }
+	  
+	  struct Internal {
+		Internal (const innerIter& beg, const innerIter& end) : it(beg),end(end) {} 
+		innerIter it;
+		innerIter end;
+	  };
+	  base_iter cur;
+	  base_iter end;
+	  std::unique_ptr<Internal> internal = nullptr;
+	};
+
+	
+	
+	using iterator = Iterator<std::vector<IEntry*>::iterator,Sequence::iterator>;
+	using const_iterator = Iterator<std::vector<IEntry*>::const_iterator,Sequence::const_iterator>;
+	using riterator = Iterator<std::vector<IEntry*>::reverse_iterator,Sequence::reverse_iterator>;
+	using const_riterator = Iterator<std::vector<IEntry*>::const_reverse_iterator,Sequence::const_reverse_iterator>;
 	friend class WordBuilder;
 	Word () {}
 	Word (std::initializer_list<IEntry*> list) : word (list) {}
 	Word (std::vector<IEntry*>&& list) : word(list) {}
 	~Word () {}
 	size_t characters () const {return word.size();}
-	auto begin () const {return word.begin();}
-	auto end () const {return word.end();}
-	auto rbegin () const {return word.rbegin();}
-	auto rend () const {return word.rend();}
-
-	auto begin () {return word.begin();}
-	auto end () {return word.end();}
-	auto rbegin () {return word.rbegin();}
-	auto rend () {return word.rend();}
+	auto begin () const {return const_iterator(word.begin(),word.end());}
+	auto end () const {return const_iterator(word.end(),word.end());}
 	
-	auto get(size_t index) {return word[index];}
+	auto begin () {return iterator(word.begin(),word.end());}
+	auto end () {return iterator(word.end(),word.end());}
+	
+	auto rbegin () const {return const_riterator(word.rbegin(),word.rend());}
+	auto rend () const {return const_riterator(word.rend(),word.rend());}
+	
+	auto rbegin () {return riterator(word.rbegin(),word.rend());}
+	auto rend () {return riterator(word.rend(),word.rend());}
+	
+	auto get(size_t index) const  {return word[index];}
 
 	bool noVariableWord() const {
 	  for (auto a : word){
@@ -82,7 +192,7 @@ namespace Words {
 	  return true;
 	}
 	
-	bool substitudeVariable(IEntry*& variable, Word& to) {
+	bool substitudeVariable(IEntry* variable, const Word& to) {
 	  bool replaced = false;
 	  auto last_pos = word.begin();
 	  Word newWord; // predict size
@@ -92,9 +202,9 @@ namespace Words {
 	  for(;it!=end;++it){
 		if(*it == variable){
 		  if(ranOnce){
-	    			newWord.insert(newWord.end(), last_pos, it);
+			newWord.insert(last_pos, it);
 		  }
-		  newWord.insert(newWord.end(),to.begin(),to.end());
+		  newWord.insert(to.begin(),to.end());
 		  last_pos = it+1;
 		  replaced = true;
 		}
@@ -103,7 +213,7 @@ namespace Words {
 	  
 	  if (replaced) {
 		if (last_pos != word.begin() && last_pos != word.end()){
-		  newWord.insert(newWord.end(), last_pos, it);
+		  newWord.insert(last_pos, it);
 		}
 		word = newWord.word;
 	  }
@@ -111,51 +221,58 @@ namespace Words {
 	}
 
 	std::vector<Word> getConstSequences(){
-		std::vector<Word> words;
-		Word currentWord;
-		for (IEntry* x : word){
-		  if (x->isVariable()){
-			if (currentWord.characters() == 0)
-			  continue;
-			words.push_back(currentWord);
-			currentWord.clear();
-		  } else {
-			currentWord.append(x);
-		  }
+	  std::vector<Word> words;
+	  Word currentWord;
+	  for (IEntry* x : word){
+		if (x->isVariable()){
+		  if (currentWord.characters() == 0)
+			continue;
+		  words.push_back(currentWord);
+		  currentWord.clear();
+		} else {
+		  currentWord.append(x);
 		}
-		return words;
+	  }
+	  return words;
 	}
 	
-	bool isFactor(Word other){
-		size_t tSize = this->characters();
-		size_t oSize = other.characters();
-		for(size_t i = 0; i <= tSize-oSize; i++ ){
-			size_t j;
-			for(j = 0; j < oSize; j++){
-				if (this->get(i+j) != other.get(j))
-					break;
+	bool isFactor(const Word& other){
+	  size_t tSize = this->characters();
+	  size_t oSize = other.characters();
+	  for(size_t i = 0; i <= tSize-oSize; i++ ){
+		size_t j;
+		for(j = 0; j < oSize; j++){
+		  if (this->get(i+j) != other.get(j))
+			break;
 			}
-
-			if (j == oSize)
-				return true;
-		}
-		return false;
+		
+		if (j == oSize)
+		  return true;
+	  }
+	  return false;
 	}
-
-	template <class iter>
-	void insert(iterator start, iter b, iter e) {
-		word.insert(start,b,e);
-	}
+	
+	
+	
 	bool operator==(Word const& rhs) const {
-		return word == rhs.word;
+	  return word == rhs.word;
 	}
+	
 	bool operator!=(Word const& rhs) const {
-		return !(*this == rhs);
+	  return !(*this == rhs);
 	}
+	
   protected:
 	void append (IEntry* e) {word.push_back(e);}
 	void clear () {word.clear ();}
   private:
+	template <class iter>
+	void insert( iter b, iter e) {
+	  for (;b != e; ++b) {
+		word.push_back(*b);
+	  }
+	}
+	
 	std::vector<IEntry*> word;
   };
   
@@ -174,10 +291,12 @@ namespace Words {
   
   class Context {
   public:
+	using SeqInput = std::vector<IEntry*>;
 	Context ();
 	~Context ();
 	IEntry* addVariable (char c);
 	IEntry* addTerminal (char c);
+	IEntry* addSequence (const SeqInput&);
 	IEntry* findSymbol (char c) const;
 	Terminal* getEpsilon ();
 	std::unique_ptr<WordBuilder> makeWordBuilder (Word& w) {return std::make_unique<WordBuilder> (*this,w);}
@@ -207,8 +326,11 @@ namespace Words {
   
   using Substitution = std::map<IEntry*, Word >;
 
+  inline std::ostream& operator<< (std::ostream& os, const IEntry& w) {
+	return w.output (os);
+  }
   std::ostream& operator<< (std::ostream&, const Word& w);
-
+  
   inline std::ostream& operator<< (std::ostream& os, const Equation& w) {
 	return os << w.lhs << " == " << w.rhs; 
   }

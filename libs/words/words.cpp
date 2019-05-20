@@ -12,9 +12,6 @@
 
 namespace Words {
 
-  using Variable_ptr = std::unique_ptr<Variable>;
-  using Terminal_ptr = std::unique_ptr<Terminal>;
-
   
   struct Context::Internals {
 	~Internals () {
@@ -22,11 +19,14 @@ namespace Words {
 		delete v;
 	  for (auto v : terminals)
 		delete v;
+	  for (auto v : sequences)
+		delete v;
 	}
 	
 	std::unordered_map<char,IEntry*> reprToEntry;
 	std::vector<Variable*> vars;
 	std::vector<Terminal*> terminals;
+	std::vector<Sequence*> sequences;
   };
   
   Context::Context () {
@@ -57,6 +57,11 @@ namespace Words {
 	
   }
 
+  IEntry* Context::addSequence (const Context::SeqInput& s) {
+	_internal->sequences.push_back ( new Sequence (_internal->sequences.size(),s));
+	return _internal->sequences.back();
+  }
+  
   bool Context::conformsToConventions () const {
 	for (auto v : _internal->vars) {
 	  if (!std::isupper (v->getRepr ())) {
@@ -116,8 +121,9 @@ namespace Words {
   
   std::ostream& operator<< (std::ostream& os, const Word& w) {
 	for (auto c : w) {
-	  os << c->getRepr ();
+	  os << c;
 	}
 	return os;
   }
+    
 }

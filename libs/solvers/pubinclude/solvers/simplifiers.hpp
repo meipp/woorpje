@@ -100,13 +100,13 @@ namespace Words {
 		}
 
 		if (llit != llend && rrit!=rrend){
-			rrend--;llend--;
-			for (; llit != llend && rrit!=rrend; --llend,--rrend) {
-			  if (*llend != *rrend) {
-				break;
-			  }
+		  --rrend;--llend;
+		  for (; llit != llend && rrit!=rrend; --llend,--rrend) {
+			if (*llend != *rrend) {
+			  break;
 			}
-			llend++;rrend++;
+		  }
+		  ++llend;++rrend;
 		}
 
 		for (;llit != llend; ++llit)
@@ -339,7 +339,7 @@ namespace Words {
 			Words::Algorithms::ParikhImage rhs_p_pi = rhs_p_pm[i];
 			Words::Algorithms::ParikhImage lhs_s_pi = lhs_s_pm[i];
 			Words::Algorithms::ParikhImage rhs_s_pi = rhs_s_pm[i];
-
+			
 			// Process variables
 			for (auto x : variableAlphabet){
 				if(processPrefix){
