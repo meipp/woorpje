@@ -95,6 +95,53 @@ namespace Words {
 	Terminal (char repr, size_t index) : IEntry(repr,index) {}
   };  
   
+  template<class Iter>
+  struct SegIter {
+	static void begin (Sequence& seq, Iter& iter) {
+	  iter = seq.begin ();
+	}
+	
+	static void end (Sequence& seq, Iter& iter) {
+	  iter = seq.end ();
+	}
+
+	static void begin (const Sequence& seq, Iter& iter) {
+	  iter = seq.begin ();
+	}
+	
+	static void end (const Sequence& seq, Iter& iter) {
+	  iter = seq.end ();
+	}
+	
+  };
+  
+  template<>
+  struct SegIter<Sequence::reverse_iterator> {
+	static void begin (Sequence& seq, Sequence::reverse_iterator& iter) {
+	  iter = seq.rbegin ();
+	}
+	
+	
+	static void end (Sequence& seq, Sequence::reverse_iterator& iter) {
+	  iter = seq.rend ();
+	}
+	
+  };
+
+  template<>
+  struct SegIter<Sequence::const_reverse_iterator> {
+	static void begin (const Sequence& seq, Sequence::const_reverse_iterator& iter) {
+	  iter = seq.rbegin ();
+	}
+	
+	
+	static void end (const Sequence& seq, Sequence::const_reverse_iterator& iter) {
+	  iter = seq.rend ();
+	}
+	
+  };
+
+  
   
   class Word  {
   public:
@@ -144,12 +191,14 @@ namespace Words {
 	  void seqCheck ()  {
 		if (cur != end && (*cur)->isSequence ()) {
 		  auto seq  = (*cur)->getSequence ();
-		  //	  internal =  std::make_unique<Internal> (IterConstr<innerIter>::begin(*seq),  IterConstr<innerIter>::end(*seq));
+		  internal = std::make_unique<Internal> ();
+		  SegIter<innerIter>::begin (*seq,internal->it);
+		  SegIter<innerIter>::end (*seq,internal->end);
+		  
 		}
 	  }
 	  
 	  struct Internal {
-		Internal (const innerIter& beg, const innerIter& end) : it(beg),end(end) {} 
 		innerIter it;
 		innerIter end;
 	  };
@@ -173,14 +222,14 @@ namespace Words {
 	auto begin () const {return const_iterator(word.begin(),word.end());}
 	auto end () const {return const_iterator(word.end(),word.end());}
 	
-	auto begin () {return iterator(word.begin(),word.end());}
-	auto end () {return iterator(word.end(),word.end());}
+	//auto begin () {return iterator(word.begin(),word.end());}
+	//auto end () {return iterator(word.end(),word.end());}
 	
 	auto rbegin () const {return const_riterator(word.rbegin(),word.rend());}
 	auto rend () const {return const_riterator(word.rend(),word.rend());}
 	
-	auto rbegin () {return riterator(word.rbegin(),word.rend());}
-	auto rend () {return riterator(word.rend(),word.rend());}
+	//auto rbegin () {return riterator(word.rbegin(),word.rend());}
+	//auto rend () {return riterator(word.rend(),word.rend());}
 	
 	auto get(size_t index) const  {return word[index];}
 
