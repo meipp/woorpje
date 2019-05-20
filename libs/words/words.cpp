@@ -113,15 +113,33 @@ namespace Words {
 	return _internal->terminals[0];
   }
   
+  WordBuilder::~WordBuilder () {
+	if (input.size ()) {
+	  auto seq = ctxt.addSequence (input);
+	  word.append (seq);
+	}
+  }
+  
   WordBuilder& WordBuilder::operator<< (char c) {
-	word.append (ctxt.findSymbol (c));
+	auto entry = ctxt.findSymbol (c);
+	if (entry->isTerminal ()) {
+	  input.push_back (entry);
+	}
+	if (entry->isVariable ()) {
+	  if (input.size()) {
+		auto seq = ctxt.addSequence (input);
+		word.append (seq);
+	  }
+	  word.append (entry);
+	  input.clear ();
+	}
 	return *this;
   }
-
+  
   
   std::ostream& operator<< (std::ostream& os, const Word& w) {
 	for (auto c : w) {
-	  os << c;
+	  c->output(os);
 	}
 	return os;
   }

@@ -332,10 +332,13 @@ namespace Words {
 	WordBuilder (Context& c,Word& w) : ctxt(c),word(w) {
 	  word.clear ();
 	}
+	~WordBuilder ();
 	WordBuilder& operator<< (char c);
+	
   private:
 	Context& ctxt;
 	Word& word;
+	std::vector<IEntry*> input;
   };
   
   class Context {
