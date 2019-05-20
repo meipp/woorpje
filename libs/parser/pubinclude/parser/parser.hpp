@@ -56,7 +56,7 @@ namespace Words {
 			  return Solvers::makeSolver<Solvers::Types::SatEncodingOld> (static_cast<size_t> (std::atoi (text.c_str ())));
 		  }
 		  
-		  if (tryacceptKeyword (Reachability)) {
+		  /*if (tryacceptKeyword (Reachability)) {
 			std::string text;
 			if (accept(Tokens::LPARAN) && 
 			  accept(Tokens::NUMBER,text) && 
@@ -64,7 +64,7 @@ namespace Words {
 				)
 			  
 			  return Solvers::makeSolver<Solvers::Types::Reachability> (static_cast<size_t> (std::atoi (text.c_str ())));
-		  }
+			  }*/
 		  if (tryacceptKeyword (SMT)) {
 			return Solvers::makeSolver<Solvers::Types::PureSMT> ();
 		  }

@@ -55,7 +55,7 @@ namespace Words {
 
   class Word  {
   public:
-	  using iterator = std::vector<IEntry*>::iterator;
+	using iterator = std::vector<IEntry*>::iterator;
 	friend class WordBuilder;
 	Word () {}
 	Word (std::initializer_list<IEntry*> list) : word (list) {}
@@ -71,59 +71,61 @@ namespace Words {
 	auto end () {return word.end();}
 	auto rbegin () {return word.rbegin();}
 	auto rend () {return word.rend();}
-	IEntry** data ()  {return word.data ();}
+	
 	auto get(size_t index) {return word[index];}
-	bool noVariableWord() const {
-		for (auto a : word){
-			if (a->isVariable())
-				return false;
-		}
-		return true;
-	  }
-	bool substitudeVariable(IEntry*& variable, Word& to) {
-	    bool replaced = false;
-	    auto last_pos = word.begin();
-	    Word newWord; // predict size
-	    bool ranOnce = false;
-	    auto it = word.begin();
-	    auto end = word.end();
-	    for(;it!=end;++it){
-	    	if(*it == variable){
-	    		if(ranOnce){
-	    			newWord.insert(newWord.end(), last_pos, it);
-	    		}
-	    		newWord.insert(newWord.end(),to.begin(),to.end());
-	    		last_pos = it+1;
-	    		replaced = true;
-	    	}
-	    	ranOnce = true;
-	    }
 
-	    if (replaced) {
-		    if (last_pos != word.begin() && last_pos != word.end()){
-		    	newWord.insert(newWord.end(), last_pos, it);
-		    }
-	    	word = newWord.word;
-	    }
-	    return replaced;
+	bool noVariableWord() const {
+	  for (auto a : word){
+		if (a->isVariable())
+		  return false;
+	  }
+	  return true;
+	}
+	
+	bool substitudeVariable(IEntry*& variable, Word& to) {
+	  bool replaced = false;
+	  auto last_pos = word.begin();
+	  Word newWord; // predict size
+	  bool ranOnce = false;
+	  auto it = word.begin();
+	  auto end = word.end();
+	  for(;it!=end;++it){
+		if(*it == variable){
+		  if(ranOnce){
+	    			newWord.insert(newWord.end(), last_pos, it);
+		  }
+		  newWord.insert(newWord.end(),to.begin(),to.end());
+		  last_pos = it+1;
+		  replaced = true;
+		}
+		ranOnce = true;
+	  }
+	  
+	  if (replaced) {
+		if (last_pos != word.begin() && last_pos != word.end()){
+		  newWord.insert(newWord.end(), last_pos, it);
+		}
+		word = newWord.word;
+	  }
+	  return replaced;
 	}
 
 	std::vector<Word> getConstSequences(){
 		std::vector<Word> words;
 		Word currentWord;
 		for (IEntry* x : word){
-			if (x->isVariable()){
-				if (currentWord.characters() == 0)
-					continue;
-				words.push_back(currentWord);
-				currentWord.clear();
-			} else {
-				currentWord.append(x);
-			}
+		  if (x->isVariable()){
+			if (currentWord.characters() == 0)
+			  continue;
+			words.push_back(currentWord);
+			currentWord.clear();
+		  } else {
+			currentWord.append(x);
+		  }
 		}
 		return words;
 	}
-
+	
 	bool isFactor(Word other){
 		size_t tSize = this->characters();
 		size_t oSize = other.characters();
