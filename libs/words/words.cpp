@@ -1,3 +1,4 @@
+#include <cassert>
 #include <unordered_map>
 #include <vector>
 #include <memory>
@@ -24,6 +25,7 @@ namespace Words {
 	}
 	
 	std::unordered_map<char,IEntry*> reprToEntry;
+	std::unordered_map<size_t,Sequence*> hashToSequence;
 	std::vector<Variable*> vars;
 	std::vector<Terminal*> terminals;
 	std::vector<Sequence*> sequences;
@@ -58,7 +60,17 @@ namespace Words {
   }
 
   IEntry* Context::addSequence (const Context::SeqInput& s) {
-	_internal->sequences.push_back ( new Sequence (_internal->sequences.size(),s));
+	std::unique_ptr<Sequence> nentry (new Sequence (_internal->sequences.size(),s));
+	auto hash = nentry->hash ();
+	auto it = _internal->hashToSequence.find (hash);
+	if (it != _internal->hashToSequence.end ()) {
+	  assert (*nentry == *it->second && "Hash Collision");
+	  if (*nentry != *it->second) {
+		throw Words::WordException ("Hash Collision while adding Sequence");
+	  }
+	  return it->second;
+	}
+	_internal->sequences.push_back (nentry.release ());
 	return _internal->sequences.back();
   }
   

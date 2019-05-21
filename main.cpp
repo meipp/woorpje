@@ -190,8 +190,8 @@ int main (int argc, char** argv) {
   CoutResultGatherer gatherer (foroutput);
   if (solver) {
 	if (simplifier) {
-	  std::cout << "Simpifiers are currently not  working." << std::endl;
-	  Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
+	  std::cout << "Simpifiers are currently not  working properly." << std::endl;
+	  //Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
 	  std::cout << "Running Simplifiers" << std::endl;
 	  Words::Solvers::CoreSimplifier reducer;
 	  Words::Substitution sub;

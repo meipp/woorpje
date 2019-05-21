@@ -11,7 +11,7 @@ if (ENABLE_Z3)
    target_link_Libraries (smtsolver ${Z3_LIBRARIES})
 endif(ENABLE_Z3)
 
-
+	
    target_sources (smtsolver PRIVATE core.cpp)	
 
 
