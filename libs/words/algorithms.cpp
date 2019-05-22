@@ -9,8 +9,8 @@ Words::Algorithms::ParikhImage Words::Algorithms::calculateParikh (Word& w){
 }
 
 void Words::Algorithms::resetParikImage(ParikhImage& image){
-  for (auto x : image){
-	image[x.first] = 0;
+  for (auto& x : image){
+	x.second = 0;
   }
 }
 
@@ -21,18 +21,17 @@ void Words::Algorithms::calculateParikhMatrices (Word& w, ParikhMatrix& p_pm, Pa
   ParikhImage s_start = p_pm.back ();
   resetParikImage(s_start);
   s_pm[0] = s_start;
-  auto itBegin = w.begin();
-  auto it = w.end();
-  --it;
+  auto it = w.rbegin();
+  auto end = w.rend();
   int wSize = w.characters()-1;
   int iSize = w.characters()-1;
-  for (; it != itBegin; --it) {
-	ParikhImage p_nPi = p_pm[iSize];
-	ParikhImage s_nPi = s_pm[wSize-iSize];
+  for (; it != end; ++it) {
+	ParikhImage& p_nPi = p_pm[iSize];
+	ParikhImage& s_nPi = s_pm[wSize-iSize];
 	iSize--;
 	p_nPi[*it]--;
 	s_nPi[*it]++;
-	p_pm[iSize] = p_nPi;
-	s_pm[wSize-iSize] = s_nPi;
+	//p_pm[iSize] = p_nPi;
+	//s_pm[wSize-iSize] = s_nPi;
   }
 }

@@ -35,6 +35,7 @@ namespace Words {
 	Context* getContext () const {return context;}
 	virtual std::ostream& output (std::ostream& os) const  {return  os << getRepr ();}
 	char getRepr () const {return repr;}
+	virtual std::size_t length () const {return 1;}
   private:
 	size_t index;
 	char repr;
@@ -95,7 +96,7 @@ namespace Words {
 	  return entries != s.entries;
 	}
 
-	size_t length () const  {return entries.size();}
+	size_t length () const override  {return entries.size();}
 
 	bool isFactorOf (const Sequence& seq) {
 	  if (length () > seq.length ()) {
@@ -273,7 +274,6 @@ namespace Words {
 	  
 	  void operator= (value_type t) {cur = t;}
 	  Iterator& operator++ () {increment();return *this;}
-	  Iterator& operator-- () {--cur;return *this;}
 	private:
 	  void increment () {
 		if (internal) {
@@ -323,7 +323,14 @@ namespace Words {
 	Word (std::initializer_list<IEntry*> list) : word (list) {}
 	Word (std::vector<IEntry*>&& list) : word(list) {}
 	~Word () {}
-	size_t characters () const {return word.size();}
+	
+	size_t characters () const {
+	  std::size_t l = 0;
+	  for (auto e : word)
+		l+=e->length();
+	  return l;
+	  //return word.size();
+	}
 	size_t entries () const {return word.size();}
 	auto begin () const {return const_iterator(word.begin(),word.end());}
 	auto end () const {return const_iterator(word.end(),word.end());}
@@ -347,8 +354,6 @@ namespace Words {
 	//auto rbegin () {return riterator(word.rbegin(),word.rend());}
 	//auto rend () {return riterator(word.rend(),word.rend());}
 	
-	auto get(size_t index) const  {return word[index];}
-
 	bool noVariableWord() const {
 	  return word.size() == 1 &&  word.at(0)->isSequence ();
 	}
@@ -426,22 +431,7 @@ namespace Words {
 	  return words;
 	}
 	
-	bool isFactor(const Word& other){
-	  size_t tSize = this->characters();
-	  size_t oSize = other.characters();
-	  for(size_t i = 0; i <= tSize-oSize; i++ ){
-		size_t j;
-		for(j = 0; j < oSize; j++){
-		  if (this->get(i+j) != other.get(j))
-			break;
-			}
-		
-		if (j == oSize)
-		  return true;
-	  }
-	  return false;
-	}
-   
+	
 	
 	bool operator==(Word const& rhs) const {
 	  return word == rhs.word;

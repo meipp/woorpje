@@ -484,89 +484,89 @@ namespace Words {
 
 			for (auto a : eq.ctxt->getVariableAlphabet()){
 				if(coefficentLhs != 0){
-						seenTwoVariables = true;
-						break; //  saw two variables, we can not do anything at this point
-					} else {
-						if (rhs_p_pm[rSize-1].count(a) == 1 && lhs_p_pm[lSize-1].count(a) == 1){
-							coefficentLhs = (lhs_p_pm[lSize-1][a]-rhs_p_pm[rSize-1][a]);
-						} else if (lhs_p_pm[lSize-1].count(a) == 1){
-							coefficentLhs = lhs_p_pm[lSize-1][a];
-						} else if (rhs_p_pm[rSize-1].count(a) == 1){
-							coefficentLhs = -rhs_p_pm[rSize-1][a];
-						}
-					}
+				  seenTwoVariables = true;
+				  break; //  saw two variables, we can not do anything at this point
+				} else {
+				  if (rhs_p_pm[rSize-1].count(a) == 1 && lhs_p_pm[lSize-1].count(a) == 1){
+					coefficentLhs = (lhs_p_pm[lSize-1][a]-rhs_p_pm[rSize-1][a]);
+				  } else if (lhs_p_pm[lSize-1].count(a) == 1){
+					coefficentLhs = lhs_p_pm[lSize-1][a];
+				  } else if (rhs_p_pm[rSize-1].count(a) == 1){
+					coefficentLhs = -rhs_p_pm[rSize-1][a];
+				  }
+				}
 			}
 			if (!seenTwoVariables){
-				for (auto a : eq.ctxt->getTerminalAlphabet()){
-					if (rhs_p_pm[rSize-1].count(a) == 1 && lhs_p_pm[lSize-1].count(a) == 1){
-						sumRhs = sumRhs+(lhs_p_pm[lSize-1][a]-rhs_p_pm[rSize-1][a]);
-					} else if (lhs_p_pm[lSize-1].count(a) == 1){
-						sumRhs = sumRhs+lhs_p_pm[lSize-1][a];
-					} else if (rhs_p_pm[rSize-1].count(a) == 1){
-						sumRhs = sumRhs-rhs_p_pm[rSize-1][a];
-					}
+			  for (auto a : eq.ctxt->getTerminalAlphabet()){
+				if (rhs_p_pm[rSize-1].count(a) == 1 && lhs_p_pm[lSize-1].count(a) == 1){
+				  sumRhs = sumRhs+(lhs_p_pm[lSize-1][a]-rhs_p_pm[rSize-1][a]);
+				} else if (lhs_p_pm[lSize-1].count(a) == 1){
+				  sumRhs = sumRhs+lhs_p_pm[lSize-1][a];
+				} else if (rhs_p_pm[rSize-1].count(a) == 1){
+				  sumRhs = sumRhs-rhs_p_pm[rSize-1][a];
 				}
-
-				if (coefficentLhs != 0 && sumRhs % coefficentLhs != 0){
-					return Simplified::ReducedNsatis;
-				}
-			}
-
-		for (int i = 1; i < minSize; i++){
-			sri = (rSize-1)-i;
-			sli = (lSize-1)-i;
-
-			Words::Algorithms::ParikhImage lhs_p_pi = lhs_p_pm[i];
-			Words::Algorithms::ParikhImage rhs_p_pi = rhs_p_pm[i];
-			Words::Algorithms::ParikhImage lhs_s_pi = lhs_s_pm[i];
-			Words::Algorithms::ParikhImage rhs_s_pi = rhs_s_pm[i];
-			
-			// Process variables
-			for (auto x : variableAlphabet){
-				if(processPrefix){
-					if(lhs_p_pi[x] != rhs_p_pi[x]){
-						processPrefix = false;
-					}
-				}
-				if(processSuffix){
-					if(lhs_s_pi[x] != rhs_s_pi[x]){
-						processSuffix = false;
-					}
-				}
-				if(!processPrefix && !processSuffix){
-					break;
-				}
-			}
-			// Process terminals
-			for (auto x : terminalAlphabet){
-				if(processPrefix){
-					if(lhs_p_pi[x] != rhs_p_pi[x]){
-						terminalsAlignPrefix = false;
-					}
-				}
-				if(processSuffix){
-					if(lhs_s_pi[x] != rhs_s_pi[x]){
-						terminalsAlignSuffix = false;
-					}
-				}
-				if(!processPrefix && !processSuffix){
-					break;
-				}
-			}
-
-			if ((processPrefix && !terminalsAlignPrefix) || (processSuffix && !terminalsAlignSuffix)){
+			  }
+			  
+			  if (coefficentLhs != 0 && sumRhs % coefficentLhs != 0){
 				return Simplified::ReducedNsatis;
+			  }
 			}
-
-			processPrefix = true;
-			processSuffix = false;
-			terminalsAlignPrefix = true;
-			terminalsAlignSuffix = true;
-		}
-		return Simplified::JustReduced;;
+			
+			for (int i = 1; i < minSize; i++){
+			  sri = (rSize-1)-i;
+			  sli = (lSize-1)-i;
+			  
+			  Words::Algorithms::ParikhImage lhs_p_pi = lhs_p_pm[i];
+			  Words::Algorithms::ParikhImage rhs_p_pi = rhs_p_pm[i];
+			  Words::Algorithms::ParikhImage lhs_s_pi = lhs_s_pm[i];
+			  Words::Algorithms::ParikhImage rhs_s_pi = rhs_s_pm[i];
+			  
+			  // Process variables
+			  for (auto x : variableAlphabet){
+				if(processPrefix){
+				  if(lhs_p_pi[x] != rhs_p_pi[x]){
+					processPrefix = false;
+				  }
+				}
+				if(processSuffix){
+				  if(lhs_s_pi[x] != rhs_s_pi[x]){
+					processSuffix = false;
+				  }
+				}
+				if(!processPrefix && !processSuffix){
+				  break;
+				}
+			  }
+			  // Process terminals
+			  for (auto x : terminalAlphabet){
+				if(processPrefix){
+				  if(lhs_p_pi[x] != rhs_p_pi[x]){
+					terminalsAlignPrefix = false;
+				  }
+				}
+				if(processSuffix){
+				  if(lhs_s_pi[x] != rhs_s_pi[x]){
+					terminalsAlignSuffix = false;
+				  }
+				}
+				if(!processPrefix && !processSuffix){
+				  break;
+				}
+			  }
+			  
+			  if ((processPrefix && !terminalsAlignPrefix) || (processSuffix && !terminalsAlignSuffix)){
+				return Simplified::ReducedNsatis;
+			  }
+			  
+			  processPrefix = true;
+			  processSuffix = false;
+			  terminalsAlignPrefix = true;
+			  terminalsAlignSuffix = true;
+			}
+			return Simplified::JustReduced;;
 	  }
 	};
-
+	
 	
 	/*using CoreSimplifier = SequenceSimplifier<
 			RunAllEq<SequenceSimplifier<PreSuffixReducer, SequenceSimplifier<CharacterMismatchDetection,ParikhMatrixMismatch>>>,
