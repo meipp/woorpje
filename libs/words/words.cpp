@@ -44,7 +44,7 @@ namespace Words {
 	if (_internal->reprToEntry.count (c)) {
 	  return _internal->reprToEntry[c];
 	}
-	_internal->vars.push_back(new Variable (c,_internal->vars.size()));
+	_internal->vars.push_back(new Variable (c,_internal->vars.size(),this));
 	_internal->reprToEntry[c] = _internal->vars.back();
 	return _internal->vars.back();
   }
@@ -53,14 +53,14 @@ namespace Words {
 	if (_internal->reprToEntry.count (c)) {
 	  return _internal->reprToEntry[c];
 	}
-	_internal->terminals.push_back(new Terminal(c,_internal->terminals.size()));
+	_internal->terminals.push_back(new Terminal(c,_internal->terminals.size(),this));
 	_internal->reprToEntry[c] = _internal->terminals.back();
 	return _internal->terminals.back();
 	
   }
 
   IEntry* Context::addSequence (const Context::SeqInput& s) {
-	std::unique_ptr<Sequence> nentry (new Sequence (_internal->sequences.size(),s));
+	std::unique_ptr<Sequence> nentry (new Sequence (_internal->sequences.size(),s,this));
 	auto hash = nentry->hash ();
 	auto it = _internal->hashToSequence.find (hash);
 	if (it != _internal->hashToSequence.end ()) {
@@ -70,7 +70,9 @@ namespace Words {
 	  }
 	  return it->second;
 	}
-	_internal->sequences.push_back (nentry.release ());
+	Sequence* seq = nentry.release ();
+	_internal->sequences.push_back (seq);
+	_internal->hashToSequence.insert(std::make_pair (hash,seq));
 	return _internal->sequences.back();
   }
   
@@ -155,5 +157,7 @@ namespace Words {
 	}
 	return os;
   }
-    
+
+
+  
 }

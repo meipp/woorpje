@@ -193,9 +193,8 @@ int main (int argc, char** argv) {
 	  std::cout << "Simpifiers are currently not  working properly." << std::endl;
 	  //Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
 	  std::cout << "Running Simplifiers" << std::endl;
-	  Words::Solvers::CoreSimplifier reducer;
 	  Words::Substitution sub;
-	  auto res = reducer.solverReduce (opt,sub);
+	  auto res = Words::Solvers::CoreSimplifier::solverReduce (opt,sub);
 	  std::cout << "Equation System after simplification" << std::endl << opt << std::endl;;
 	  
 	  switch (res) {

@@ -17,9 +17,10 @@ namespace Words {
   class Variable;
   class Terminal;
   class Sequence;
+  class Context;
   class IEntry {
   public:
-	IEntry (char repr,size_t i) : index(i),repr(repr) {}
+	IEntry (char repr,size_t i,Context* ctxt) : index(i),repr(repr),context(ctxt) {}
 	virtual ~IEntry () {}
 	virtual size_t getIndex ()  {return index;}
 	virtual bool isVariable () const {return false;}	
@@ -31,11 +32,13 @@ namespace Words {
 	virtual const Variable* getVariable () const {return nullptr;}	
 	virtual const Terminal* getTerminal () const {return nullptr;}
 	virtual const Sequence* getSequence () const {return nullptr;}
+	Context* getContext () const {return context;}
 	virtual std::ostream& output (std::ostream& os) const  {return  os << getRepr ();}
 	char getRepr () const {return repr;}
   private:
 	size_t index;
 	char repr;
+	Context* context;
   };
   
   class Variable : public IEntry {
@@ -45,7 +48,7 @@ namespace Words {
 	virtual Variable* getVariable () {return this;}
 	virtual const Variable* getVariable () const {return this;}
   protected:
-	Variable (char repr, size_t index) : IEntry(repr,index) {}
+	Variable (char repr, size_t index,Context* ctxt) : IEntry(repr,index,ctxt) {}
   };
 
   class Sequence : public IEntry {
@@ -78,7 +81,7 @@ namespace Words {
 	  }
 	  return os;
 	}
-
+   
 	size_t hash () const {
 	  return Words::Hash::Hash<const IEntry*> (entries.data(), entries.size(),static_cast<uint32_t> (entries.size()));
 	  
@@ -170,7 +173,7 @@ namespace Words {
 
 	
   protected:
-	Sequence (size_t index,std::vector<IEntry*> e) : IEntry('#',index),entries(e) {}
+	Sequence (size_t index,std::vector<IEntry*> e,Context* ctxt) : IEntry('#',index,ctxt),entries(e) {}
   private:
 	std::vector<IEntry*> entries;
   };
@@ -186,7 +189,7 @@ namespace Words {
 	virtual const Terminal* getTerminal () const {return this;}	
 	virtual bool isEpsilon () const {return false;}
   protected:
-	Terminal (char repr, size_t index) : IEntry(repr,index) {}
+	Terminal (char repr, size_t index,Context* ctxt) : IEntry(repr,index,ctxt) {}
   };  
   
   template<class Iter>
@@ -321,6 +324,7 @@ namespace Words {
 	Word (std::vector<IEntry*>&& list) : word(list) {}
 	~Word () {}
 	size_t characters () const {return word.size();}
+	size_t entries () const {return word.size();}
 	auto begin () const {return const_iterator(word.begin(),word.end());}
 	auto end () const {return const_iterator(word.end(),word.end());}
 
@@ -369,7 +373,7 @@ namespace Words {
 		  if(ranOnce){
 			newWord.insert(last_pos, it);
 		  }
-		  newWord.insert(to.begin(),to.end());
+		  newWord.insert(to.ebegin(),to.eend());
 		  last_pos = it+1;
 		  replaced = true;
 		}
@@ -437,8 +441,7 @@ namespace Words {
 	  }
 	  return false;
 	}
-	
-	
+   
 	
 	bool operator==(Word const& rhs) const {
 	  return word == rhs.word;
