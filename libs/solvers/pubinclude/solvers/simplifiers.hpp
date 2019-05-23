@@ -590,11 +590,11 @@ namespace Words {
 		*/
 
 
-	using FoldPreSuf = SequenceSimplifier2<Words::Equation,ConstSequenceFolding,PrefixReducer,SuffixReducer>;
-	using CoreSimplifier = SequenceSimplifier2<Words::Options,RunAllEq<FoldPreSuf>,
-											   SubstitutionReasoningNew<FoldPreSuf>
-											   >;
-	
+	using FoldPreSufParikh = SequenceSimplifier2<Words::Equation,ConstSequenceFolding,PrefixReducer,SuffixReducer,ParikhMatrixMismatch>;
+	using CoreSimplifier = SequenceSimplifier2<Words::Options,RunAllEq<FoldPreSufParikh>,
+	SubstitutionReasoningNew<FoldPreSufParikh>
+												   >;
+	//using CoreSimplifier = RunAllEq<ParikhMatrixMismatch>;
 	//using CoreSimplifier = RunAllEq<PrefixReducer>;
 	//using CoreSimplifier = RunAllEq<SequenceSimplifier<ConstSequenceMismatch,
 	//PreSuffixReducer

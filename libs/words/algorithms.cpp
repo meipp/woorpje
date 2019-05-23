@@ -23,9 +23,9 @@ void Words::Algorithms::calculateParikhMatrices (Word& w, ParikhMatrix& p_pm, Pa
   s_pm[0] = s_start;
   auto it = w.rbegin();
   auto end = w.rend();
-  int wSize = w.characters()-1;
+  const int wSize = w.characters()-1;
   int iSize = w.characters()-1;
-  for (; it != end; ++it) {
+  for (; it != end && iSize > 0; ++it) {
 	ParikhImage p_nPi = p_pm[iSize];
 	ParikhImage s_nPi = s_pm[wSize-iSize];
 	iSize--;
