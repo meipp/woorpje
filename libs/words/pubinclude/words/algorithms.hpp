@@ -12,7 +12,8 @@ namespace Words {
 	ParikhImage calculateParikh (Word& w);
 
 	void resetParikImage(ParikhImage& image);
-	
+    void emptyParikhImage(Equation& eq, ParikhImage& image);
+    void emptyParikhMatrix(Equation& eq, ParikhMatrix& image);
 	void calculateParikhMatrices (Word& w, ParikhMatrix& p_pm, ParikhMatrix& s_pm);
 
   }

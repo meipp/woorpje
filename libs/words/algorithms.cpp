@@ -14,6 +14,23 @@ void Words::Algorithms::resetParikImage(ParikhImage& image){
   }
 }
 
+void Words::Algorithms::emptyParikhImage(Equation& eq, ParikhImage& image){
+    for (auto a : eq.ctxt->getTerminalAlphabet()){
+        image[a] = 0;
+    }
+    for (auto a : eq.ctxt->getVariableAlphabet()){
+        image[a] = 0;
+    }
+}
+
+void Words::Algorithms::emptyParikhMatrix(Equation& eq, ParikhMatrix& m){
+    ParikhImage image;
+    emptyParikhImage(eq,image);
+    m.resize(1);
+    m[0] = image;
+}
+
+
 void Words::Algorithms::calculateParikhMatrices (Word& w, ParikhMatrix& p_pm, ParikhMatrix& s_pm) {
   p_pm.resize (w.characters());
   s_pm.resize (w.characters());

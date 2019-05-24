@@ -354,9 +354,6 @@ namespace Words {
 	//auto rbegin () {return riterator(word.rbegin(),word.rend());}
 	//auto rend () {return riterator(word.rend(),word.rend());}
 	
-	bool noVariableWord() const {
-	  return word.size() == 1 &&  word.at(0)->isSequence ();
-	}
 
 	void getSequences ( std::vector<Sequence*>& seq) {
 	  for (auto i : word) {
@@ -365,6 +362,16 @@ namespace Words {
 		}
 	  }
 	}
+
+    bool noVariableWord() const {
+      return word.size() == 1 &&  word.at(0)->isSequence ();
+    }
+
+    bool noTerminalWord() {
+       std::vector<Sequence*> seqs;
+       getSequences(seqs);
+       return seqs.size() == 0;
+    }
 	
 	bool substitudeVariable(IEntry* variable, const Word& to) {
 	  bool replaced = false;

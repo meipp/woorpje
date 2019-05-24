@@ -4,6 +4,8 @@
 #include "words/words.hpp"
 #include "words/algorithms.hpp"
 
+#include <iostream>
+
 namespace Words {
   namespace Solvers {
 	enum class Simplified {
@@ -458,14 +460,33 @@ namespace Words {
 	// Uses the length arguments for unsat check
 	class ParikhMatrixMismatch : public EquationSimplifier{
 	public:
+
+      static Simplified oneSideEmptyCheck (Words::Word &w){
+          if (w.noVariableWord())
+              return Simplified::ReducedNsatis;
+           else
+              return Simplified::JustReduced;
+      }
+
 	  static Simplified solverReduce  (Words::Equation& eq,Substitution&) {
 		  Words::Algorithms::ParikhMatrix lhs_p_pm;
 		  Words::Algorithms::ParikhMatrix lhs_s_pm;
 		  Words::Algorithms::ParikhMatrix rhs_p_pm;
 		  Words::Algorithms::ParikhMatrix rhs_s_pm;
-		  Words::Algorithms::calculateParikhMatrices(eq.lhs,lhs_p_pm,lhs_s_pm);
-		  Words::Algorithms::calculateParikhMatrices(eq.rhs,rhs_p_pm,rhs_s_pm);
-		  bool processPrefix = true;
+
+          // Avoid the calculation of an empty parikh image
+          if (eq.lhs.characters() == 0 && eq.rhs.characters() == 0){
+            return Simplified::ReducedSatis;
+          } else if (eq.lhs.characters() == 0){
+              return oneSideEmptyCheck(eq.lhs);
+          } else if (eq.rhs.characters() == 0) {
+              return oneSideEmptyCheck(eq.rhs);
+          }
+
+          Words::Algorithms::calculateParikhMatrices(eq.lhs,lhs_p_pm,lhs_s_pm);
+          Words::Algorithms::calculateParikhMatrices(eq.rhs,rhs_p_pm,rhs_s_pm);
+
+          bool processPrefix = true;
 		  bool processSuffix = false;
 		  bool terminalsAlignPrefix = true;
 		  bool terminalsAlignSuffix = true;
