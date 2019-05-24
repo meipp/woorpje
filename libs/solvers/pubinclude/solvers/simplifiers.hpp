@@ -611,7 +611,7 @@ namespace Words {
 		*/
 
 
-	using FoldPreSufParikh = SequenceSimplifier2<Words::Equation,ConstSequenceFolding,PrefixReducer,SuffixReducer,ParikhMatrixMismatch>;
+    using FoldPreSufParikh = SequenceSimplifier2<Words::Equation,ConstSequenceFolding,PrefixReducer,SuffixReducer,ParikhMatrixMismatch,ConstSequenceMismatch>;
 	using CoreSimplifier = SequenceSimplifier2<Words::Options,RunAllEq<FoldPreSufParikh>,
 	SubstitutionReasoningNew<FoldPreSufParikh>
 												   >;
