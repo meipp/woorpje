@@ -15,7 +15,8 @@ namespace Words {
 					  SatEncoding,
 					  SatEncodingOld,
 					  Reachability,
-					  PureSMT
+					  PureSMT,
+					  Levis
 	};
 
 	enum class Result {

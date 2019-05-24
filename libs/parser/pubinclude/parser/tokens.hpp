@@ -41,7 +41,8 @@ enum  Keywords{
 					SatGlucose,
 					SatGlucoseOld,
 					Reachability,
-					SMT
+					SMT,
+					Levis
 };
 
 

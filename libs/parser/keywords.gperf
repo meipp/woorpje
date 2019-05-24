@@ -14,6 +14,7 @@ SatGlucose, STRING, SatGlucose
 SatGlucoseOld, STRING, SatGlucoseOld
 Reachability, STRING, Reachability
 SMT, STRING, SMT
+Levis, STRING, Levis
 %%
 
 bool KeywordChecker::isKeyword (std::string str) {

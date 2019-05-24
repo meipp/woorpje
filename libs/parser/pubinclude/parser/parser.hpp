@@ -68,6 +68,9 @@ namespace Words {
 		  if (tryacceptKeyword (SMT)) {
 			return Solvers::makeSolver<Solvers::Types::PureSMT> ();
 		  }
+		  if (tryacceptKeyword (Levis)) {
+			return Solvers::makeSolver<Solvers::Types::Levis> ();
+		  }
 		}
 	  }
 	  catch (ParserException& p) {
