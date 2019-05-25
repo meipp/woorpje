@@ -355,6 +355,10 @@ namespace Words {
 	//auto rend () {return riterator(word.rend(),word.rend());}
 	
 
+	uint32_t hash (uint32_t seed) const {
+	  return Words::Hash::Hash<const IEntry*> (word.data (),word.size(),seed);
+	}
+	
 	void getSequences ( std::vector<Sequence*>& seq) {
 	  for (auto i : word) {
 		if (i->isSequence ()) {
@@ -505,12 +509,26 @@ namespace Words {
 	Word lhs;
 	Word rhs;
 	Context* ctxt;
+	uint32_t hash (uint32_t seed) const {
+	  return rhs.hash (lhs.hash(seed));
+	}
   };
   
-  struct Options {
+  struct Options : public std::enable_shared_from_this<Options>{
 	Context context;
 	std::vector<Equation> equations;
 	std::vector<Constraints::Constraint_ptr> constraints;
+
+	uint32_t eqhash (uint32_t seed) const {
+	  for (auto& eq : equations) {
+		seed = eq.hash(seed);
+	  }
+	  return seed;
+	}
+	
+	std::shared_ptr<Options> copy () const  {return std::make_shared<Options> (*this);}
+																			   
+	
   };
   
   using Substitution = std::map<IEntry*, Word >;
