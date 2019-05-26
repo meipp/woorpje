@@ -49,12 +49,15 @@ namespace Words {
 		PassedWaiting waiting;
 		Graph graph;
 		Handler handler (waiting,graph,sub);
+		
 		auto insert = opt.copy ();
 		waiting.insert (insert);
 		graph.makeNode (insert);
+
 		while (waiting.size()) {
 		  auto cur = waiting.pullElement ();
 		  RuleSequencer<Handler,DummyRule>::runRules (handler,*cur); 
+		  relay.progressMessage ((Words::Solvers::Formatter ("Passed: %1%, Waiting: %2%") % waiting.passedsize() % waiting.size()).str());
 		}
 		return ::Words::Solvers::Result::NoIdea;
 	  }

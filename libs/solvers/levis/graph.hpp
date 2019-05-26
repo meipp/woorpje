@@ -50,7 +50,10 @@ namespace Words {
 		  to->incoming.push_back (edge.get());
 		  edges.push_back(std::move(edge));
 		}
-				  
+
+		auto findWayBackFrom (Node* from) {
+		  
+		}
 		
 	  private:
 		std::unordered_map<uint32_t,std::unique_ptr<Node>> nodes;

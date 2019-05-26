@@ -54,11 +54,12 @@ namespace Words {
 	  }
 	  void progressMessage (const std::string& s) override {
 		timep now = std::chrono::high_resolution_clock::now();
-		if (std::chrono::duration_cast<std::chrono::milliseconds>( now - last ).count() >=5 ) {
-		  os << arr[++i] << " " << s << "\r";
+		if (std::chrono::duration_cast<std::chrono::milliseconds>( now - last ).count() >= 1000 ) {
+		  os << "\x1b[2K" << arr[i++] << " " << s << "\r";
 		  if (arr[i] == '\0')
 			i = 0;
 		  last = now;
+		  os.flush();
 		}
 	   
 	  }
@@ -70,8 +71,6 @@ namespace Words {
       size_t i = 0;
 	  timep last;
 	};
-
-	
 	
 	//Add Callback function for solver to provide solution details
 	class ResultGatherer {

@@ -29,6 +29,11 @@ namespace Words {
 		std::size_t size () const  {
 		  return queue.size ();
 		}
+
+		std::size_t passedsize () const  {
+		  return passed.size ();
+		}
+		
 		
 	  private:
 		std::set<uint32_t> passed;
