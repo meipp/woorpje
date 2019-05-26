@@ -98,7 +98,7 @@ namespace Words {
 
 	size_t length () const override  {return entries.size();}
 
-	bool isFactorOf (const Sequence& seq) {
+    bool isFactorOf (const Sequence& seq) {
 	  if (length () > seq.length ()) {
 		return false;
 	  }
@@ -110,17 +110,19 @@ namespace Words {
 		auto oend = seq.end ();
 		auto mend = end();
 		auto mit = begin ();
-		auto it = mit;
+        auto it = mit;
+
 		for (;oit != oend; ++oit) {	  
 		  if (*it == *oit) {
-			for (; it!=mend; ++oit,++it) {
-			  if (*it != *oit) {
+            auto currentOit = oit;
+            for (; it!=mend; ++currentOit,++it) {
+              if (*it != *currentOit) {
 				break;
 			  }
 			}
 			if (it == mend)
 			  return true;
-			else
+            else
 			  it = mit;
 		  }
 		}
