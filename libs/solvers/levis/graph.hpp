@@ -16,10 +16,13 @@ namespace Words {
 	  };
 	  
 	  struct Edge {
-		Edge (Node* f, Node* t) : from(f),to (t) {}
+		Edge (Node* f, Node* t,const Words::Substitution& subs) : from(f),
+																  to (t),
+																  subs(subs) {}
 			  
 		Node* from;
 		Node * to;
+		Words::Substitution subs;
 	  };
 	  
 	  class Graph {
@@ -42,8 +45,8 @@ namespace Words {
 		  return nodes.find(n.eqhash(0))->second.get();
 		}
 
-		void addEdge (Node* from, Node* to) {
-		  auto edge = std::make_unique<Edge> (from,to);
+		void addEdge (Node* from, Node* to,const Words::Substitution& s) {
+		  auto edge = std::make_unique<Edge> (from,to,s);
 		  to->incoming.push_back (edge.get());
 		  edges.push_back(std::move(edge));
 		}
