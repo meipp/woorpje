@@ -125,8 +125,8 @@ namespace Words {
 			eq.lhs.replace_entry (lfirst,seq);
 			
 		  }
-		  else 
-			return Simplified::ReducedNsatis;
+          else
+            return Simplified::ReducedNsatis;
 		}
 		else
 		  break;
