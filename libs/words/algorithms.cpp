@@ -44,11 +44,11 @@ void Words::Algorithms::calculateParikhMatrices (Word& w, ParikhMatrix& p_pm, Pa
   int iSize = w.characters()-1;
   for (; it != end && iSize > 0; ++it) {
 	ParikhImage p_nPi = p_pm[iSize];
-	ParikhImage s_nPi = s_pm[wSize-iSize];
-	iSize--;
-	p_nPi[*it]--;
-	s_nPi[*it]++;
-	p_pm[iSize] = p_nPi;
-	s_pm[wSize-iSize] = s_nPi;
+    ParikhImage s_nPi = s_pm[wSize-iSize];
+    s_nPi[*it]++;
+    s_pm[wSize-iSize] = s_nPi;
+    iSize--;
+    p_nPi[*it]--;
+	p_pm[iSize] = p_nPi;    
   }
 }

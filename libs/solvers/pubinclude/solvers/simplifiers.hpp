@@ -259,8 +259,8 @@ namespace Words {
 	public:
 	  static Simplified replaceVarInEquation (Words::Equation& eq,  Words::IEntry* var, Words::Word& repl) {
 		Substitution subs;
-		eq.lhs.substitudeVariable (var,repl);
-		eq.rhs.substitudeVariable (var,repl);
+        eq.lhs.substitudeVariable (var,repl);
+        eq.rhs.substitudeVariable (var,repl);
 		return Inner::solverReduce (eq,subs);
 	  }
 
@@ -270,6 +270,8 @@ namespace Words {
 		while (it != end) {
 		  IEntry* variable = nullptr;
 		  Word* subsWord = nullptr;
+
+          // Select a variable and a proper substitution
 		  if (it->lhs.entries () == 1 && (*it->lhs.begin ())->isVariable()) {
 			variable = (*it->lhs.begin ());
 			subsWord = &it->rhs;
@@ -279,6 +281,7 @@ namespace Words {
 			variable = (*it->rhs.begin ());
 			subsWord = &it->lhs;
 		  }
+
 
 		  if (variable) {
 			std::vector<Words::Equation> eqs;
@@ -291,19 +294,22 @@ namespace Words {
 			
 			
 			for (auto iit = opt.equations.begin(); iit != opt.equations.end();++iit) {
-			  if (it == iit)
+              if (it == iit){
 				continue;
+              }
+
 			  auto res = replaceVarInEquation (*iit,variable,*subsWord); 
-			  if ( res == Simplified::ReducedNsatis)  {
+              if ( res == Simplified::ReducedNsatis)  {
 				return Simplified::ReducedNsatis;
 			  }
-			  else if ( res == Simplified::JustReduced) {
-				eqs.push_back (*iit);
+              else if ( res == Simplified::JustReduced) {
+                eqs.push_back (*iit);
 			  }
+
 			}
 			opt.equations = eqs;
 			it = opt.equations.begin();
-			end = opt.equations.end();
+            end = opt.equations.end();
 		  }
 		  else 
 			++it;
@@ -319,9 +325,7 @@ namespace Words {
 			ConstSequenceFolding::solverReduce (eq,dummy);
 			opt.equations.push_back(eq);
 		  }
-		  
 
-		  
 		  return Simplified::JustReduced;
 		  
 		}
@@ -504,19 +508,21 @@ namespace Words {
 			int coefficentLhs = 0;
 
 			for (auto a : eq.ctxt->getVariableAlphabet()){
-				if(coefficentLhs != 0){
+                if(coefficentLhs != 0){
 				  seenTwoVariables = true;
 				  break; //  saw two variables, we can not do anything at this point
-				} else {
+                } else {
 				  if (rhs_p_pm[rSize-1].count(a) == 1 && lhs_p_pm[lSize-1].count(a) == 1){
 					coefficentLhs = (lhs_p_pm[lSize-1][a]-rhs_p_pm[rSize-1][a]);
 				  } else if (lhs_p_pm[lSize-1].count(a) == 1){
 					coefficentLhs = lhs_p_pm[lSize-1][a];
 				  } else if (rhs_p_pm[rSize-1].count(a) == 1){
 					coefficentLhs = -rhs_p_pm[rSize-1][a];
-				  }
+                  }
 				}
 			}
+
+
 			if (!seenTwoVariables){
 			  for (auto a : eq.ctxt->getTerminalAlphabet()){
 				if (rhs_p_pm[rSize-1].count(a) == 1 && lhs_p_pm[lSize-1].count(a) == 1){
@@ -527,20 +533,19 @@ namespace Words {
 				  sumRhs = sumRhs-rhs_p_pm[rSize-1][a];
 				}
 			  }
-			  
-			  if (coefficentLhs != 0 && sumRhs % coefficentLhs != 0){
+              if (coefficentLhs != 0 && sumRhs % coefficentLhs != 0){
 				return Simplified::ReducedNsatis;
 			  }
 			}
-			
+
 			for (int i = 1; i < minSize; i++){
 			  sri = (rSize-1)-i;
-			  sli = (lSize-1)-i;
-			  
+              sli = (lSize-1)-i;
+
 			  Words::Algorithms::ParikhImage lhs_p_pi = lhs_p_pm[i];
 			  Words::Algorithms::ParikhImage rhs_p_pi = rhs_p_pm[i];
-			  Words::Algorithms::ParikhImage lhs_s_pi = lhs_s_pm[i];
-			  Words::Algorithms::ParikhImage rhs_s_pi = rhs_s_pm[i];
+              Words::Algorithms::ParikhImage lhs_s_pi = lhs_s_pm[sli];
+              Words::Algorithms::ParikhImage rhs_s_pi = rhs_s_pm[sri];
 			  
 			  // Process variables
 			  for (auto x : variableAlphabet){
