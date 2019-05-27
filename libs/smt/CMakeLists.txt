@@ -1,4 +1,5 @@
 option (ENABLE_Z3 "Enable Z3")
+option (ENABLE_CVC4 "Enable CVC4")
 
 
 add_library (smtsolver STATIC)
@@ -11,7 +12,13 @@ if (ENABLE_Z3)
    target_link_Libraries (smtsolver ${Z3_LIBRARIES})
 endif(ENABLE_Z3)
 
-	
-   target_sources (smtsolver PRIVATE core.cpp)	
+if (ENABLE_CVC4)
+   find_package(CVC4)
+   add_definitions (-DENABLECVC4)
+   target_sources (smtsolver PRIVATE cvc4.cpp)
+   target_link_Libraries (smtsolver ${CVC4_LIBRARIES})
+endif(ENABLE_CVC4)
+
+target_sources (smtsolver PRIVATE core.cpp)	
 
 

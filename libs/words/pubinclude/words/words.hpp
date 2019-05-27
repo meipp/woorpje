@@ -477,6 +477,8 @@ namespace Words {
 	}
 	~WordBuilder ();
 	WordBuilder& operator<< (char c);
+
+	void flush ();
 	
   private:
 	Context& ctxt;

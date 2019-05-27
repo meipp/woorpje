@@ -54,6 +54,8 @@ namespace Words {
 	inline void buildEquationSystem (Solver& solver, const Words::Options& opt) {
 	  for (auto i : opt.context.getVariableAlphabet ())
 		solver.addVariable (i);
+	  for (auto i : opt.context.getTerminalAlphabet ())
+		solver.addTerminal (i);
 	  solver.addEquations (opt.equations.begin(),opt.equations.end());
 	  solver.addConstraints (opt.constraints.begin(),opt.constraints.end());
 	}

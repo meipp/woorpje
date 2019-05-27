@@ -15,8 +15,10 @@ namespace Words {
 	  void retriveSubstitution (Words::SMT::Solver& s, Words::Options& opt, Words::Substitution& sub) {
 		for (auto v :opt.context.getVariableAlphabet ()) {
 		  Words::Word w;
+		  
 		  auto wb = opt.context.makeWordBuilder (w);
 		  s.evaluate (v,*wb);
+		  wb->flush ();
 		  sub.insert (std::make_pair (v,w));
 		}
 	  }

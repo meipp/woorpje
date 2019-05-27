@@ -23,10 +23,6 @@ namespace Words {
 		//returns true if successor generation should stop
 		//
 		bool handle (const Words::Options& from, std::shared_ptr<Words::Options>& to, const Words::Substitution& sub) {
-		  auto node = graph.getNode (from);
-		  auto nnode = graph.makeNode (to);
-		  graph.addEdge (node,nnode,sub);
-		  waiting.insert(to);
 		  
 		  //TODO Check if the equation is
 		  // Trivially satisfied,
@@ -34,6 +30,11 @@ namespace Words {
 		  // If we should call the SMT solver
 		  // In either case of satisfied we need som code to reconstruct the substitution
 		  // For now we just return false thus apply rules until we reach a fix-point
+		  auto node = graph.getNode (from);
+		  auto nnode = graph.makeNode (to);
+		  graph.addEdge (node,nnode,sub);
+		  waiting.insert(to);
+		  
 		  return false;
 		}
 

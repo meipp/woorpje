@@ -19,9 +19,9 @@ namespace Words {
 	  }
 	  
 	  virtual ~Z3Solver () {}
-
-	  virtual Words::SMT::SolverResult solve () {
 		
+	  
+	  virtual Words::SMT::SolverResult solve () {
 		switch (Z3_solver_check (context,solver)) {
 		case Z3_L_TRUE:
 		  model = Z3_solver_get_model (context,solver);
@@ -44,7 +44,8 @@ namespace Words {
 		asts.insert (std::make_pair (v,ast));
 	  }
 	  
-	  virtual void addTerminal (Words::Terminal* ) {}
+	  virtual void addTerminal (Words::Terminal* t) {
+	  }
 
 	  virtual void addConstraint (const Constraints::Constraint& l) {
 		if (l.isLinear ()) {
@@ -70,6 +71,7 @@ namespace Words {
 		Z3_model_eval (context,model,asts.at(v),true,&ast);
 		auto str = Z3_get_string (context,ast);
 		while (*str != '\0') {
+		  std::cerr << *str << std::endl;
 		  wb << *str;
 		  str++;
 		}
@@ -108,7 +110,8 @@ namespace Words {
 		}
 
 		if (asts.size() > 1) 
-		  return Z3_mk_seq_concat (context,asts.size(),asts.data());				  else
+		  return Z3_mk_seq_concat (context,asts.size(),asts.data());
+		else
 		  return asts[0];
 		  
 		
@@ -122,10 +125,11 @@ namespace Words {
 	  Z3_sort intsort;
 	  Z3_solver solver;
 	  Z3_model model;
-  };
+	  };
   
 	Words::SMT::Solver_ptr makeZ3Solver () {
 	  return std::make_unique<Z3Solver> ();
 	}
   }
 }
+  
