@@ -16,20 +16,23 @@ struct RuleSequencer<Handler,First,RuleSequence...> {
     First::runRule (e,subs);
 
     if (subs.size() == 0)
-        RuleSequencer<Handler,RuleSequence...>::runRule (h);
+        RuleSequencer<Handler,RuleSequence...>::runRules(h,s);
+    else {
+        std::vector<Words::Equation> newEquations;
+        for(auto ee : s.equations){
+            for(auto x : subs){ // should only contain a single substitution at this point
+                ee.lhs.substitudeVariable(x.first,x.second);
+                ee.rhs.substitudeVariable(x.first,x.second);
+                newEquations.push_back(ee);
+            }
+        }
+        auto snew = s.copy();
+        snew->equations = newEquations;
 
-    std::vector<Words::Equation> newEquations;
-    for(auto ee : s.equations){
-        for(auto x : subs){ // should only contain a single substitution at this point
-            ee.lhs.substitudeVariable(x.first,x.second);
-            ee.rhs.substitudeVariable(x.first,x.second);
+        if (!h.handle (s,snew,subs)) {
+          RuleSequencer<Handler,RuleSequence...>::runRules(h,s);
         }
     }
-    auto snew = s.copy();
-    snew->equations = newEquations;
-    if (!h.handle (s,snew,subs)) {
-	  RuleSequencer<Handler,RuleSequence...>::runRule (h);
-	}
   }
 };
 
