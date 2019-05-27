@@ -56,7 +56,14 @@ namespace Words {
 
 		while (waiting.size()) {
 		  auto cur = waiting.pullElement ();
-		  RuleSequencer<Handler,DummyRule>::runRules (handler,*cur); 
+
+          std::cout << "THIS IS THE CURRENT ELEMENT!" << std::endl;
+          for(auto e : (*cur).equations){
+              std::cout << e << std::endl;
+          }
+          std::cout << "DONE!" << std::endl;
+
+          RuleSequencer<Handler,PrefixReasoningLeftHandSide,PrefixReasoningRightHandSide,PrefixReasoningEqual,PrefixEmptyWordLeftHandSide,PrefixEmptyWordRightHandSide,PrefixLetterLeftHandSide,PrefixLetterRightHandSide>::runRules (handler,*cur);
 		  relay.progressMessage ((Words::Solvers::Formatter ("Passed: %1%, Waiting: %2%") % waiting.passedsize() % waiting.size()).str());
 		}
 		return ::Words::Solvers::Result::NoIdea;
