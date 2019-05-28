@@ -29,6 +29,8 @@ struct RuleSequencer<Handler,First,RuleSequence...> {
         auto snew = s.copy();
         snew->equations = newEquations;
 
+        //std::cout << typeid(First).name() << std::endl;
+
         if (!h.handle (s,snew,subs)) {
           RuleSequencer<Handler,RuleSequence...>::runRules(h,s);
         }
@@ -54,6 +56,9 @@ struct RuleSequencer<Handler,First> {
             newEquations.push_back(ee);
         }
     }
+
+    //std::cout << typeid(First).name() << std::endl;
+
     auto snew = s.copy();
     snew->equations = newEquations;
     h.handle (s,snew,subs);

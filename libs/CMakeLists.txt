@@ -6,4 +6,4 @@ add_subdirectory (solvers)
 add_subdirectory (smt)
 
 add_library(libs INTERFACE)
-target_link_libraries (libs INTERFACE parser words host  solvers glucose smtsolver)
+target_link_libraries (libs INTERFACE parser solvers  words host glucose smtsolver)

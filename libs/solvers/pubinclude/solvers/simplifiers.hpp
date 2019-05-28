@@ -135,8 +135,7 @@ namespace Words {
 			rhs.ebegin () == rhs.eend ()) {
 		  return Simplified::ReducedSatis;
 		}
-	  
-		return Simplified::JustReduced;
+        return Simplified::JustReduced;
 	  }
 	};
 	  
@@ -232,14 +231,17 @@ namespace Words {
 		Words::Word::entry_iterator begin = lhs.ebegin();
 		Words::Word::entry_iterator end = lhs.eend();
 		for (auto it = begin; it != end ; ++it) {
-		  if (!(*it)->isSequence()) {
+          if ((*it)->isVariable()) {
 			if (nseq.size()) {
 			  nword.push_back (eq.ctxt->addSequence (nseq));
 			  nseq.clear ();
 			}
 			nword.push_back (*it);
 			  
-		  }
+          }
+          else if ((*it)->isTerminal()) {
+              nseq.push_back( (*it));
+          }
 		  else {
 			auto seq = (*it)->getSequence();
 			std::copy (seq->begin (),seq->end (),std::back_inserter (nseq));

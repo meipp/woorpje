@@ -14,7 +14,7 @@ namespace Words {
 		using Element = std::shared_ptr<Words::Options>;
 		void insert (const Element& elem) {
 		  auto hash = elem->eqhash(0);
-		  if (!passed.count (hash)) {
+          if (!passed.count (hash)) {
 			passed.insert(hash);
 			queue.push (elem);
 		  }
@@ -33,7 +33,11 @@ namespace Words {
 		std::size_t passedsize () const  {
 		  return passed.size ();
 		}
-		
+
+        void clear() {
+            std::queue<Element> empty;
+            std::swap( queue, empty );
+        }
 		
 	  private:
 		std::set<uint32_t> passed;
