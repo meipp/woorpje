@@ -1,6 +1,7 @@
 #ifndef _GRAPH_
 #define _GRAPH_
 
+#include <string>
 #include <unordered_map>
 #include <stack>
 
@@ -11,7 +12,7 @@ namespace Words {
 	namespace Levis {
 	  struct Edge;
 	  struct Node {
-		Node (const std::shared_ptr<Words::Options>& ) : opt(opt) {}
+		Node (const std::shared_ptr<Words::Options>& o) : opt(o) {}
 		std::shared_ptr<Words::Options> opt;
 		std::vector<Edge*> incoming;
 		bool isRoot () {return !incoming.size();}
@@ -52,15 +53,16 @@ namespace Words {
 		  to->incoming.push_back (edge.get());
 		  edges.push_back(std::move(edge));
 		}
-
 		
+		auto begin () const {return edges.begin();}
+		auto end () const {return edges.end();}
 		
 	  private:
 		std::unordered_map<uint32_t,std::unique_ptr<Node>> nodes;
 		std::vector<std::unique_ptr<Edge> > edges;
 	  };
 
-	  Words::Substitution replaceInSub (const Words::Substitution& orig, const Words::Substitution& solution) {
+	  inline Words::Substitution replaceInSub (const Words::Substitution& orig, const Words::Substitution& solution) {
 		std::cerr << "Replace in Sub" << std::endl;
 		std::cerr << "Solution" << solution << std::endl;
 		std::cerr << "transition" << orig << std::endl;
@@ -79,7 +81,7 @@ namespace Words {
 		return nnew;
 	  }
 	  
-	  Words::Substitution findRootSolution (Node* n, Words::Substitution& final) {
+	  inline Words::Substitution findRootSolution (Node* n, Words::Substitution& final) {
 		struct SearchNode {
 		  SearchNode (Node* n, const Words::Substitution& s) : n(n), subs(s) {} 
 		  Node* n;
@@ -106,6 +108,9 @@ namespace Words {
 		throw "Shouldn't get here";
 		
 	  }
+
+	  void outputToString (const std::string&, const Graph& g);
+	  
 	}
   }
 }

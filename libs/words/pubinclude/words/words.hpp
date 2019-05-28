@@ -333,6 +333,7 @@ namespace Words {
 	  return l;
 	  //return word.size();
 	}
+	
 	size_t entries () const {return word.size();}
 	auto begin () const {return const_iterator(word.begin(),word.end());}
 	auto end () const {return const_iterator(word.end(),word.end());}

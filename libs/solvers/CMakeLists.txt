@@ -3,5 +3,6 @@ add_subdirectory (puresmt)
 add_subdirectory (levis)
 
 
-add_library (solvers STATIC $<TARGET_OBJECTS:satsolver> $<TARGET_OBJECTS:puresmt> $<TARGET_OBJECTS:levis>)
-target_include_directories (solvers PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/pubinclude)
+add_library (solvers INTERFACE) 
+target_include_directories (solvers INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/pubinclude)
+target_link_libraries (solvers INTERFACE satsolver puresmt levis)
