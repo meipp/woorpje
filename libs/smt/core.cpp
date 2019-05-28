@@ -4,6 +4,10 @@ namespace Words {
   namespace Z3 {
 	Words::SMT::Solver_ptr makeZ3Solver ();
   }
+
+  namespace CVC4 {
+	Words::SMT::Solver_ptr makeCVC4Solver ();
+  }
   
   namespace SMT {
 	
@@ -15,6 +19,10 @@ namespace Words {
 #ifdef ENABLEZ3
 	  case SMTSolver::Z3:
 		return Words::Z3::makeZ3Solver ();
+#endif
+#ifdef ENABLECVC4
+	  case SMTSolver::CVC4:
+		return Words::CVC4::makeCVC4Solver ();
 #endif
 	  default:
 		throw SMTSolverUnavailable ();

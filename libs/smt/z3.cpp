@@ -2,12 +2,20 @@
 #include <memory>
 #include <sstream>
 #include <unordered_map>
+#include <functional>
+#include <set>
+#include "passthrough.hpp"
 #include "words/exceptions.hpp"
 #include "smt/smtsolvers.hpp"
 #include "words/linconstraint.hpp"
 
 namespace Words {
   namespace Z3 {
+
+	
+	
+	
+	  
 	class Z3Solver : public Words::SMT::Solver {
 	public:
 	  Z3Solver () {
@@ -19,9 +27,9 @@ namespace Words {
 	  }
 	  
 	  virtual ~Z3Solver () {}
-
-	  virtual Words::SMT::SolverResult solve () {
 		
+	  
+	  virtual Words::SMT::SolverResult solve () {
 		switch (Z3_solver_check (context,solver)) {
 		case Z3_L_TRUE:
 		  model = Z3_solver_get_model (context,solver);
@@ -44,7 +52,9 @@ namespace Words {
 		asts.insert (std::make_pair (v,ast));
 	  }
 	  
-	  virtual void addTerminal (Words::Terminal* ) {}
+	  virtual void addTerminal (Words::Terminal* t) {
+		terminals.insert(t->getRepr ());
+	  }
 
 	  virtual void addConstraint (const Constraints::Constraint& l) {
 		if (l.isLinear ()) {
@@ -69,8 +79,9 @@ namespace Words {
 		Z3_ast ast;
 		Z3_model_eval (context,model,asts.at(v),true,&ast);
 		auto str = Z3_get_string (context,ast);
+		PassthroughStream<Words::WordBuilder> stream (wb,terminals);
 		while (*str != '\0') {
-		  wb << *str;
+		  stream << *str;
 		  str++;
 		}
 		
@@ -108,12 +119,19 @@ namespace Words {
 		}
 
 		if (asts.size() > 1) 
-		  return Z3_mk_seq_concat (context,asts.size(),asts.data());				  else
+		  return Z3_mk_seq_concat (context,asts.size(),asts.data());
+		else
 		  return asts[0];
 		  
 		
 	  }
 
+	  virtual std::string getVersionString () const {
+		std::stringstream str;
+		str << "Z3 " << Z3_get_full_version (); 
+		return str.str();
+	  }
+	  
 	private:
 	  Z3_context context;
 	  Z3_config cfg;
@@ -122,10 +140,12 @@ namespace Words {
 	  Z3_sort intsort;
 	  Z3_solver solver;
 	  Z3_model model;
-  };
+	  std::set<char> terminals;
+	  };
   
 	Words::SMT::Solver_ptr makeZ3Solver () {
 	  return std::make_unique<Z3Solver> ();
 	}
   }
 }
+  

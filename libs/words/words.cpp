@@ -128,10 +128,7 @@ namespace Words {
   }
   
   WordBuilder::~WordBuilder () {
-	if (input.size ()) {
-	  auto seq = ctxt.addSequence (input);
-	  word.append (seq);
-	}
+	flush ();
   }
   
   WordBuilder& WordBuilder::operator<< (char c) {
@@ -150,6 +147,12 @@ namespace Words {
 	return *this;
   }
   
+  void WordBuilder::flush  ()  {
+	if (input.size ()) {
+	  auto seq = ctxt.addSequence (input);
+	  word.append (seq);
+	}
+  }
   
   std::ostream& operator<< (std::ostream& os, const Word& w) {
 	for (auto c : w) {
