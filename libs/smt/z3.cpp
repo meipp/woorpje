@@ -2,12 +2,91 @@
 #include <memory>
 #include <sstream>
 #include <unordered_map>
+#include <functional>
+#include <set>
 #include "words/exceptions.hpp"
 #include "smt/smtsolvers.hpp"
 #include "words/linconstraint.hpp"
 
 namespace Words {
   namespace Z3 {
+
+	
+	
+	template<class Stream>
+	struct PassthroughStream {
+	  PassthroughStream (Stream& s, std::set<char>& terminals, char c = '_') : stream(s),
+												   terminals(terminals),
+												   dummy(c) {}
+	  void operator<< (char c) {
+		state (c,*this);
+	  }
+
+	private:
+	  
+	  static void standard (char c,PassthroughStream<Stream>& s) {
+
+		switch (c) {
+		case '\\':
+		  s.state = first;
+		  break;
+		default:
+		  s.push(c);
+		}
+	  }
+	  
+	  static void first (char c,PassthroughStream<Stream>& s) {
+	
+		switch (c) {
+		case 'a':
+		case 'b':
+		case 'f':
+		case 'n':
+		case 'r':
+		case 't':
+		case 'v':
+		  s.push (s.dummy);
+		  s.state = standard;
+		  break;
+		case 'x':
+		  s.state = second;
+		  break;
+		default:
+		  s.push ('\\');
+		  s.push (c);
+		}
+		
+		
+	  }
+	  
+	  static void second (char c,PassthroughStream<Stream>& s) {
+
+		s.state = third;
+	  }
+	  
+	  static void third (char c,PassthroughStream<Stream>& s) {
+
+		s.stream << s.dummy;
+		s.state = standard;
+	  }
+
+	  void push (char c) {
+		if (terminals.count(c)) {
+		  stream << c;
+		}
+
+		else {
+		  stream << dummy;
+		}
+								  
+	  }
+	  
+	  std::function<void(char,PassthroughStream<Stream>&)> state = standard;
+	  Stream& stream;
+	  std::set<char>& terminals;
+	  char dummy;
+	};
+	  
 	class Z3Solver : public Words::SMT::Solver {
 	public:
 	  Z3Solver () {
@@ -45,6 +124,7 @@ namespace Words {
 	  }
 	  
 	  virtual void addTerminal (Words::Terminal* t) {
+		terminals.insert(t->getRepr ());
 	  }
 
 	  virtual void addConstraint (const Constraints::Constraint& l) {
@@ -70,9 +150,9 @@ namespace Words {
 		Z3_ast ast;
 		Z3_model_eval (context,model,asts.at(v),true,&ast);
 		auto str = Z3_get_string (context,ast);
+		PassthroughStream<Words::WordBuilder> stream (wb,terminals);
 		while (*str != '\0') {
-		  std::cerr << *str << std::endl;
-		  wb << *str;
+		  stream << *str;
 		  str++;
 		}
 		
@@ -125,6 +205,7 @@ namespace Words {
 	  Z3_sort intsort;
 	  Z3_solver solver;
 	  Z3_model model;
+	  std::set<char> terminals;
 	  };
   
 	Words::SMT::Solver_ptr makeZ3Solver () {
