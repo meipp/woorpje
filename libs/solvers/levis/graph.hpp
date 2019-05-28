@@ -2,6 +2,7 @@
 #define _GRAPH_
 
 #include <unordered_map>
+#include <stack>
 
 #include "words/words.hpp"
 
@@ -13,6 +14,7 @@ namespace Words {
 		Node (const std::shared_ptr<Words::Options>& ) : opt(opt) {}
 		std::shared_ptr<Words::Options> opt;
 		std::vector<Edge*> incoming;
+		bool isRoot () {return !incoming.size();}
 	  };
 	  
 	  struct Edge {
@@ -51,14 +53,59 @@ namespace Words {
 		  edges.push_back(std::move(edge));
 		}
 
-		auto findWayBackFrom (Node* from) {
-		  
-		}
+		
 		
 	  private:
 		std::unordered_map<uint32_t,std::unique_ptr<Node>> nodes;
 		std::vector<std::unique_ptr<Edge> > edges;
 	  };
+
+	  Words::Substitution replaceInSub (const Words::Substitution& orig, const Words::Substitution& solution) {
+		std::cerr << "Replace in Sub" << std::endl;
+		std::cerr << "Solution" << solution << std::endl;
+		std::cerr << "transition" << orig << std::endl;
+		
+		Words::Substitution nnew = orig;
+		for (const auto& elem : solution) {
+		  //std::cerr << *elem.first << std::endl;
+		  if (nnew.count(elem.first)) 
+			nnew[elem.first].substitudeVariable (elem.first,elem.second);
+		  else
+			nnew[elem.first] = elem.second;
+		  //elem.second.substitudeVariable (elem.first,solution.at(elem.first));
+		  //std::cerr << elem.second << std::endl;
+		}
+		std::cerr << "Replace " << nnew;
+		return nnew;
+	  }
+	  
+	  Words::Substitution findRootSolution (Node* n, Words::Substitution& final) {
+		struct SearchNode {
+		  SearchNode (Node* n, const Words::Substitution& s) : n(n), subs(s) {} 
+		  Node* n;
+		  Words::Substitution subs;
+		};
+	   
+		std::stack<SearchNode> waiting;
+		waiting.push(SearchNode (n,final));
+		
+		while (waiting.size()) {
+		  std::cerr << "BackTrack" << std::endl;
+		  auto cur = waiting.top();
+		  waiting.pop();
+		  if (cur.n->isRoot()) {
+			return cur.subs;
+		  }
+		  else {
+			for (auto edge : cur.n->incoming) {
+			  Words::Substitution subs = replaceInSub (edge->subs,cur.subs);
+			  waiting.push (SearchNode (edge->from,subs));
+			}
+		  }
+		}
+		throw "Shouldn't get here";
+		
+	  }
 	}
   }
 }

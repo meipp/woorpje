@@ -161,6 +161,11 @@ namespace Words {
 	return os;
   }
 
-
+  std::ostream& operator<< (std::ostream& os, const Substitution& sub) {
+	os << "{ ";
+	for (auto& s: sub)
+	  os << *s.first << " -> "  << s.second << " ";
+	return os << " }";
+  }
   
 }

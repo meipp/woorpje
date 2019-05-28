@@ -30,7 +30,6 @@ namespace Words {
             //returns true if successor generation should stop
             //
             bool handle (const Words::Options& from, std::shared_ptr<Words::Options>& to, const Words::Substitution& sub) {
-            auto node = graph.getNode (from);
 
             // Simplification
             Words::Substitution simplSub;
@@ -39,32 +38,42 @@ namespace Words {
             if (res==Simplified::ReducedNsatis){
               return false;
             }
+			
+		
+			
+            
+			auto node = graph.getNode (from);			
+			auto nnode = graph.makeNode (to);
+            
+			
+            if (res==Simplified::ReducedSatis) {
+			  graph.addEdge (node,nnode,sub);
+			  result = Words::Solvers::Result::HasSolution;
+			  subs = findRootSolution (nnode,simplSub);
+			  // rebuild subsitution here!>
+			  waiting.clear();
+			  return true;
+            }
 
-            // merge substitutions
-            // this is stupid, I know ;)
-            Words::Substitution newSub;
-            for (auto x : simplSub){
-             for(auto y : sub){ // should be exactly one substitution due to levis rules
-                 if (x.first == y.first){
-                    Words::Word w = y.second;
+			else {// merge substitutions
+			  // this is stupid, I know ;)
+			  Words::Substitution newSub = sub;
+			  for (auto x : simplSub){
+				//for(auto y : sub){ // should be exactly one substitution due to levis rules
+				if (newSub.count(x.first))  { // == y.first){
+				  /*Words::Word w = y.second;
                     w.substitudeVariable(y.first,x.second);
-                    newSub.insert(std::pair<Words::IEntry*,Words::Word>(y.first,w));
-                 } else if(newSub.count(x.first) != 1){
-                   newSub.insert(std::pair<Words::IEntry*,Words::Word>(x.first,x.second));
-                 }
-             }
-            }
-
-            if (res==Simplified::ReducedSatis){
-                // rebuild subsitution here!>
-                waiting.clear();
-                return true;
-            }
-
-            auto nnode = graph.makeNode (to);
-            graph.addEdge (node,nnode,newSub);
-            waiting.insert(to);
-
+                    newSub.insert(std::pair<Words::IEntry*,Words::Word>(y.first,w));*/
+				  newSub[x.first].substitudeVariable (x.first,x.second); 
+				}/* else if(newSub.count(x.first) != 1){
+					newSub.insert(std::pair<Words::IEntry*,Words::Word>(x.first,x.second));
+					}*/
+			  }
+			  
+			  graph.addEdge (node,nnode,newSub);
+			  waiting.insert(to);
+			}
+			
 
             //TODO Check if the equation is
             // Trivially satisfied,
@@ -75,11 +84,13 @@ namespace Words {
             return false;
 		}
 
+		auto getResult () const { return result;}
 		
 	  private:
 		PassedWaiting& waiting;
 		Graph& graph;
 		Words::Substitution& subs;
+		Words::Solvers::Result result = Words::Solvers::Result::NoIdea;
 	  };
 	  
 	  ::Words::Solvers::Result Solver::Solve (Words::Options& opt,::Words::Solvers::MessageRelay& relay)   {
@@ -97,7 +108,7 @@ namespace Words {
           RuleSequencer<Handler,PrefixReasoningLeftHandSide,PrefixReasoningRightHandSide,PrefixReasoningEqual,PrefixEmptyWordLeftHandSide,PrefixEmptyWordRightHandSide,PrefixLetterLeftHandSide,PrefixLetterRightHandSide,SuffixReasoningLeftHandSide,SuffixReasoningRightHandSide,SuffixReasoningEqual,SuffixEmptyWordLeftHandSide,SuffixEmptyWordRightHandSide,SuffixLetterLeftHandSide,SuffixLetterRightHandSide>::runRules (handler,*cur);
 		  relay.progressMessage ((Words::Solvers::Formatter ("Passed: %1%, Waiting: %2%") % waiting.passedsize() % waiting.size()).str());
 		}
-		return ::Words::Solvers::Result::NoIdea;
+		return handler.getResult ();
 	  }
 	}
 	
