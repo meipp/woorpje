@@ -2,6 +2,7 @@
 #include <memory>
 #include <sstream>
 #include <unordered_map>
+#include "passthrough.hpp"
 #include "words/exceptions.hpp"
 #include "smt/smtsolvers.hpp"
 #include "words/linconstraint.hpp"
@@ -52,7 +53,8 @@ namespace Words {
 		exprs.insert (std::make_pair (v,em.mkVar (str.str(),em.stringType())));
 	  }
 	  
-	  virtual void addTerminal (Words::Terminal* ) {
+	  virtual void addTerminal (Words::Terminal*t ) {
+		terminals.insert (t->getRepr ());
 	  }
 
 	  virtual void addConstraint (const Constraints::Constraint& l) {
@@ -96,8 +98,9 @@ namespace Words {
 		auto ss = str.str();
 		auto it = ss.begin()+1; //Needed to filter out the 
 		auto end = ss.end()-1; //leading " and ending "
+		PassthroughStream<Words::WordBuilder> stream (wb,terminals);
 		for (; it!=end; ++it ) {
-		  wb << *it;
+		  stream << *it;
 		}
 	  }
 	  
@@ -107,6 +110,10 @@ namespace Words {
 		auto right = buildWordAst (eq.rhs);
 		auto eqe = em.mkExpr (::CVC4::kind::EQUAL, left,right);
 		asserts.push_back (eqe);
+	  }
+
+	  virtual std::string getVersionString () const {
+		return "CVC4";
 	  }
 
 	  ::CVC4::Expr  buildWordAst (const Words::Word& w) {
@@ -145,6 +152,7 @@ namespace Words {
 	  ::CVC4::SmtEngine engine;
 	  std::unordered_map<Words::IEntry*,::CVC4::Expr> exprs;
 	  std::vector<::CVC4::Expr> asserts;
+	  std::set<char> terminals;
 	};
   
 	Words::SMT::Solver_ptr makeCVC4Solver () {

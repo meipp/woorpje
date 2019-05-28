@@ -25,10 +25,10 @@ namespace Words {
 	  
 	  
 	  ::Words::Solvers::Result Solver::Solve (Words::Options& opt,::Words::Solvers::MessageRelay& relay)   {
-		relay.pushMessage ("Encode to SMT");
+		relay.pushMessage (Words::Solvers::Formatter (("Encode to SMT")).str());
 		auto smtsolver = Words::SMT::makeSolver ();
 		buildEquationSystem (*smtsolver,opt);
-		
+		relay.pushMessage ((Words::Solvers::Formatter (("Using: %1%")) % smtsolver->getVersionString ()).str());
 		auto res = smtsolver->solve ();
 		switch (res) {
 		case Words::SMT::SolverResult::Satis:

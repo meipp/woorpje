@@ -44,6 +44,8 @@ namespace Words {
 		  addConstraint (**begin);
 		}
 	  }
+
+	  virtual std::string getVersionString () const = 0;
 	};
 	using Solver_ptr = std::unique_ptr<Solver>;
 	
