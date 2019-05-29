@@ -107,6 +107,24 @@ void setSMTSolver (size_t i) {
   }
 }
 
+Words::Solvers::Solver_ptr buildSolver (size_t i)  {
+  switch (i) {
+  case 0:
+	return nullptr;
+	break;
+  case 1:
+	return Words::Solvers::makeSolver<Words::Solvers::Types::SatEncoding> (static_cast<size_t> (0));
+  case 2:
+	return Words::Solvers::makeSolver<Words::Solvers::Types::SatEncodingOld> (static_cast<size_t> (0));
+  case 3:
+	return Words::Solvers::makeSolver<Words::Solvers::Types::PureSMT> ();
+  case 4:
+	return Words::Solvers::makeSolver<Words::Solvers::Types::Levis> ();
+  }
+  return nullptr;
+}
+
+
 int main (int argc, char** argv) {
   bool diagnostic = false;
   bool suppressbanner = false;
@@ -114,6 +132,7 @@ int main (int argc, char** argv) {
   bool simplifier = false;
   size_t cpulim = 0;
   size_t vmlim = 0;
+  size_t solverr  = 0;
   std::string conffile;
   po::options_description desc("General Options");
   desc.add_options ()
@@ -123,8 +142,14 @@ int main (int argc, char** argv) {
 	("configuration,c",po::value<std::string>(&conffile), "Configuration file")
 	("cpulim,C",po::value<size_t>(&cpulim), "CPU Limit in seconds")
 	("simplify",po::bool_switch(&simplifier), "Enable simplifications")
-	("vmlim,V",po::value<size_t>(&vmlim), "VM Limit in MBytes");
-
+	("vmlim,V",po::value<size_t>(&vmlim), "VM Limit in MBytes")
+	("solver",po::value<size_t>(&solverr), "Solver Strategy\n"
+								"\t  0 Defined in input file\n"
+								"\t  1 Sat Encoding via Glucose\n"
+								"\t  2 Old Sat Encoding via Glucose\n"
+								"\t  3 SMT\n"
+								"\t  4 Levis Lemmas\n"
+	 );
   size_t smtsolver = 0;
   po::options_description smdesc("SMT Options");
   smdesc.add_options()
@@ -132,7 +157,8 @@ int main (int argc, char** argv) {
 	"\t 0 Z3\n"
 	"\t 1 CVC4\n"
 	 );
-
+  
+  
   desc.add (smdesc);
   
   po::positional_options_description positionalOptions; 
@@ -174,13 +200,21 @@ int main (int argc, char** argv) {
   Words::Options opt;
   Words::Options foroutput;
   bool parsesucc = false;
-  Words::Solvers::Solver_ptr solver = nullptr;
+  Words::Solvers::Solver_ptr solver = buildSolver (solverr);;
   
   try {
 	std::fstream inp;
 	inp.open (conffile);
 	auto parser = Words::Parser::Create (inp);
-	solver = parser->Parse (opt,std::cout);
+	auto s = parser->Parse (opt,std::cout);
+	if (!solver) {
+	  std::cout << "Using Solver from input file." << std::endl;
+	  std::swap (solver,s);
+	  //solver = s;
+	}
+	else {
+	  std::cout << "Using command line forced  solver." << std::endl;
+	}
 	foroutput = opt;
 	inp.close ();
   }catch (Words::WordException& e) {
@@ -190,8 +224,6 @@ int main (int argc, char** argv) {
   CoutResultGatherer gatherer (foroutput);
   if (solver) {
 	if (simplifier) {
-	  std::cout << "Simpifiers are currently not  working properly." << std::endl;
-	  //Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
 	  std::cout << "Running Simplifiers" << std::endl;
 	  Words::Substitution sub;
 	  auto res = Words::Solvers::CoreSimplifier::solverReduce (opt,sub);
