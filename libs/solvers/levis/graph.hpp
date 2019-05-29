@@ -62,37 +62,28 @@ namespace Words {
 		std::vector<std::unique_ptr<Edge> > edges;
 	  };
 
-	  inline Words::Substitution replaceInSub (const Words::Substitution& orig, const Words::Substitution& solution) {
-		std::cerr << "Replace in Sub" << std::endl;
-		std::cerr << "Solution" << solution << std::endl;
-		std::cerr << "transition" << orig << std::endl;
-		
+	  inline Words::Substitution replaceInSub (const Words::Substitution& orig, const Words::Substitution& solution) {		
 		Words::Substitution nnew = orig;
 		for (const auto& elem : solution) {
-		  //std::cerr << *elem.first << std::endl;
 		  if (nnew.count(elem.first)) 
 			nnew[elem.first].substitudeVariable (elem.first,elem.second);
 		  else
 			nnew[elem.first] = elem.second;
-		  //elem.second.substitudeVariable (elem.first,solution.at(elem.first));
-		  //std::cerr << elem.second << std::endl;
 		}
-		std::cerr << "Replace " << nnew;
 		return nnew;
 	  }
 	  
-	  inline Words::Substitution findRootSolution (Node* n, Words::Substitution& final) {
+	  inline Words::Substitution findRootSolution (Node* n) {
 		struct SearchNode {
 		  SearchNode (Node* n, const Words::Substitution& s) : n(n), subs(s) {} 
 		  Node* n;
 		  Words::Substitution subs;
 		};
-	   
+		Words::Substitution final;
 		std::stack<SearchNode> waiting;
 		waiting.push(SearchNode (n,final));
 		
 		while (waiting.size()) {
-		  std::cerr << "BackTrack" << std::endl;
 		  auto cur = waiting.top();
 		  waiting.pop();
 		  if (cur.n->isRoot()) {

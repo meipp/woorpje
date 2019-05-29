@@ -30,49 +30,46 @@ namespace Words {
             //returns true if successor generation should stop
             //
             bool handle (const Words::Options& from, std::shared_ptr<Words::Options>& to, const Words::Substitution& sub) {
+			  auto beforeSimp = to->copy ();
+			  // Simplification
+			  Words::Substitution simplSub;
+			  auto res = Words::Solvers::CoreSimplifier::solverReduce (*to,simplSub); 
 
-            // Simplification
-            Words::Substitution simplSub;
-            auto res = Words::Solvers::CoreSimplifier::solverReduce (*to,simplSub); //TODO: THIS CALL ISN'T WORKING - WRONG TYPE!!! FIX IT
+			  auto node = graph.getNode (from);			
+			  auto simpnode = graph.makeNode (beforeSimp);
+			  auto nnode = graph.makeNode (to);
 
-            if (res==Simplified::ReducedNsatis){
-              return false;
+			graph.addEdge (node,simpnode,sub);
+			graph.addEdge (simpnode,nnode,simplSub);
+			  
+			if (res==Simplified::ReducedNsatis){
+			  return false;
             }
 			
 		
 			
             
-			auto node = graph.getNode (from);			
-			auto nnode = graph.makeNode (to);
-            
 			
             if (res==Simplified::ReducedSatis) {
-			  graph.addEdge (node,nnode,sub);
+			  
 			  result = Words::Solvers::Result::HasSolution;
-			  subs = findRootSolution (nnode,simplSub);
+			  subs = findRootSolution (nnode);
 			  // rebuild subsitution here!>
 			  waiting.clear();
 			  return true;
             }
 
-			else {// merge substitutions
-			  // this is stupid, I know ;)
-			  Words::Substitution newSub = sub;
+			// merge substitutions
+			  /*Words::Substitution newSub = sub;
 			  for (auto x : simplSub){
-				//for(auto y : sub){ // should be exactly one substitution due to levis rules
 				if (newSub.count(x.first))  { // == y.first){
-				  /*Words::Word w = y.second;
-                    w.substitudeVariable(y.first,x.second);
-                    newSub.insert(std::pair<Words::IEntry*,Words::Word>(y.first,w));*/
 				  newSub[x.first].substitudeVariable (x.first,x.second); 
-				}/* else if(newSub.count(x.first) != 1){
-					newSub.insert(std::pair<Words::IEntry*,Words::Word>(x.first,x.second));
-					}*/
-			  }
+				}
+				}*/
 			  
-			  graph.addEdge (node,nnode,newSub);
-			  waiting.insert(to);
-			}
+			  
+			waiting.insert(to);
+			  
 			
 
             //TODO Check if the equation is
