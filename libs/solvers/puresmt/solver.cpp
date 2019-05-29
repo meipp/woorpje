@@ -12,16 +12,7 @@
 namespace Words {
   namespace Solvers {
 	namespace PureSMT {
-	  void retriveSubstitution (Words::SMT::Solver& s, Words::Options& opt, Words::Substitution& sub) {
-		for (auto v :opt.context.getVariableAlphabet ()) {
-		  Words::Word w;
-		  
-		  auto wb = opt.context.makeWordBuilder (w);
-		  s.evaluate (v,*wb);
-		  wb->flush ();
-		  sub.insert (std::make_pair (v,w));
-		}
-	  }
+	  
 	  
 	  
 	  ::Words::Solvers::Result Solver::Solve (Words::Options& opt,::Words::Solvers::MessageRelay& relay)   {
@@ -32,7 +23,7 @@ namespace Words {
 		auto res = smtsolver->solve ();
 		switch (res) {
 		case Words::SMT::SolverResult::Satis:
-		  retriveSubstitution (*smtsolver,opt,sub);
+		  Words::SMT::retriveSubstitution (*smtsolver,opt,sub);
 		  return ::Words::Solvers::Result::HasSolution;
 		  break;
 		case Words::SMT::SolverResult::NSatis:

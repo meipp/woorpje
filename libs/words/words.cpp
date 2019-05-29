@@ -108,10 +108,10 @@ namespace Words {
 	return _internal->vars[s];
   }
   const std::vector<Terminal*>& Context::getTerminalAlphabet() const {
-	  return _internal->terminals;
+	return _internal->terminals;
   }
   const std::vector<Variable*>& Context::getVariableAlphabet() const {
-	  return _internal->vars;
+	return _internal->vars;
   }
   IEntry* Context::findSymbol (char c) const {
 	auto it = _internal->reprToEntry.find(c);

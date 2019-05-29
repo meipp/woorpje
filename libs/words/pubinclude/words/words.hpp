@@ -497,7 +497,7 @@ namespace Words {
 	IEntry* addSequence (const SeqInput&);
 	IEntry* findSymbol (char c) const;
 	Terminal* getEpsilon ();
-	std::unique_ptr<WordBuilder> makeWordBuilder (Word& w) {return std::make_unique<WordBuilder> (*this,w);}
+	std::unique_ptr<WordBuilder> makeWordBuilder (Word& w)  {return std::make_unique<WordBuilder> (*this,w);}
 	bool conformsToConventions () const;
 	size_t nbVars () const;
 	size_t nbTerms () const;
