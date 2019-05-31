@@ -57,7 +57,7 @@ namespace Words {
 			return true;
 		  }
 
-		  if  (false)  { //insert criterion for running SMTSolvers
+		  if  (true)  { //insert criterion for running SMTSolvers
 			return runSMTSolver (nnode,to);
 		  }
 		  
@@ -95,7 +95,7 @@ namespace Words {
 			Words::SMT::retriveSubstitution (*smtsolver,*tt,finalSolution);
 			auto nnode = graph.makeNode (tt);
 			graph.addEdge (n,nnode,finalSolution);
-			findRootSolution (nnode);
+			subs = findRootSolution (nnode);
 			waiting.clear();
 			result = Words::Solvers::Result::HasSolution;
 			return true;
