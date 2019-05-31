@@ -22,14 +22,31 @@ namespace Words {
 		cfg = Z3_mk_config ();
 		context = Z3_mk_context(cfg);
 		solver = Z3_mk_solver(context);
+		Z3_solver_inc_ref(context, solver);
 		strsort = Z3_mk_string_sort (context);
 		intsort = Z3_mk_int_sort (context);
 	  }
 	  
-	  virtual ~Z3Solver () {}
+	  virtual ~Z3Solver () {
+		Z3_solver_dec_ref(context, solver);
+		Z3_del_config(cfg);
+		Z3_del_context(context);
+	  }
 		
 	  
 	  virtual Words::SMT::SolverResult solve () {
+		if (timeout) {
+		  Z3_params solverParams = Z3_mk_params(context);
+		  Z3_params_inc_ref(context, solverParams);
+		  Z3_symbol timeoutParamStrSymbol = Z3_mk_string_symbol(context, "timeout");
+		  // "timeout (unsigned int) timeout (in milliseconds) (0 means no timeout) (default: 0)"
+		  Z3_params_set_uint(context,
+							 solverParams,
+							 timeoutParamStrSymbol,
+							 timeout); 
+		  Z3_solver_set_params(context, solver, solverParams);
+		  Z3_params_dec_ref(context, solverParams);
+		}
 		switch (Z3_solver_check (context,solver)) {
 		case Z3_L_TRUE:
 		  model = Z3_solver_get_model (context,solver);
@@ -131,6 +148,8 @@ namespace Words {
 		str << "Z3 " << Z3_get_full_version (); 
 		return str.str();
 	  }
+
+	  void setTimeout (size_t t ) {timeout = t;}
 	  
 	private:
 	  Z3_context context;
@@ -141,6 +160,7 @@ namespace Words {
 	  Z3_solver solver;
 	  Z3_model model;
 	  std::set<char> terminals;
+	  size_t timeout;
 	  };
   
 	Words::SMT::Solver_ptr makeZ3Solver () {

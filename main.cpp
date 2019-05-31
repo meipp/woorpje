@@ -151,12 +151,14 @@ int main (int argc, char** argv) {
 								"\t  4 Levis Lemmas\n"
 	 );
   size_t smtsolver = 0;
+  size_t smttimeout = 0;
   po::options_description smdesc("SMT Options");
   smdesc.add_options()
 	("smtsolver,S",po::value<size_t> (&smtsolver), "SMT Solver\n"
 	"\t 0 Z3\n"
 	"\t 1 CVC4\n"
-	 );
+	 )
+	("smttimeout",po::value<size_t> (&smttimeout), "Set timeout for SMTSolver (ms)");
   
   
   desc.add (smdesc);
@@ -182,6 +184,7 @@ int main (int argc, char** argv) {
 	return -1;
   }
   setSMTSolver (smtsolver);
+  Words::SMT::setDefaultTimeout (smttimeout);
   if (!suppressbanner)
 	printBanner (std::cout);
   if (conffile == "" ) {

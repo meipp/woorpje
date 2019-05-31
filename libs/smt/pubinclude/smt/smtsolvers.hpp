@@ -30,6 +30,7 @@ namespace Words {
 	  virtual void addConstraint (const Constraints::Constraint& ) {}
 	  virtual void addEquation (const Words::Equation& ) {}
 	  virtual void evaluate (Words::Variable*, Words::WordBuilder& wb) = 0;
+	  virtual void setTimeout (size_t t) { throw Words::WordException ("Timeout not implemented");}
 	  
 	  template<class iterator>
 	  void addEquations (iterator begin, iterator end) {
@@ -51,8 +52,8 @@ namespace Words {
 	
 	
 	void setSMTSolver (SMTSolver);
+	void setDefaultTimeout (size_t);	  
 	Solver_ptr makeSolver (); 
-
 
 
 	inline void retriveSubstitution (Words::SMT::Solver& s, Words::Options& opt, Words::Substitution& sub) {
