@@ -16,6 +16,7 @@ namespace Words {
 		std::shared_ptr<Words::Options> opt;
 		std::vector<Edge*> incoming;
 		bool isRoot () {return !incoming.size();}
+		bool ranSMTSolver = false;
 	  };
 	  
 	  struct Edge {

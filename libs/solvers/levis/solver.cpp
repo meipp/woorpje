@@ -36,6 +36,10 @@ namespace Words {
 		  Words::Substitution simplSub;
 		  auto res = Words::Solvers::CoreSimplifier::solverReduce (*to,simplSub); 
 
+		  if (res==Simplified::ReducedNsatis){
+			return false;
+		  }
+		  
 		  auto node = graph.getNode (from);			
 		  auto simpnode = graph.makeNode (beforeSimp);
 		  auto nnode = graph.makeNode (to);
@@ -43,9 +47,7 @@ namespace Words {
 		  graph.addEdge (node,simpnode,sub);
 		  graph.addEdge (simpnode,nnode,simplSub);
 			  
-		  if (res==Simplified::ReducedNsatis){
-			return false;
-		  }
+		  
             
 			
 		  if (res==Simplified::ReducedSatis) {
@@ -84,6 +86,7 @@ namespace Words {
 		}
 
 		bool runSMTSolver (Node* n, const std::shared_ptr<Words::Options>& from) {
+		  n->ranSMTSolver = true;
 		  auto smtsolver = Words::SMT::makeSolver ();
 		  Words::SMT::buildEquationSystem (*smtsolver,*from);
 		  switch (smtsolver->solve()) {

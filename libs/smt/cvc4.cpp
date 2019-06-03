@@ -12,7 +12,7 @@ namespace Words {
   namespace CVC4 {
 	class CVC4Solver : public Words::SMT::Solver {
 	public:
-	  CVC4Solver () : engine(&em) {
+	  CVC4Solver () : engine(&em),timeout(0) {
 		engine.setOption("produce-models", "true");
 		engine.setOption("strings-exp", "true");
 		// Set output language to SMTLIB2
@@ -27,7 +27,9 @@ namespace Words {
 		  for (size_t i = 0; i < asserts.size(); i++) {
 			form = em.mkExpr (::CVC4::kind::AND,form,asserts[i]);
 		  }
-		  
+		  if (timeout) {
+			engine.setTimeLimit (timeout);
+		  }
 		  auto res = engine.checkSat (form);
 		  switch (res.isSat ()) {
 		  case ::CVC4::Result::Sat::UNSAT:
@@ -146,6 +148,8 @@ namespace Words {
 		  
 		
 	  }
+
+	  void setTimeout (size_t t ) {timeout = t;}
 	  
 	private:
 	  ::CVC4::ExprManager em;
@@ -153,6 +157,7 @@ namespace Words {
 	  std::unordered_map<Words::IEntry*,::CVC4::Expr> exprs;
 	  std::vector<::CVC4::Expr> asserts;
 	  std::set<char> terminals;
+	  size_t timeout = 0;
 	};
   
 	Words::SMT::Solver_ptr makeCVC4Solver () {
