@@ -1,5 +1,5 @@
 FIND_PATH(LIBMURMUR_INCLUDE_DIR NAMES murmurhash.h)
-FIND_LIBRARY(LIBMURMUR_LIBRARY NAMES murmurhash )
+FIND_LIBRARY(LIBMURMUR_LIBRARY NAMES libmurmurhash.so.2.0.0) 
 
 
 INCLUDE(FindPackageHandleStandardArgs)
@@ -8,6 +8,7 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(LIBMURMUR DEFAULT_MSG LIBMURMUR_LIBRARY LIBMUR
 IF(LIBMURMUR_FOUND)
 	SET(MURMUR_LIBRARIES ${LIBMURMUR_LIBRARY} )
 	SET(MURMUR_INCLUDE_DIRS ${LIBMURMUR_INCLUDE_DIR})
+	install (FILES ${MURMUR_LIBRARIES} DESTINATION lib)
 ELSE(LIBMURMUR_FOUND)
 	include(ExternalProject)
 	ExternalProject_Add(murmurhash
@@ -21,8 +22,9 @@ ELSE(LIBMURMUR_FOUND)
 
 	add_library(murmur STATIC IMPORTED)	
 	add_dependencies(murmur murmurhash)
-	set_property(TARGET murmur PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/murmurhash/install/lib/libmurmurhash.so)
+	set_property(TARGET murmur PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/murmurhash/install/lib/libmurmurhash.so.2.0.0)
 	
 	SET(MURMUR_LIBRARIES  murmur)
 	SET(MURMUR_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/murmurhash/install/include)
+	install (FILES ${CMAKE_CURRENT_BINARY_DIR}/murmurhash/install/lib/libmurmurhash.so.2.0.0 DESTINATION lib)
 ENDIF(LIBMURMUR_FOUND)
