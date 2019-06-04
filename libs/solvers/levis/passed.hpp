@@ -20,6 +20,11 @@ namespace Words {
 		  }
 		}
 
+        bool contains(const Element& elem){
+            auto hash = elem->eqhash(0);
+            return passed.count(hash);
+        }
+
 		Element pullElement () {
 		  auto h = queue.front();
 		  queue.pop ();
@@ -41,8 +46,8 @@ namespace Words {
 		
 	  private:
 		std::set<uint32_t> passed;
-		std::queue<Element> queue;
-	  };
+        std::queue<Element> queue;
+      };
 
 	}
   }

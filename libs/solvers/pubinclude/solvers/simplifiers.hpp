@@ -32,8 +32,8 @@ namespace Words {
 	template<class T,class First>
 	class SequenceSimplifier2<T,First> {
 	public:
-	  static Simplified solverReduce  (T& eq,Substitution& s) {
-		return First::solverReduce (eq,s);
+      static Simplified solverReduce  (T& eq,Substitution& s) {
+        return First::solverReduce (eq,s);
 	  }
 	};
 	
@@ -41,8 +41,8 @@ namespace Words {
 	class SequenceSimplifier2<T,First,Ts...> {
 	public:
 	  
-	  static Simplified solverReduce  (T& eq,Substitution& s) {
-		auto res = First::solverReduce (eq,s);
+      static Simplified solverReduce  (T& eq,Substitution& s) {
+        auto res = First::solverReduce (eq,s);
 		if (res == Simplified::ReducedSatis || res==Simplified::ReducedNsatis)
 		  return res;
 		else {
@@ -103,9 +103,14 @@ namespace Words {
 			   rhs.ebegin () !=rhs.eend ()) {
 		Word::entry_iterator lfirst = eq.lhs.ebegin();
 		Word::entry_iterator rfirst = eq.rhs.ebegin();
-		if (*lfirst == *rfirst) {
-		  lhs.erase_entry (lfirst);
-		  rhs.erase_entry (rfirst);
+        if (*lfirst == *rfirst) {
+          lhs.erase_entry (lfirst);
+          rhs.erase_entry (rfirst);
+
+          if ((*lfirst)->isVariable()){
+              s[(*lfirst)] = Words::Word();
+          }
+
 		}
 		else if ((*lfirst)->isSequence () && (*rfirst)->isSequence ()) {
 		  Words::Sequence* ll = (*lfirst)->getSequence ();
@@ -125,8 +130,10 @@ namespace Words {
 			eq.lhs.replace_entry (lfirst,seq);
 			
 		  }
-          else
-            return Simplified::ReducedNsatis;
+          else {
+              s.clear();
+              return Simplified::ReducedNsatis;
+          }
 		}
 		else
 		  break;
@@ -135,6 +142,7 @@ namespace Words {
 			rhs.ebegin () == rhs.eend ()) {
 		  return Simplified::ReducedSatis;
 		}
+        s.clear();
         return Simplified::JustReduced;
 	  }
 	};
@@ -149,9 +157,13 @@ namespace Words {
 		  
 		  auto lrfirst = lhs.rebegin();
 		  auto rrfirst = rhs.rebegin();
-		  if (*lrfirst == *rrfirst) {
-			eq.lhs.erase_entry (lrfirst);
-			eq.rhs.erase_entry (rrfirst);
+          if (*lrfirst == *rrfirst) {
+            eq.lhs.erase_entry (lrfirst);
+            eq.rhs.erase_entry (rrfirst);
+
+            if ((*lrfirst)->isVariable()){
+                s[(*lrfirst)] = Words::Word();
+            }
 		  }
 		  else if ((*lrfirst)->isSequence () && (*rrfirst)->isSequence ()) {
 			Words::Sequence* ll = (*lrfirst)->getSequence ();
@@ -169,9 +181,11 @@ namespace Words {
 			  eq.rhs.erase_entry (rrfirst);
 			  eq.lhs.replace_entry (lrfirst,seq);
 			}
-			else 
+            else {
+              s.clear();
 			  return Simplified::ReducedNsatis;
-		  }
+            }
+          }
 		  else {
 			break;
 		  }
@@ -181,6 +195,7 @@ namespace Words {
 			rhs.ebegin () == rhs.eend ()) {
 		  return Simplified::ReducedSatis;
 		}
+        s.clear();
 		return Simplified::JustReduced;
 	  }
 	};
@@ -331,7 +346,7 @@ namespace Words {
 		  return Simplified::JustReduced;
 		  
 		}
-		else {
+        else {
 		  return Simplified::ReducedSatis;
 		}
 		
@@ -483,6 +498,7 @@ namespace Words {
           // Avoid the calculation of an empty parikh image
           if (eq.lhs.characters() == 0 && eq.rhs.characters() == 0){
             return Simplified::ReducedSatis;
+                        std::cout << "??????" << std::endl;
           } else if (eq.lhs.characters() == 0){
               return oneSideEmptyCheck(eq.lhs);
           } else if (eq.rhs.characters() == 0) {

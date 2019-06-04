@@ -29,7 +29,7 @@ struct RuleSequencer<Handler,First,RuleSequence...> {
         auto snew = s.copy();
         snew->equations = newEquations;
 
-        //std::cout << typeid(First).name() << std::endl;
+        //std::cout << "Choosen: " << typeid(First).name() << std::endl;
 
         if (!h.handle (s,snew,subs)) {
           RuleSequencer<Handler,RuleSequence...>::runRules(h,s);

@@ -64,13 +64,42 @@ namespace Words {
 	  };
 
 	  inline Words::Substitution replaceInSub (const Words::Substitution& orig, const Words::Substitution& solution) {		
-		Words::Substitution nnew = orig;
+        Words::Substitution nnew = orig;
+        std::vector<std::pair<IEntry*,IEntry*>> varEquals;
+
+        for (auto& elem : orig) {
+            if (elem.second.characters() < 1)
+                continue;
+
+            auto subsb = elem.second.ebegin();
+            auto subse = elem.second.eend();
+
+            for (auto it = subsb; it != subse; ++it) {
+                if((*it)->isVariable() && (*it) != elem.first ){
+                    //std::cout << "works..." << (*it)->getRepr() << " " << elem.first->getRepr() << std::endl;
+                    if (solution.count(*it)){
+                        //std::cout << "Okay, it's " << solution.at(*it) << std::endl;
+                        nnew[elem.first].substitudeVariable(*it,solution.at(*it));
+                    } else {
+                        //std::cout << "Okay, not present!" << std::endl;
+                        nnew[elem.first].substitudeVariable(*it,Words::Word());
+                    }
+                }
+            }
+        }
+
 		for (const auto& elem : solution) {
-		  if (nnew.count(elem.first)) 
+          if (nnew.count(elem.first))
 			nnew[elem.first].substitudeVariable (elem.first,elem.second);
-		  else
+          else
 			nnew[elem.first] = elem.second;
-		}
+        }
+
+        // set open substitutions to the empty word
+        for (auto& oelem : nnew) {
+              oelem.second.substitudeVariable(oelem.first,Words::Word());
+        }
+
 		return nnew;
 	  }
 	  
