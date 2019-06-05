@@ -106,6 +106,20 @@ namespace Words {
 	  
 	  
 	  virtual void addEquation (const Words::Equation& eq) {
+
+
+
+          if(eq.lhs.characters() == 0){
+              std::cout << " xxx : " << eq.lhs << std::endl;
+
+              std::cout << eq << std::endl;
+
+          }
+
+          if(eq.rhs.characters() == 0){
+              std::cout << " yyy : "  << std::endl;
+          }
+
 		auto left = buildWordAst (eq.lhs);
 		auto right = buildWordAst (eq.rhs);
 		auto eqe = Z3_mk_eq (context,left,right);

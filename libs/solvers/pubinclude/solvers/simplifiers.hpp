@@ -289,12 +289,12 @@ namespace Words {
 		  Word* subsWord = nullptr;
 
           // Select a variable and a proper substitution
-		  if (it->lhs.entries () == 1 && (*it->lhs.begin ())->isVariable()) {
+          if (it->lhs.entries () == 1 && (*it->lhs.begin ())->isVariable() && !it->rhs.containsVariable((*it->lhs.begin ()))) {
 			variable = (*it->lhs.begin ());
 			subsWord = &it->rhs;
 		  }
 
-		  if (it->rhs.entries () == 1 && (*it->rhs.begin ())->isVariable()) {
+          if (it->rhs.entries () == 1 && (*it->rhs.begin ())->isVariable() && !it->lhs.containsVariable((*it->rhs.begin ()))) {
 			variable = (*it->rhs.begin ());
 			subsWord = &it->lhs;
 		  }
@@ -347,6 +347,8 @@ namespace Words {
 		  
 		}
         else {
+           std::cout << "XXX" << std::endl;
+
 		  return Simplified::ReducedSatis;
 		}
 		
@@ -483,7 +485,7 @@ namespace Words {
 	public:
 
       static Simplified oneSideEmptyCheck (Words::Word &w){
-          if (w.noVariableWord())
+          if (!w.noTerminalWord())
               return Simplified::ReducedNsatis;
            else
               return Simplified::JustReduced;
@@ -497,12 +499,11 @@ namespace Words {
 
           // Avoid the calculation of an empty parikh image
           if (eq.lhs.characters() == 0 && eq.rhs.characters() == 0){
-            return Simplified::ReducedSatis;
-                        std::cout << "??????" << std::endl;
+              return Simplified::ReducedSatis;
           } else if (eq.lhs.characters() == 0){
-              return oneSideEmptyCheck(eq.lhs);
-          } else if (eq.rhs.characters() == 0) {
               return oneSideEmptyCheck(eq.rhs);
+          } else if (eq.rhs.characters() == 0) {
+              return oneSideEmptyCheck(eq.lhs);
           }
 
           Words::Algorithms::calculateParikhMatrices(eq.lhs,lhs_p_pm,lhs_s_pm);
@@ -555,6 +556,14 @@ namespace Words {
 				return Simplified::ReducedNsatis;
 			  }
 			}
+
+
+            // Unbalanced equation check
+            // this is dirty...
+
+
+            //
+
 
 			for (int i = 1; i < minSize; i++){
 			  sri = (rSize-1)-i;
@@ -636,7 +645,7 @@ namespace Words {
 
     using FoldPreSufParikh = SequenceSimplifier2<Words::Equation,ConstSequenceFolding,PrefixReducer,SuffixReducer,ParikhMatrixMismatch,ConstSequenceMismatch>;
 	using CoreSimplifier = SequenceSimplifier2<Words::Options,RunAllEq<FoldPreSufParikh>,
-	SubstitutionReasoningNew<FoldPreSufParikh>
+    SubstitutionReasoningNew<FoldPreSufParikh>
 												   >;
 	//using CoreSimplifier = RunAllEq<ParikhMatrixMismatch>;
 	//using CoreSimplifier = RunAllEq<PrefixReducer>;

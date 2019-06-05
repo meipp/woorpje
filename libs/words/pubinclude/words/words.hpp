@@ -295,7 +295,6 @@ namespace Words {
 		  internal = std::make_unique<Internal> ();
 		  SegIter<innerIter>::begin (*seq,internal->it);
 		  SegIter<innerIter>::end (*seq,internal->end);
-		  
 		}
 	  }
 	  
@@ -369,6 +368,15 @@ namespace Words {
 		}
 	  }
 	}
+
+    bool containsVariable(IEntry* var){
+        for (auto i : word) {
+            if (i->isVariable() && i == var)
+                return true;
+        }
+        return false;
+    }
+
 
     bool noVariableWord() const {
       return word.size() == 1 &&  word.at(0)->isSequence ();

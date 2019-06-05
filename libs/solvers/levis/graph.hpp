@@ -101,7 +101,7 @@ namespace Words {
         }
 
 		return nnew;
-	  }
+      }
 	  
 	  inline Words::Substitution findRootSolution (Node* n) {
 		struct SearchNode {
