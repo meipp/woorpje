@@ -11,6 +11,7 @@
 #include "graph.hpp"
 #include "solver.hpp"
 #include "rules.hpp"
+#include "heuristics.hpp"
 #include "solvers/simplifiers.hpp"
 #include "smt/smtsolvers.hpp"
 #include "words/algorithms.hpp"
@@ -27,30 +28,30 @@ namespace Words {
 	  class Handler {
 	  public:
 		Handler (PassedWaiting& w, Graph& g,Words::Substitution& s) : waiting(w),graph(g),subs(s) {}
-
+		
         // criteria for external solver calls
         //
 
         // trigger the solver with a timeout given via parameter every time the
         // waiting list exceeds a bound
-        bool waitingListLimitExceeded(std::size_t wSize, std::size_t bound=35){
+        /*bool waitingListLimitExceeded(std::size_t wSize, std::size_t bound=35){
             return wSize > bound;
-        }
+			}*/
 
         // sets the solver timeout based on items in the waiting list
-        bool waitingListLimitExceededScaleTimeout(std::size_t wSize, std::size_t& timeout, std::size_t bound=35){
+        /*bool waitingListLimitExceededScaleTimeout(std::size_t wSize, std::size_t& timeout, std::size_t bound=35){
             if(!waitingListLimitExceeded(wSize,bound))
                 return false;
             timeout = (wSize-bound)*10;
             return true;
-        }
+			}*/
 
-        bool variableLimitReached(std::shared_ptr<Words::Options>& to, std::size_t bound=3){
+        /*bool variableLimitReached(std::shared_ptr<Words::Options>& to, std::size_t bound=3){
             return to->context.getVariableAlphabet().size() < bound;
-        }
+			}*/
 
         // some equations (maximumEquations amount) exceeded a length bound
-        bool equationLengthExceeded(std::shared_ptr<Words::Options>& to, std::size_t maximumLength=50, std::size_t maximumEquations=0){
+        /*bool equationLengthExceeded(std::shared_ptr<Words::Options>& to, std::size_t maximumLength=50, std::size_t maximumEquations=0){
             //Words::Algorithms::ParikhImage p_lhs;
             auto eqBegin = to->equations.begin();
             auto eqEnd = to->equations.end();
@@ -62,7 +63,7 @@ namespace Words {
                 }
             }
             return false;
-        }
+			}*/
 
         size_t calculateTotalEquationSystemSize(const Words::Options& o){
             size_t eqsSize = 0;
@@ -87,6 +88,7 @@ namespace Words {
 		bool handle (const Words::Options& from, std::shared_ptr<Words::Options>& to, const Words::Substitution& sub) {
 		  auto beforeSimp = to->copy ();
 		  // Simplification
+		  SMTHeuristic_ptr heur = std::make_unique<WaitingListLimitReached> (10);
 		  Words::Substitution simplSub;
 		  auto res = Words::Solvers::CoreSimplifier::solverReduce (*to,simplSub); 
 
@@ -114,19 +116,11 @@ namespace Words {
 			return true;
 		  }
 
-          if (equationLengthGrowthExceeded(from,to))  { //insert criterion for running SMTSolvers
-          std::size_t timeout = 0;
-          //if (waitingListLimitExceededScaleTimeout(waiting.size(),timeout)){
-            return runSMTSolver (nnode,to,timeout);
-		  }
+          //if (equationLengthGrowthExceeded(from,to))  { //insert criterion for running SMTSolvers
+		  if (heur->doRunSMTSolver (from,*to,waiting))
+            return runSMTSolver (nnode,to,*heur);
 		  
-		  // merge substitutions
-		  /*Words::Substitution newSub = sub;
-			for (auto x : simplSub){
-			if (newSub.count(x.first))  { // == y.first){
-			newSub[x.first].substitudeVariable (x.first,x.second); 
-			}
-			}*/
+		  
 			
 			  
 		  waiting.insert(to);
@@ -142,12 +136,11 @@ namespace Words {
 		  return false;
 		}
 
-        bool runSMTSolver (Node* n, const std::shared_ptr<Words::Options>& from, std::size_t timeout=0) {
+        bool runSMTSolver (Node* n, const std::shared_ptr<Words::Options>& from, SMTHeuristic& heur) {
 		  n->ranSMTSolver = true;
 		  auto smtsolver = Words::SMT::makeSolver ();
+		  heur.configureSolver (smtsolver);
 		  Words::SMT::buildEquationSystem (*smtsolver,*from);
-          if (timeout)
-            smtsolver->setTimeout(timeout);
           switch (smtsolver->solve()) {
 		  case Words::SMT::SolverResult::Satis: {
 			std::shared_ptr<Words::Options> tt = from->copy ();
