@@ -117,9 +117,12 @@ namespace Words {
 		  }
 
           //if (equationLengthGrowthExceeded(from,to))  { //insert criterion for running SMTSolvers
-		  if (heur->doRunSMTSolver (from,*to,waiting))
-            return runSMTSolver (nnode,to,*heur);
-		  
+          //if(waitingListLimitExceeded(waiting.size(),30)){
+
+          std::size_t timeout = 0;
+          if (waitingListLimitExceededScaleTimeout(waiting.size(),timeout,50)){ // && equationLengthGrowthExceeded(from,to)){
+            return runSMTSolver (nnode,to,timeout);
+		  }
 		  
 			
 			  
