@@ -116,7 +116,7 @@ namespace Words {
 		  }
 
 
-          SMTHeuristic_ptr heur = std::make_unique<WaitingListLimitReached> (10);
+          SMTHeuristic_ptr heur = std::make_unique<VariableTerminalRatio> (1.1);
           if (heur->doRunSMTSolver (from,*to,waiting))
             return runSMTSolver (nnode,to,*heur);
 			  

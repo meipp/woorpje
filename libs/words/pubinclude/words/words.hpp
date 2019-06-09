@@ -333,6 +333,17 @@ namespace Words {
 	  //return word.size();
 	}
 	
+    void sepearteCharacterCount (size_t & terminals, size_t & variables) const {
+      auto end = eend();
+      auto begin = ebegin();
+      for (auto it=begin; it != end; ++it) {
+          if((*it)->isVariable())
+              variables++;
+          else
+              terminals = terminals + (*it)->length();
+      }
+    }
+
 	size_t entries () const {return word.size();}
 	auto begin () const {return const_iterator(word.begin(),word.end());}
 	auto end () const {return const_iterator(word.end(),word.end());}
