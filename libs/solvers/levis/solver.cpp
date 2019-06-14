@@ -134,7 +134,16 @@ namespace Words {
                    std::map<IEntry*,int64_t> coefficents;
                    int64_t coefficent = 0;
                    x.second.getVariables (usedVariables);
+
                    for (auto lhsIt = lhsBegin; lhsIt != lhsEnd; ++lhsIt){
+                      if ((*lhsIt).entry == x.first){
+                          coefficent = (*lhsIt).number;
+                          break;
+                      }
+                  }
+
+
+                   /*for (auto lhsIt = lhsBegin; lhsIt != lhsEnd; ++lhsIt){
                        if(std::find(usedVariables.begin(), usedVariables.end(), (*lhsIt).entry) != usedVariables.end()) {
                             coefficents[(*lhsIt).entry] =  (*lhsIt).number;
                        } else if ((*lhsIt).entry != x.first) {
@@ -163,7 +172,7 @@ namespace Words {
                             if(bSum != 0)
                                 builder->addLHS(y.first,bSum);
                         }
-                   }
+                   }*/
 
                    cstr = builder->makeConstraint();
                    if(cstr->lhsEmpty()){
