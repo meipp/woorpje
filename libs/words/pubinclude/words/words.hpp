@@ -340,7 +340,8 @@ namespace Words {
           if((*it)->isVariable())
               variables++;
           else
-              terminals = terminals + (*it)->length();
+            terminals = terminals + (*it)->length();
+
       }
     }
 
@@ -379,6 +380,16 @@ namespace Words {
 		}
 	  }
 	}
+
+    void getVariables (std::vector<IEntry*>& vars){
+        auto end = eend();
+        auto begin = ebegin();
+        for (auto it=begin; it != end; ++it) {
+            if((*it)->isVariable())
+                vars.push_back((*it));
+        }
+    }
+
 
     bool containsVariable(IEntry* var){
         for (auto i : word) {
@@ -570,9 +581,9 @@ namespace Words {
   
   inline std::ostream& operator<< (std::ostream& os, const Options& opt) {
 	for (auto& eq : opt.equations)
-	  os << eq << std::endl;
+      os << eq  << std::endl;
 	for (auto& c : opt.constraints)
-	  os << *c << std::endl;
+      os << *c << std::endl;
 	return os;
   }
 

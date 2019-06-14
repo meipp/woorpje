@@ -29,7 +29,9 @@ namespace Words {
 		return o;
 	  }
 	  virtual bool isLinear () const override {return true;}
-	  virtual const LinearConstraint* getLinconstraint () const override {return this;}
+      virtual const LinearConstraint* getLinconstraint () const override {return this;}
+      virtual std::shared_ptr<Constraint> copy() const override {return std::make_shared<LinearConstraint>(*this);}
+      virtual bool lhsEmpty() const override {return variables.size() == 0;}
 	  
 	private: 
 	  std::vector<VarMultiplicity> variables;
