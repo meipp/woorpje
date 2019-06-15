@@ -339,9 +339,10 @@ namespace Words {
       for (auto it=begin; it != end; ++it) {
           if((*it)->isVariable())
               variables++;
-          else
-            terminals = terminals + (*it)->length();
+          else{
+              terminals = terminals + (*it)->length();
 
+          }
       }
     }
 

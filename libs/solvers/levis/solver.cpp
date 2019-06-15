@@ -127,7 +127,7 @@ namespace Words {
                     // we need information about the amout of variables and chars later...
                     size_t variableCount = 0;
                     size_t terminalCount = 0;
-                    x.second.sepearteCharacterCount (variableCount, terminalCount);
+                    x.second.sepearteCharacterCount (terminalCount, variableCount);
 
                     // do the variable magic
                    std::vector<IEntry*> usedVariables;
@@ -135,12 +135,64 @@ namespace Words {
                    int64_t coefficent = 0;
                    x.second.getVariables (usedVariables);
 
+                   // get the coefficent of the substituions left hand side
+                   // rather naive right now...
                    for (auto lhsIt = lhsBegin; lhsIt != lhsEnd; ++lhsIt){
-                      if ((*lhsIt).entry == x.first){
+                       if ((*lhsIt).entry == x.first){
                           coefficent = (*lhsIt).number;
                           break;
                       }
+                   }
+
+                   // left hand side not present inside the constraint
+                   if (coefficent == 0){
+                       newConstraints.push_back((*it)->copy());
+                       continue;
+                   }
+
+                   // add the right hand side
+                   int64_t rhsSum = (*it)->getLinconstraint()->getRHS()-(coefficent*((int64_t)terminalCount));
+                   builder->addRHS(rhsSum);
+
+                   // collect the other coefficents
+                   for (auto lhsIt = lhsBegin; lhsIt != lhsEnd; ++lhsIt){
+                      if(std::find(usedVariables.begin(), usedVariables.end(), (*lhsIt).entry) != usedVariables.end()) {
+                           coefficents[(*lhsIt).entry] =  (*lhsIt).number;
+                      } else if ((*lhsIt).entry != x.first) {
+                         builder->addLHS((*lhsIt).entry,(*lhsIt).number);
+                      }
                   }
+
+                  // fill coefficents for unused variables but occurring in the substitution
+                  for (auto y : usedVariables){
+                      if (!coefficents.count(y))
+                          coefficents[y] = 0;
+                  }
+
+                  // create left hand side
+                  int64_t bSum = 0;
+                  for(auto y : coefficents){
+                        if (y.first != x.first){
+                            bSum = y.second+coefficent;
+                            if(bSum != 0)
+                                builder->addLHS(y.first,bSum);
+                        } else {
+                            builder->addLHS(x.first,coefficent);
+                        }
+                   }
+
+                  cstr = builder->makeConstraint();
+                  if(cstr->lhsEmpty()){
+                      if(cstr->getLinconstraint()->getRHS() < 0){
+                          return false;
+                      }
+                  } else {
+                     newConstraints.push_back(cstr);
+                  }
+                  continue;
+
+
+
 
 
                    /*for (auto lhsIt = lhsBegin; lhsIt != lhsEnd; ++lhsIt){
@@ -174,15 +226,7 @@ namespace Words {
                         }
                    }*/
 
-                   cstr = builder->makeConstraint();
-                   if(cstr->lhsEmpty()){
-                       if(cstr->getLinconstraint()->getRHS() < 0){
-                           return false;
-                       }
-                   } else {
-                      newConstraints.push_back(cstr);
-                   }
-                   continue;
+
 
 
 
@@ -293,12 +337,30 @@ namespace Words {
 		//returns true if successor generation should stop
 		//
 		bool handle (const Words::Options& from, std::shared_ptr<Words::Options>& to, const Words::Substitution& sub) {
-		  auto beforeSimp = to->copy ();
+          //auto beforeSimp = to->copy ();
 		  // Simplification
+          if(!modifyLinearConstraints(to, sub))
+             return false;
+
+
+  /*        std::cout << "----------------------"<< std::endl;
+          std::cout << "Start modification on:" << from << std::endl;
+          std::cout << "=====================" <<  std::endl; */
+         // modifyLinearConstraints(to, sub);
+          auto beforeSimp = to->copy ();
+  /*        std::cout << "First modification:" << *to << std::endl;
+          std::cout << "Substitution was: " << sub << std::endl;
+std::cout << "=====================" <<  std::endl;
+*/
 		  Words::Substitution simplSub;
           auto res = Words::Solvers::CoreSimplifier::solverReduce (*to,simplSub);
 
-          if(!modifyLinearConstraints(to, sub))
+
+       /*   std::cout << "Second modification:" << *to << std::endl;
+          std::cout << "Substitution was: " << simplSub << std::endl;
+          std::cout << "----------------------"<< std::endl;
+        */
+          if(!modifyLinearConstraints(to, simplSub))
               return false;
 
 		  if (res==Simplified::ReducedNsatis){
@@ -374,8 +436,8 @@ namespace Words {
 		
         auto getResult () const {
             // shouldn't this be true?
-            if (waiting.size() == 0)
-                return Words::Solvers::Result::DefinitelyNoSolution;
+            //if (waiting.size() == 0)
+            //    return Words::Solvers::Result::DefinitelyNoSolution;
 
 
             return result;}
@@ -392,8 +454,18 @@ namespace Words {
 		PassedWaiting waiting;
 		Graph graph;
 		Handler handler (waiting,graph,sub);
-		
-		auto insert = opt.copy ();
+
+        // We need the substituion of the first simplifier run. This is just a quick hack...
+        // Start THE SOLVER without simplify flag
+        Words::Substitution simplSub;
+        auto insert = opt.copy ();
+        auto res = Words::Solvers::CoreSimplifier::solverReduce (*insert,simplSub);
+        handler.modifyLinearConstraints(insert, simplSub);
+
+        if (res==Simplified::ReducedNsatis){
+          return Words::Solvers::Result::DefinitelyNoSolution;
+        }
+        //auto insert = opt.copy ();
 		waiting.insert (insert);
 		graph.makeNode (insert);
 
