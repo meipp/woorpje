@@ -86,6 +86,10 @@ namespace Words {
 
         // Linear constraints handling
         bool modifyLinearConstraints(std::shared_ptr<Words::Options>& opt, const Words::Substitution& sub){
+            if (opt->constraints.size() == 0)
+                return true;
+
+
             std::unique_ptr<Words::Constraints::LinearConstraintBuilder> builder = nullptr;
             std::vector<Constraints::Constraint_ptr> newConstraints;
             auto cBegin = opt->constraints.begin();
@@ -464,7 +468,10 @@ std::cout << "=====================" <<  std::endl;
 
         if (res==Simplified::ReducedNsatis){
           return Words::Solvers::Result::DefinitelyNoSolution;
+        } else if (res==Simplified::ReducedSatis) {
+          return Words::Solvers::Result::HasSolution;
         }
+
         //auto insert = opt.copy ();
 		waiting.insert (insert);
 		graph.makeNode (insert);
