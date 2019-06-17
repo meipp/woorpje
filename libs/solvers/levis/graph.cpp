@@ -17,8 +17,7 @@ namespace Words {
 		agattr(graph,AGNODE,const_cast<char*>("style"),const_cast<char*>("filled"));;
 
 		auto it = g.begin();
-		auto end = g.end();
-		
+        auto end = g.end();
 		for (; it != end; ++it) {
 		  auto& e = *it;
 		  auto from = e->from;
@@ -27,7 +26,8 @@ namespace Words {
 		  std::stringstream tstr;
 		  std::stringstream ledge;
 		  fstr << *(from->opt);
-		  tstr << *(to->opt);
+          tstr << *(to->opt);
+
 		  ledge << e->subs;
 		  auto fromn = agnode (graph,const_cast<char*> (fstr.str().c_str()),1);
 		  auto ton = agnode (graph,const_cast<char*> (tstr.str().c_str()),1);

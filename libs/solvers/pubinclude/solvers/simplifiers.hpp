@@ -46,7 +46,7 @@ namespace Words {
 		if (res == Simplified::ReducedSatis || res==Simplified::ReducedNsatis)
 		  return res;
 		else {
-		  s.clear ();
+          s.clear ();
 		  return SequenceSimplifier2<T,Ts...>::solverReduce (eq,s);
 		}
 	  }
@@ -141,7 +141,7 @@ namespace Words {
 		if (lhs.ebegin () == lhs.eend () &&
 			rhs.ebegin () == rhs.eend ()) {
 		  return Simplified::ReducedSatis;
-		}
+        }
         s.clear();
         return Simplified::JustReduced;
 	  }
@@ -194,7 +194,7 @@ namespace Words {
 		if (lhs.ebegin () == lhs.eend () &&
 			rhs.ebegin () == rhs.eend ()) {
 		  return Simplified::ReducedSatis;
-		}
+        }
         s.clear();
 		return Simplified::JustReduced;
 	  }

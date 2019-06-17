@@ -333,6 +333,18 @@ namespace Words {
 	  //return word.size();
 	}
 	
+    void sepearteCharacterCount (size_t & terminals, size_t & variables) const {
+      auto end = eend();
+      auto begin = ebegin();
+      for (auto it=begin; it != end; ++it) {
+          if((*it)->isVariable())
+              variables++;
+          else
+            terminals = terminals + (*it)->length();
+
+      }
+    }
+
 	size_t entries () const {return word.size();}
 	auto begin () const {return const_iterator(word.begin(),word.end());}
 	auto end () const {return const_iterator(word.end(),word.end());}
@@ -368,6 +380,16 @@ namespace Words {
 		}
 	  }
 	}
+
+    void getVariables (std::vector<IEntry*>& vars){
+        auto end = eend();
+        auto begin = ebegin();
+        for (auto it=begin; it != end; ++it) {
+            if((*it)->isVariable())
+                vars.push_back((*it));
+        }
+    }
+
 
     bool containsVariable(IEntry* var){
         for (auto i : word) {
@@ -559,9 +581,9 @@ namespace Words {
   
   inline std::ostream& operator<< (std::ostream& os, const Options& opt) {
 	for (auto& eq : opt.equations)
-	  os << eq << std::endl;
+      os << eq  << std::endl;
 	for (auto& c : opt.constraints)
-	  os << *c << std::endl;
+      os << *c << std::endl;
 	return os;
   }
 

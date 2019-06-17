@@ -105,8 +105,37 @@ using SMTHeuristic_ptr = std::unique_ptr<SMTHeuristic>;
 	  private:
 		double scale = 1.25;
 	  };
-	  
-	}
+
+
+      class VariableTerminalRatio : public SMTHeuristic {
+      public:
+        VariableTerminalRatio (double scale) : scale(scale) {}
+        bool doRunSMTSolver (const Words::Options& from,const Words::Options& opt, const PassedWaiting& pw) const override {
+          std::size_t fTerminals, tTerminals, fVariables, tVariables = 0;
+          calculateTotalCount(from,fTerminals,fVariables);
+          calculateTotalCount(opt,tTerminals,tVariables);
+
+          if(fVariables == 0 || tVariables == 0)
+              return false;
+
+          return (fTerminals/fVariables)*scale < (tTerminals/tVariables);
+        }
+
+
+        void calculateTotalCount(const Words::Options& o, size_t & terminals, size_t & variables) const {
+          auto eqBegin = o.equations.begin();
+          auto eqEnd = o.equations.end();
+          for(auto it = eqBegin; it != eqEnd; ++it){
+              it->lhs.sepearteCharacterCount(terminals,variables);
+          }
+        }
+
+        virtual void configureSolver (Words::SMT::Solver_ptr&) {}
+
+      private:
+        double scale = 1.25;
+      };
+    }
   }
 }
 
