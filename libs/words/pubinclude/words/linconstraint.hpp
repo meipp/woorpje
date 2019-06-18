@@ -35,6 +35,10 @@ namespace Words {
 		seed = Words::Hash::Hash<VarMultiplicity> (variables.data(),variables.size(),seed);
 		return Words::Hash::Hash<int64_t> (&rhs,1,seed);
 	  }
+		
+	  virtual std::shared_ptr<Constraint> copy() const override {return std::make_shared<LinearConstraint>(*this);}
+          virtual bool lhsEmpty() const override {return variables.size() == 0;}
+	
 	private: 
 	  std::vector<VarMultiplicity> variables;
 	  int64_t rhs;

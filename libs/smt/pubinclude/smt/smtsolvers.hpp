@@ -1,3 +1,7 @@
+#ifndef _SMT_SOLVERS__
+#define _SMT_SOLVERS__
+
+
 #include <memory>
 #include "words/exceptions.hpp"
 #include "words/words.hpp"
@@ -77,3 +81,5 @@ namespace Words {
 	}
   }
 }
+
+#endif
