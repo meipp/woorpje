@@ -84,8 +84,7 @@ namespace Words {
 	}
    
 	size_t hash () const {
-	  return Words::Hash::Hash<const IEntry*> (entries.data(), entries.size(),static_cast<uint32_t> (entries.size()));
-	  
+	  return  Words::Hash::Hash<const IEntry*> (entries.data(), entries.size(),static_cast<uint32_t> (entries.size()));
 	}
 	
 	bool operator== (const Sequence& s) {
@@ -535,6 +534,9 @@ namespace Words {
 	uint32_t eqhash (uint32_t seed) const {
 	  for (auto& eq : equations) {
 		seed = eq.hash(seed);
+	  }
+	  for (auto& c : constraints) {
+		seed = c->hash (seed);
 	  }
 	  return seed;
 	}

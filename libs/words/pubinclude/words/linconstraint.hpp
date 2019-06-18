@@ -3,6 +3,7 @@
 
 #include "words/words.hpp"
 #include "words/constraints.hpp"
+#include "host/hash.hpp"
 
 namespace Words {
   namespace Constraints {
@@ -30,7 +31,10 @@ namespace Words {
 	  }
 	  virtual bool isLinear () const override {return true;}
 	  virtual const LinearConstraint* getLinconstraint () const override {return this;}
-	  
+	  uint32_t hash (uint32_t seed) const override {
+		seed = Words::Hash::Hash<VarMultiplicity> (variables.data(),variables.size(),seed);
+		return Words::Hash::Hash<int64_t> (&rhs,1,seed);
+	  }
 	private: 
 	  std::vector<VarMultiplicity> variables;
 	  int64_t rhs;

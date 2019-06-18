@@ -12,6 +12,7 @@ namespace Words  {
 	  virtual bool isLinear () const  {return false;}
 	  virtual const LinearConstraint* getLinconstraint () const {return nullptr;}
 	  virtual std::ostream& output (std::ostream&) const = 0;
+	  virtual uint32_t hash (uint32_t seed) const = 0;
 	};
 
 	using Constraint_ptr = std::shared_ptr<Constraint>;
