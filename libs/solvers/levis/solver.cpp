@@ -86,7 +86,7 @@ namespace Words {
 
         // Linear constraints handling
         bool modifyLinearConstraints(std::shared_ptr<Words::Options>& opt, const Words::Substitution& sub){
-            if (opt->constraints.size() == 0)
+            if (opt->constraints.size() == 0 || sub.size() == 0)
                 return true;
 
 
@@ -94,8 +94,11 @@ namespace Words {
             std::vector<Constraints::Constraint_ptr> newConstraints;
             auto cBegin = opt->constraints.begin();
             auto cEnd   = opt->constraints.end();
-
+            std::cout << sub << std::endl;
             for (auto x : sub){
+
+                std::cout << *opt << std::endl;
+
                 for (auto it = cBegin; it!=cEnd; ++it){
                     if (!(*it)->isLinear()){
                         newConstraints.push_back((*it));
@@ -107,7 +110,6 @@ namespace Words {
                     auto lhsEnd = ((*it)->getLinconstraint())->end();
                     Constraints::Constraint_ptr cstr;
 
-                    //std::cout << x.first->getRepr() << ": " << x.second << "(" << x.second.characters() << "," << variableCount << "," << terminalCount<< ")" <<  std::endl;
                     // r(X) = \epsilon
                     if (x.second.characters() == 0){
                         builder->addRHS((*it)->getLinconstraint()->getRHS());
@@ -132,6 +134,8 @@ namespace Words {
                     size_t variableCount = 0;
                     size_t terminalCount = 0;
                     x.second.sepearteCharacterCount (terminalCount, variableCount);
+                    Words::Algorithms::ParikhImage p = Words::Algorithms::calculateParikh(x.second);
+
 
                     // do the variable magic
                    std::vector<IEntry*> usedVariables;
@@ -141,12 +145,15 @@ namespace Words {
 
                    // get the coefficent of the substituions left hand side
                    // rather naive right now...
+
+
                    for (auto lhsIt = lhsBegin; lhsIt != lhsEnd; ++lhsIt){
                        if ((*lhsIt).entry == x.first){
                           coefficent = (*lhsIt).number;
                           break;
                       }
                    }
+
 
                    // left hand side not present inside the constraint
                    if (coefficent == 0){
@@ -158,6 +165,7 @@ namespace Words {
                    int64_t rhsSum = (*it)->getLinconstraint()->getRHS()-(coefficent*((int64_t)terminalCount));
                    builder->addRHS(rhsSum);
 
+
                    // collect the other coefficents
                    for (auto lhsIt = lhsBegin; lhsIt != lhsEnd; ++lhsIt){
                       if(std::find(usedVariables.begin(), usedVariables.end(), (*lhsIt).entry) != usedVariables.end()) {
@@ -166,6 +174,7 @@ namespace Words {
                          builder->addLHS((*lhsIt).entry,(*lhsIt).number);
                       }
                   }
+
 
                   // fill coefficents for unused variables but occurring in the substitution
                   for (auto y : usedVariables){
@@ -177,7 +186,7 @@ namespace Words {
                   int64_t bSum = 0;
                   for(auto y : coefficents){
                         if (y.first != x.first){
-                            bSum = y.second+coefficent;
+                            bSum = p.at(y.first)*coefficent+y.second;
                             if(bSum != 0)
                                 builder->addLHS(y.first,bSum);
                         } else {
@@ -187,152 +196,17 @@ namespace Words {
 
                   cstr = builder->makeConstraint();
                   if(cstr->lhsEmpty()){
+                      std::cout << "NICE" << x.first->getRepr() << x.second << std::endl;
                       if(cstr->getLinconstraint()->getRHS() < 0){
                           return false;
                       }
                   } else {
                      newConstraints.push_back(cstr);
                   }
-                  continue;
-
-
-
-
-
-                   /*for (auto lhsIt = lhsBegin; lhsIt != lhsEnd; ++lhsIt){
-                       if(std::find(usedVariables.begin(), usedVariables.end(), (*lhsIt).entry) != usedVariables.end()) {
-                            coefficents[(*lhsIt).entry] =  (*lhsIt).number;
-                       } else if ((*lhsIt).entry != x.first) {
-                          builder->addLHS((*lhsIt).entry,(*lhsIt).number);
-                       }
-
-                       if ((*lhsIt).entry == x.first)
-                           coefficent = (*lhsIt).number;
-                   }
-
-                   // add terminal letter cout to the rhs
-                   int64_t rhsSum = (*it)->getLinconstraint()->getRHS()+(coefficent*(int64_t)terminalCount);
-                   builder->addRHS(rhsSum);
-
-                   // Variable present in the current constraint?
-                   if (coefficent == 0)
-                       continue;
-
-
-                   /// I HAVE TO CONSIDER THE WHOLE SYSTEM !!! SHIT!
-
-                   int64_t bSum;
-                   for(auto y : coefficents){
-                        if (y.first != x.first){
-                            bSum = y.second+coefficent;
-                            if(bSum != 0)
-                                builder->addLHS(y.first,bSum);
-                        }
-                   }*/
-
-
-
-
-
-
-
-
-
-
-
-                    /*
-
-                      SEPARAT LEVIS RULES!!!
-
-                    // r(X) = aX or r(X) = Xa
-                    if (x.second.characters() == 2 && variableCount == 1 && terminalCount == 1){
-
-                        builder->addRHS((*it)->getLinconstraint()->getRHS()+1);
-
-                        // TODO: not modified at all, hook in a full vector in the builder!
-                        for (auto lhsIt = lhsBegin; lhsIt != lhsEnd; ++lhsIt){
-                            builder->addLHS((*lhsIt).entry,(*lhsIt).number);
-                        }
-
-                        cstr = builder->makeConstraint();
-                        if(cstr->lhsEmpty()){
-                            if(cstr->getLinconstraint()->getRHS() < 0){
-                                return false;
-                            }
-                        } else {
-                           newConstraints.push_back(cstr);
-                        }
-                        continue;
-                    }
-
-                    // r(X) = Y
-                    if (x.second.characters() == 1 && variableCount == 1){
-                        IEntry* Y = (*x.second.begin());
-                        int64_t coefficent = 0;
-                        builder->addRHS((*it)->getLinconstraint()->getRHS());
-                        for (auto lhsIt = lhsBegin; lhsIt != lhsEnd; ++lhsIt){
-                            if ((*lhsIt).entry != x.first && (*lhsIt).entry != Y ){
-                                builder->addLHS((*lhsIt).entry,(*lhsIt).number);
-                            } else {
-                                coefficent=coefficent+(*lhsIt).number;
-                            }
-                        }
-                        if (coefficent != 0){
-                            builder->addLHS(Y,coefficent);
-                        }
-
-                        cstr = builder->makeConstraint();
-                        if(cstr->lhsEmpty()){
-                            if(cstr->getLinconstraint()->getRHS() < 0){
-                                return false;
-                            }
-                        } else {
-                           newConstraints.push_back(cstr);
-                        }
-                        continue;
-                    }
-
-                    // r(X) = YX
-                    if (x.second.characters() == 2 && variableCount == 2){
-                        IEntry* Y = (*x.second.begin());
-                        auto Xit = x.second.begin();
-                        IEntry* X = (*Xit);
-
-                        if (X != x.first)
-                            continue;
-
-                        int64_t coefficent = 0;
-                        builder->addRHS((*it)->getLinconstraint()->getRHS());
-                        for (auto lhsIt = lhsBegin; lhsIt != lhsEnd; ++lhsIt){
-                            if ((*lhsIt).entry == Y){
-                                coefficent = coefficent + (*lhsIt).number;
-                            } else {
-                                builder->addLHS((*lhsIt).entry,(*lhsIt).number);
-                                if ((*lhsIt).entry == X)
-                                    coefficent = coefficent + (*lhsIt).number;
-                            }
-                        }
-
-                        if (coefficent != 0){
-                            builder->addLHS(Y,coefficent);
-                        }
-
-                        cstr = builder->makeConstraint();
-                        if(cstr->lhsEmpty()){
-                            if(cstr->getLinconstraint()->getRHS() < 0){
-                                return false;
-                            }
-                        } else {
-                           newConstraints.push_back(cstr);
-                        }
-                        continue;
-                    } */
                 }
+                if (newConstraints.size() > 0)
+                    opt->constraints = newConstraints;
             }
-
-            if (newConstraints.size() > 0)
-                opt->constraints = newConstraints;
-
             return true;
         }
 
@@ -439,11 +313,6 @@ std::cout << "=====================" <<  std::endl;
 		}
 		
         auto getResult () const {
-            // shouldn't this be true?
-            //if (waiting.size() == 0)
-            //    return Words::Solvers::Result::DefinitelyNoSolution;
-
-
             return result;}
 		
 	  private:
@@ -464,14 +333,13 @@ std::cout << "=====================" <<  std::endl;
         Words::Substitution simplSub;
         auto insert = opt.copy ();
         auto res = Words::Solvers::CoreSimplifier::solverReduce (*insert,simplSub);
-        handler.modifyLinearConstraints(insert, simplSub);
 
         if (res==Simplified::ReducedNsatis){
           return Words::Solvers::Result::DefinitelyNoSolution;
         } else if (res==Simplified::ReducedSatis) {
           return Words::Solvers::Result::HasSolution;
         }
-
+        handler.modifyLinearConstraints(insert, simplSub);
         //auto insert = opt.copy ();
 		waiting.insert (insert);
 		graph.makeNode (insert);
@@ -481,11 +349,25 @@ std::cout << "=====================" <<  std::endl;
           RuleSequencer<Handler,PrefixReasoningLeftHandSide,PrefixReasoningRightHandSide,PrefixReasoningEqual,PrefixEmptyWordLeftHandSide,PrefixEmptyWordRightHandSide,PrefixLetterLeftHandSide,PrefixLetterRightHandSide,SuffixReasoningLeftHandSide,SuffixReasoningRightHandSide,SuffixReasoningEqual,SuffixEmptyWordLeftHandSide,SuffixEmptyWordRightHandSide,SuffixLetterLeftHandSide,SuffixLetterRightHandSide>::runRules (handler,*cur);
           relay.progressMessage ((Words::Solvers::Formatter ("Passed: %1%, Waiting: %2%") % waiting.passedsize() % waiting.size()).str());
 		}
-#ifdef ENABLEGRAPH
-		outputToString ("Levis",graph);
-#endif
-		return handler.getResult ();
-	  }
+
+        #ifdef ENABLEGRAPH
+                outputToString ("Levis",graph);
+        #endif
+
+
+
+        if (handler.getResult() == Words::Solvers::Result::NoIdea ){
+            return Words::Solvers::Result::DefinitelyNoSolution;
+        }
+
+
+        return handler.getResult ();
+}
+
+
+
+
+
 	}
 	
   }
