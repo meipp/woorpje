@@ -20,6 +20,12 @@
 
 namespace po = boost::program_options;
 
+struct LevisHeuristics {
+  size_t which = 0;
+  double varTerminalRatio = 1.1;
+  size_t wlistLimit = 2;
+};
+
 class CoutResultGatherer : public Words::Solvers::DummyResultGatherer {
 public:
   CoutResultGatherer (const Words::Options& opt) : opt(opt) {}
@@ -89,6 +95,17 @@ void printBanner (std::ostream& os) {
   os << std::endl;
 }
 
+void setupLevis (LevisHeuristics& l) {
+  using namespace Words::Solvers::Levis;
+  switch (l.which) {
+  case 0:
+	selectVariableTerminalRatio(l.varTerminalRatio);
+	break;
+  case 1:
+	selectWaitingListReached (l.wlistLimit);
+	break;
+  }
+}
 
 void printHelp (std::ostream& os,po::options_description& desc) {
   printBanner (os);
@@ -135,6 +152,7 @@ int main (int argc, char** argv) {
   size_t solverr  = 0;
   std::string conffile;
   po::options_description desc("General Options");
+  LevisHeuristics lheu;
   desc.add_options ()
 	("help,h",po::bool_switch(&help), "Help message.")
 	("nobanner,n",po::bool_switch(&suppressbanner), "Suppress the banner.")
@@ -159,10 +177,19 @@ int main (int argc, char** argv) {
 	"\t 1 CVC4\n"
 	 )
 	("smttimeout",po::value<size_t> (&smttimeout), "Set timeout for SMTSolver (ms)");
-  
+
+  po::options_description levdesc("LevisSMT Options");
+  levdesc.add_options()
+	("levisheuristics",po::value<size_t> (&lheu.which), "Levisu Heuristics\n"
+	"\t 0 VariableTerminalRatio\n"
+	"\t 1 WaitingListLimitReached\n"
+	 )
+	("VarTerminalRation",po::value<double> (&lheu.varTerminalRatio), "Variable Terminal Ratio")
+	("WaitingLimit",po::value<size_t> (&lheu.wlistLimit), "WaitingListLimit");
+	
   
   desc.add (smdesc);
-  
+  desc.add (levdesc);
   po::positional_options_description positionalOptions; 
   positionalOptions.add("configuration", 1); 
   po::variables_map vm; 
@@ -183,6 +210,7 @@ int main (int argc, char** argv) {
 	printHelp (std::cout,desc);
 	return -1;
   }
+  setupLevis (lheu);
   setSMTSolver (smtsolver);
   Words::SMT::setDefaultTimeout (smttimeout);
   if (!suppressbanner)
@@ -204,7 +232,6 @@ int main (int argc, char** argv) {
   Words::Options foroutput;
   bool parsesucc = false;
   Words::Solvers::Solver_ptr solver = buildSolver (solverr);;
-  
   try {
 	std::fstream inp;
 	inp.open (conffile);

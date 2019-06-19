@@ -16,19 +16,22 @@ namespace Words {
 		virtual void configureSolver (Words::SMT::Solver_ptr&) {}
 	  };
 
-using SMTHeuristic_ptr = std::unique_ptr<SMTHeuristic>;
-	  
+	  using SMTHeuristic_ptr = std::unique_ptr<SMTHeuristic>;
+	  SMTHeuristic& getSMTHeuristic ();
 	  class WaitingListLimitReached : public SMTHeuristic {
 	  public:
-		WaitingListLimitReached (size_t bound) : bound (bound) {}
+		WaitingListLimitReached (size_t b) : bound (b) {
+		  std::cerr << "Init value " << b << std::endl;
+		}
 		bool doRunSMTSolver (const Words::Options& from,const Words::Options& opt, const PassedWaiting& pw) const override {
+		  std::cerr << "Bound " << bound << std::endl;
 		  return pw.size() > bound;
 		}
 
 		virtual void configureSolver (Words::SMT::Solver_ptr&) {}
 		
 	  private:
-		size_t bound = 0;
+		size_t bound;
 	  };
 
 	  class WaitingListLimitReachedScaledTimeout : public SMTHeuristic {
