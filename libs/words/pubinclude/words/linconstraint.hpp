@@ -23,6 +23,7 @@ namespace Words {
 	  auto end () const {return variables.end();}
 	  const auto& getRHS () const {return rhs;}
 	  std::ostream& output (std::ostream& o) const override {
+		o << this << ": ";
 		for  (auto& e : variables) {
 		  o << e.number   <<"*"<<  e.entry->getRepr() << " "; 
 		}
@@ -37,7 +38,7 @@ namespace Words {
 	  }
 		
 	  virtual std::shared_ptr<Constraint> copy() const override {return std::make_shared<LinearConstraint>(*this);}
-          virtual bool lhsEmpty() const override {return variables.size() == 0;}
+	  virtual bool lhsEmpty() const override {return variables.size() == 0;}
 	
 	private: 
 	  std::vector<VarMultiplicity> variables;
