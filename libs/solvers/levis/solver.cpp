@@ -100,6 +100,7 @@ namespace Words {
                 std::cout << *opt << std::endl;
 
                 for (auto it = cBegin; it!=cEnd; ++it){
+                    std::cout << "x:" <<  *(*it) << std::endl;
                     if (!(*it)->isLinear()){
                         newConstraints.push_back((*it));
                         continue;
@@ -209,8 +210,6 @@ namespace Words {
             }
             return true;
         }
-
-
 
 		//returns true if successor generation should stop
 		//
