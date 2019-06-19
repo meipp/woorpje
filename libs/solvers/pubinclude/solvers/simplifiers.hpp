@@ -347,8 +347,6 @@ namespace Words {
 		  
 		}
         else {
-           std::cout << "XXX" << std::endl;
-
 		  return Simplified::ReducedSatis;
 		}
 		

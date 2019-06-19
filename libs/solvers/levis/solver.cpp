@@ -15,6 +15,7 @@
 #include "solvers/simplifiers.hpp"
 #include "smt/smtsolvers.hpp"
 #include "words/algorithms.hpp"
+#include "host/trace.hpp"
 
 #include <sstream>
 #include <iostream>
@@ -28,7 +29,6 @@ namespace Words {
 	  class Handler {
 	  public:
 		Handler (PassedWaiting& w, Graph& g,Words::Substitution& s) : waiting(w),graph(g),subs(s) {}
-		
         // criteria for external solver calls
         //
 
@@ -93,7 +93,7 @@ namespace Words {
 		  std::unique_ptr<Words::Constraints::LinearConstraintBuilder> builder = nullptr;
 		  std::vector<Constraints::Constraint_ptr> newConstraints;
 		  
-		  std::cout << sub << std::endl;
+		  //std::cout << sub << std::endl;
 		  for (auto x : sub){
 			auto cBegin = opt->constraints.begin();
 			auto cEnd   = opt->constraints.end();
@@ -194,7 +194,7 @@ namespace Words {
 			  
 			  cstr = builder->makeConstraint();
 			  if(cstr->lhsEmpty()){
-				std::cout << "NICE" << x.first->getRepr() << x.second << std::endl;
+				//std::cout << "NICE" << x.first->getRepr() << x.second << std::endl;
 				if(cstr->getLinconstraint()->getRHS() < 0){
 				  return false;
 				}
@@ -322,6 +322,7 @@ std::cout << "=====================" <<  std::endl;
 	  
 	  ::Words::Solvers::Result Solver::Solve (Words::Options& opt,::Words::Solvers::MessageRelay& relay)   {
 		relay.pushMessage ("Levis Algorithm");
+		relay.pushMessage ((Formatter ("Using Heuristic: %1%") % getSMTHeuristic().getDescription ()).str()); 
 		PassedWaiting waiting;
 		Graph graph;
 		Handler handler (waiting,graph,sub);

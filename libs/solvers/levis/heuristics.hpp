@@ -14,6 +14,7 @@ namespace Words {
 	  public:
 		virtual bool doRunSMTSolver (const Words::Options& from,const Words::Options&, const PassedWaiting& ) const { return true;}
 		virtual void configureSolver (Words::SMT::Solver_ptr&) {}
+		virtual std::string getDescription () const  {return "Unknown";}
 	  };
 
 	  using SMTHeuristic_ptr = std::unique_ptr<SMTHeuristic>;
@@ -21,15 +22,13 @@ namespace Words {
 	  class WaitingListLimitReached : public SMTHeuristic {
 	  public:
 		WaitingListLimitReached (size_t b) : bound (b) {
-		  std::cerr << "Init value " << b << std::endl;
 		}
 		bool doRunSMTSolver (const Words::Options& from,const Words::Options& opt, const PassedWaiting& pw) const override {
-		  std::cerr << "Bound " << bound << std::endl;
 		  return pw.size() > bound;
 		}
-
-		virtual void configureSolver (Words::SMT::Solver_ptr&) {}
 		
+		virtual void configureSolver (Words::SMT::Solver_ptr&) {}
+		virtual std::string getDescription () const override {return (Formatter ("WaitingListLimit - %1%") % bound).str();};
 	  private:
 		size_t bound;
 	  };
@@ -124,7 +123,8 @@ namespace Words {
           return (fTerminals/fVariables)*scale < (tTerminals/tVariables);
         }
 
-
+		virtual std::string getDescription () const override {return (Formatter ("VariableTerminalRatio - %1%") % scale).str();};
+		
         void calculateTotalCount(const Words::Options& o, size_t & terminals, size_t & variables) const {
           auto eqBegin = o.equations.begin();
           auto eqEnd = o.equations.end();

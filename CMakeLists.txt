@@ -14,6 +14,10 @@ option (ENABLE_STATIC "STATIC_LINKING")
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules;${CMAKE_MODULE_PATH}")
 
+option (ENABLE_TRACE "Enable Trace")
+if (ENABLE_TRACE)
+  	add_definitions (-DENABLETRACE)
+endif(ENABLE_TRACE)
 
 if (NOT ENABLE_STATIC)
 # when building, don't use the install RPATH already
