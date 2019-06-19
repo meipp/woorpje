@@ -131,7 +131,15 @@ namespace Words {
 	  }
 
 	  void outputToString (const std::string&, const Graph& g);
-	  
+	  struct GuaranteeOutput {
+		GuaranteeOutput (const std::string& f, const Graph& g) : file(f),g(g) {
+		}
+		~GuaranteeOutput () {
+		  outputToString (file,g);
+		}
+		const std::string file;
+		const Graph& g;
+	  };
 	}
   }
 }

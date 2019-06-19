@@ -325,31 +325,39 @@ std::cout << "=====================" <<  std::endl;
 		Graph graph;
 		Handler handler (waiting,graph,sub);
 
+#ifdef ENABLEGRAPH
+		GuaranteeOutput go ("Levis",graph);
+#endif
+		
         // We need the substituion of the first simplifier run. This is just a quick hack...
         // Start THE SOLVER without simplify flag
         Words::Substitution simplSub;
-        auto insert = opt.copy ();
+		auto first = opt.copy();
+		auto insert = opt.copy ();
         auto res = Words::Solvers::CoreSimplifier::solverReduce (*insert,simplSub);
+		handler.modifyLinearConstraints(insert, simplSub);
+		auto inode = graph.makeNode (insert);
+		
 
         if (res==Simplified::ReducedNsatis){
           return Words::Solvers::Result::DefinitelyNoSolution;
         } else if (res==Simplified::ReducedSatis) {
+		  auto fnode = graph.makeNode (first); 
+		  graph.addEdge (fnode,inode,simplSub);
+		  sub = findRootSolution (inode);
           return Words::Solvers::Result::HasSolution;
         }
-        handler.modifyLinearConstraints(insert, simplSub);
+        
         //auto insert = opt.copy ();
 		waiting.insert (insert);
-		graph.makeNode (insert);
-
+		
 		while (waiting.size()) {
           auto cur = waiting.pullElement ();
           RuleSequencer<Handler,PrefixReasoningLeftHandSide,PrefixReasoningRightHandSide,PrefixReasoningEqual,PrefixEmptyWordLeftHandSide,PrefixEmptyWordRightHandSide,PrefixLetterLeftHandSide,PrefixLetterRightHandSide,SuffixReasoningLeftHandSide,SuffixReasoningRightHandSide,SuffixReasoningEqual,SuffixEmptyWordLeftHandSide,SuffixEmptyWordRightHandSide,SuffixLetterLeftHandSide,SuffixLetterRightHandSide>::runRules (handler,*cur);
           relay.progressMessage ((Words::Solvers::Formatter ("Passed: %1%, Waiting: %2%") % waiting.passedsize() % waiting.size()).str());
 		}
 
-        #ifdef ENABLEGRAPH
-                outputToString ("Levis",graph);
-        #endif
+        
 
 
 
