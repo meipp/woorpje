@@ -5,7 +5,7 @@ namespace Words {
   namespace Solvers {
 	namespace Levis {
 	  
-	  SMTHeuristic_ptr ptr = nullptr;
+	  SMTHeuristic_ptr ptr = std::make_unique<SMTHeuristic> ();
 	  
 	  SMTHeuristic& getSMTHeuristic () {
 		return *ptr;
