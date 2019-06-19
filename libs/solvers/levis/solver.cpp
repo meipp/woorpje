@@ -262,11 +262,12 @@ std::cout << "=====================" <<  std::endl;
 			return true;
 		  }
 
-
-          SMTHeuristic_ptr heur = std::make_unique<VariableTerminalRatio> (1.1);
-          if (heur->doRunSMTSolver (from,*to,waiting))
-            return runSMTSolver (nnode,to,*heur);
-			  
+		  
+          SMTHeuristic& heur = getSMTHeuristic ();
+          if (heur.doRunSMTSolver (from,*to,waiting))
+            return runSMTSolver (nnode,to,heur);
+		  else
+			std::cerr << "No solver " << std::endl;
 		  waiting.insert(to);
 			  
 			

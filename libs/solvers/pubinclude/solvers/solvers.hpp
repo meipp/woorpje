@@ -26,6 +26,12 @@ namespace Words {
 					   NoIdea
 	};
 
+
+	namespace Levis {
+	  void selectVariableTerminalRatio (double d);
+	  void selectWaitingListReached (size_t);
+	}
+	
 	class Formatter {
 	public:
 	  Formatter (const std::string& str) : formatter(str) {}

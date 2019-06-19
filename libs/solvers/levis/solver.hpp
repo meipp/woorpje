@@ -11,7 +11,6 @@
 namespace Words {
   namespace Solvers {
 	namespace Levis {
-
 	  
 	  class Solver : public ::Words::Solvers::Solver {
 	  public:
