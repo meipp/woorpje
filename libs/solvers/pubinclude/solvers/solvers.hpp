@@ -30,6 +30,9 @@ namespace Words {
 	namespace Levis {
 	  void selectVariableTerminalRatio (double d);
 	  void selectWaitingListReached (size_t);
+      void selectCalculateTotalEquationSystemSize (double d);
+      void selectEquationLengthExceeded (size_t);
+      void selectNone();
 	}
 	
 	class Formatter {

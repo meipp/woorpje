@@ -58,12 +58,11 @@ namespace Words {
 
 	  class EquationLengthExceeded : public SMTHeuristic {
 	  public:
-		EquationLengthExceeded (size_t eqLength, size_t maxEquations ) : eqLengthBound (eqLength),
-																		 maxEquations (maxEquations) {}
+        EquationLengthExceeded (size_t eqLength) : eqLengthBound (eqLength) {}
 		bool doRunSMTSolver (const Words::Options& from,const Words::Options& opt, const PassedWaiting& pw) const override {
-		  auto maximumEquations = maxEquations;
 		  auto eqBegin = opt.equations.begin();
 		  auto eqEnd = opt.equations.end();
+          int maximumEquations = opt.equations.size() / 2;
 		  for(auto it = eqBegin; it != eqEnd; ++it){
 			if (it->lhs.characters() + it->rhs.characters() > eqLengthBound){
 			  if (!maximumEquations)
@@ -74,8 +73,10 @@ namespace Words {
 		  return false;
 		}
 
+
 		virtual void configureSolver (Words::SMT::Solver_ptr&) {
 		}
+        virtual std::string getDescription () const override {return (Formatter ("Fixed equation length exceeded - %1%") % eqLengthBound).str();};
 		
 	  private:
 		size_t eqLengthBound = 0;
@@ -103,7 +104,8 @@ namespace Words {
         }
 		
 		virtual void configureSolver (Words::SMT::Solver_ptr&) {}
-		
+        virtual std::string getDescription () const override {return (Formatter ("Equation growth - %1%") % scale).str();};
+
 	  private:
 		double scale = 1.25;
 	  };
@@ -137,6 +139,20 @@ namespace Words {
 
       private:
         double scale = 1.25;
+      };
+
+
+      class NoSMT : public SMTHeuristic {
+      public:
+        NoSMT () {}
+        bool doRunSMTSolver (const Words::Options& from,const Words::Options& opt, const PassedWaiting& pw) const override {
+          return false;
+        }
+
+        virtual std::string getDescription () const override {return "No SMT Solver";};
+
+
+        virtual void configureSolver (Words::SMT::Solver_ptr&) {}
       };
     }
   }

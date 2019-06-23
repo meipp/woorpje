@@ -24,6 +24,8 @@ struct LevisHeuristics {
   size_t which = 0;
   double varTerminalRatio = 1.1;
   size_t wlistLimit = 2;
+  double growthFactor = 1.1;
+  size_t eqLength = 100;
 };
 
 class CoutResultGatherer : public Words::Solvers::DummyResultGatherer {
@@ -104,6 +106,15 @@ void setupLevis (LevisHeuristics& l) {
   case 1:
 	selectWaitingListReached (l.wlistLimit);
 	break;
+  case 2:
+    selectCalculateTotalEquationSystemSize(l.growthFactor);
+    break;
+  case 3:
+    selectEquationLengthExceeded(l.eqLength);
+    break;
+  case 4:
+    selectNone();
+    break;
   }
 }
 
@@ -180,12 +191,17 @@ int main (int argc, char** argv) {
 
   po::options_description levdesc("LevisSMT Options");
   levdesc.add_options()
-	("levisheuristics",po::value<size_t> (&lheu.which), "Levisu Heuristics\n"
+    ("levisheuristics",po::value<size_t> (&lheu.which), "Levi Heuristics\n"
 	"\t 0 VariableTerminalRatio\n"
-	"\t 1 WaitingListLimitReached\n"
+    "\t 1 WaitingListLimitReached\n"
+    "\t 2 EquationGrowth\n"
+    "\t 3 EquationLengthExceeded\n"
+    "\t 4 None\n"
 	 )
 	("VarTerminalRation",po::value<double> (&lheu.varTerminalRatio), "Variable Terminal Ratio")
-	("WaitingLimit",po::value<size_t> (&lheu.wlistLimit), "WaitingListLimit");
+    ("WaitingLimit",po::value<size_t> (&lheu.wlistLimit), "WaitingListLimit")
+    ("growth",po::value<double> (&lheu.growthFactor), "Equation Growth Ratio")
+    ("eqLength",po::value<size_t> (&lheu.eqLength), "Equation Length");
 	
   
   desc.add (smdesc);

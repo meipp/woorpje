@@ -266,9 +266,10 @@ std::cout << "=====================" <<  std::endl;
           SMTHeuristic& heur = getSMTHeuristic ();
           if (heur.doRunSMTSolver (from,*to,waiting))
             return runSMTSolver (nnode,to,heur);
-		  else
-			std::cerr << "No solver " << std::endl;
-		  waiting.insert(to);
+          else
+            TRACE ( "No solver " )
+
+          waiting.insert(to);
 			  
 			
 
@@ -337,9 +338,12 @@ std::cout << "=====================" <<  std::endl;
 		auto first = opt.copy();
 		auto insert = opt.copy ();
         auto res = Words::Solvers::CoreSimplifier::solverReduce (*insert,simplSub);
-		handler.modifyLinearConstraints(insert, simplSub);
+
+
+        if (!handler.modifyLinearConstraints(insert, simplSub))
+            return Words::Solvers::Result::DefinitelyNoSolution;
+
 		auto inode = graph.makeNode (insert);
-		
 
         if (res==Simplified::ReducedNsatis){
           return Words::Solvers::Result::DefinitelyNoSolution;
