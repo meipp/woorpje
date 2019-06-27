@@ -15,6 +15,7 @@ namespace Words {
 	
 	enum class SMTSolver {
 						  Z3,
+						  Z3Str3,
 						  CVC4
 	};
 

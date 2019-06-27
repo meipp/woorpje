@@ -3,6 +3,7 @@
 namespace Words {
   namespace Z3 {
 	Words::SMT::Solver_ptr makeZ3Solver ();
+	void setStr3 ();
   }
 
   namespace CVC4 {
@@ -18,12 +19,21 @@ namespace Words {
 	  defaultTimeout = t;
 	}
 	
-	void setSMTSolver (SMTSolver i) {msolve =  i;}
+	void setSMTSolver (SMTSolver i) {
+#ifdef ENABLEZ3
+	  if (i ==  SMTSolver::Z3Str3) {
+		Words::Z3::setStr3 ();
+	  }
+#endif
+	  msolve =  i;
+	}
+	
 	Solver_ptr makeSolver () {
 	  Solver_ptr solver;
 	  switch (msolve) {
 #ifdef ENABLEZ3
 	  case SMTSolver::Z3:
+	  case SMTSolver::Z3Str3:
 		solver = Words::Z3::makeZ3Solver ();
 		break;
 #endif
