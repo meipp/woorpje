@@ -18,11 +18,17 @@ namespace Words {
 		Result Solve (Words::Options&,Words::Solvers::MessageRelay&) override;
 		//Should only be called if Result returned HasSolution
 		void getResults (Words::Solvers::ResultGatherer& r) override {
-		  r.setSubstitution (sub);
+            std::stringstream str;
+            r.setSubstitution (sub);
 		}
+
+        void getMoreInformation (std::ostream& os) override {
+            os << "SMTCalls: " << smtSolverCalls << " \n";
+        }
 		
 	  private:
-		Words::Substitution sub;
+        Words::Substitution sub;
+        size_t smtSolverCalls;
 	  };
 	}
 

@@ -102,6 +102,7 @@ namespace Words {
 
 	  //Should only be called if Result returned HasSolution
 	  virtual void getResults (ResultGatherer& r) = 0;
+      virtual void getMoreInformation (std::ostream& os){};
 	  virtual void enableDiagnosticOutput () {}
 	};
 

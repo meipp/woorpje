@@ -28,7 +28,9 @@ namespace Words {
 
 	  class Handler {
 	  public:
-		Handler (PassedWaiting& w, Graph& g,Words::Substitution& s) : waiting(w),graph(g),subs(s) {}
+        Handler (PassedWaiting& w, Graph& g,Words::Substitution& s) : waiting(w),graph(g),subs(s) {
+            smtSolverCalls = 0;
+        }
         // criteria for external solver calls
         //
 
@@ -264,11 +266,13 @@ std::cout << "=====================" <<  std::endl;
 
 		  
           SMTHeuristic& heur = getSMTHeuristic ();
-          if (heur.doRunSMTSolver (from,*to,waiting))
+          if (heur.doRunSMTSolver (from,*to,waiting)){
+            smtSolverCalls = smtSolverCalls+1;
             return runSMTSolver (nnode,to,heur);
-          else
+          }
+          else {
             TRACE ( "No solver " )
-
+          }
           waiting.insert(to);
 			  
 			
@@ -312,13 +316,19 @@ std::cout << "=====================" <<  std::endl;
 		}
 		
         auto getResult () const {
-            return result;}
-		
+            return result;
+        }
+
+        auto getSMTSolverCalls () const {
+            return smtSolverCalls;
+        }
+
 	  private:
 		PassedWaiting& waiting;
 		Graph& graph;
 		Words::Substitution& subs;
 		Words::Solvers::Result result = Words::Solvers::Result::NoIdea;
+        size_t smtSolverCalls;
 	  };
 	  
 	  ::Words::Solvers::Result Solver::Solve (Words::Options& opt,::Words::Solvers::MessageRelay& relay)   {
@@ -326,7 +336,7 @@ std::cout << "=====================" <<  std::endl;
 		relay.pushMessage ((Formatter ("Using Heuristic: %1%") % getSMTHeuristic().getDescription ()).str()); 
 		PassedWaiting waiting;
 		Graph graph;
-		Handler handler (waiting,graph,sub);
+        Handler handler (waiting,graph,sub);
 
 #ifdef ENABLEGRAPH
 		GuaranteeOutput go ("Levis",graph);
@@ -340,8 +350,9 @@ std::cout << "=====================" <<  std::endl;
         auto res = Words::Solvers::CoreSimplifier::solverReduce (*insert,simplSub);
 
 
-        if (!handler.modifyLinearConstraints(insert, simplSub))
+        if (!handler.modifyLinearConstraints(insert, simplSub)){
             return Words::Solvers::Result::DefinitelyNoSolution;
+        }
 
 		auto inode = graph.makeNode (insert);
 
@@ -350,7 +361,7 @@ std::cout << "=====================" <<  std::endl;
         } else if (res==Simplified::ReducedSatis) {
 		  auto fnode = graph.makeNode (first); 
 		  graph.addEdge (fnode,inode,simplSub);
-		  sub = findRootSolution (inode);
+          sub = findRootSolution (inode);
           return Words::Solvers::Result::HasSolution;
         }
         
@@ -363,9 +374,7 @@ std::cout << "=====================" <<  std::endl;
           relay.progressMessage ((Words::Solvers::Formatter ("Passed: %1%, Waiting: %2%") % waiting.passedsize() % waiting.size()).str());
 		}
 
-        
-
-
+        smtSolverCalls = handler.getSMTSolverCalls();
 
         if (handler.getResult() == Words::Solvers::Result::NoIdea ){
             return Words::Solvers::Result::DefinitelyNoSolution;

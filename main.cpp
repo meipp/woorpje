@@ -247,7 +247,7 @@ int main (int argc, char** argv) {
   Words::Options opt;
   Words::Options foroutput;
   bool parsesucc = false;
-  Words::Solvers::Solver_ptr solver = buildSolver (solverr);;
+  Words::Solvers::Solver_ptr solver = buildSolver (solverr);
   try {
 	std::fstream inp;
 	inp.open (conffile);
@@ -291,7 +291,12 @@ int main (int argc, char** argv) {
 	  solver->enableDiagnosticOutput ();	
 	try {
 	  Words::Solvers::StreamRelay relay (std::cout);
-	  auto ret =  solver->Solve (opt,relay);
+      auto ret =  solver->Solve (opt,relay);
+
+      solver->getMoreInformation(std::cout);
+
+      std::cout << "\n" << std::endl;
+
 	  switch (ret) {
 		
 	  case Words::Solvers::Result::HasSolution: {
