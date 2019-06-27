@@ -13,7 +13,9 @@ namespace Words {
   namespace Z3 {
 
 	
-	
+	void setStr3 () {
+	  Z3_global_param_set ("smt.string_solver","z3str3");
+	}
 	
 	  
 	class Z3Solver : public Words::SMT::Solver {

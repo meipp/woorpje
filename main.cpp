@@ -128,7 +128,10 @@ void setSMTSolver (size_t i) {
   case 0:
 	Words::SMT::setSMTSolver (Words::SMT::SMTSolver::Z3);
 	break;
-  case 1: [[fallthrough]]
+  case 2:	
+	Words::SMT::setSMTSolver (Words::SMT::SMTSolver::Z3Str3);
+	break;
+  case 1: 
   default:
 	Words::SMT::setSMTSolver (Words::SMT::SMTSolver::CVC4);
 	break;
@@ -186,6 +189,7 @@ int main (int argc, char** argv) {
 	("smtsolver,S",po::value<size_t> (&smtsolver), "SMT Solver\n"
 	"\t 0 Z3\n"
 	"\t 1 CVC4\n"
+	"\t 2 Z3Str3\n"
 	 )
 	("smttimeout",po::value<size_t> (&smttimeout), "Set timeout for SMTSolver (ms)");
 

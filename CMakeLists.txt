@@ -44,6 +44,7 @@ configure_file (
 )
 add_subdirectory(libs)
 add_subdirectory(documentation)
+
 SET(Boost_USE_STATIC_LIBS ON)
 FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
 
@@ -59,13 +60,15 @@ add_executable (${Translator} woorpje2smt.cpp)
 target_link_libraries (${Translator}  libs ${Boost_LIBRARIES} )
 target_include_directories(${Translator} PRIVATE ${PROJECT_BINARY_DIR})
 
+INCLUDE(CPack)
 SET(CPACK_GENERATOR "ZIP")									   
 SET(CPACK_PACKAGE_FILE_NAME ${ToolName}-${VERSION_MAJOR}_${VERSION_MINOR})
 INSTALL (TARGETS ${ToolName} DESTINATION bin)
 INSTALL (TARGETS ${Translator} DESTINATION bin)
+INSTALL (FILES LICENSE DESTINATION license)
 
-
-INCLUDE(CPack)
 
 enable_testing()
 add_subdirectory(test)
+
+add_subdirectory(package)
