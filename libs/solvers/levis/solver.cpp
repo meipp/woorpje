@@ -337,6 +337,8 @@ std::cout << "=====================" <<  std::endl;
 		PassedWaiting waiting;
 		Graph graph;
         Handler handler (waiting,graph,sub);
+        smtSolverCalls = 0;
+
 
 #ifdef ENABLEGRAPH
 		GuaranteeOutput go ("Levis",graph);
