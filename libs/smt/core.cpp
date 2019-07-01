@@ -10,6 +10,7 @@ namespace Words {
 
   namespace CVC4 {
 	Words::SMT::Solver_ptr makeCVC4Solver ();
+	Words::SMT::IntSolver_ptr makeCVC4IntSolver ();
   }
   
   namespace SMT {
@@ -61,6 +62,11 @@ namespace Words {
 	  case SMTSolver::Z3:
 	  case SMTSolver::Z3Str3:
 		solver = Words::Z3::makeZ3IntSolver ();
+		break;
+#endif
+#ifdef ENABLECVC4
+	  case SMTSolver::CVC4:
+		solver = Words::CVC4::makeCVC4IntSolver ();
 		break;
 #endif
 	  }

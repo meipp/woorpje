@@ -41,7 +41,6 @@ namespace Words {
 	  }
 
 	  bool solveDummy (const Words::Options& opt, Words::Substitution& s) {
-		std::cerr << opt << std::endl;
 		std::set<const Words::IEntry*> unrestricted;
 		auto intsolver = Words::SMT::makeIntSolver ();
 		for (auto& t : opt.constraints) {
@@ -67,7 +66,6 @@ namespace Words {
 			
 			auto constraint = builder->makeConstraint ();
 			auto lconstraint = constraint->getLinconstraint ();
-			std::cerr << * constraint << std::endl;
 			if (lconstraint->lhsEmpty () && lconstraint->getRHS () < 0) {
 			  return false;
 			}
@@ -157,7 +155,7 @@ namespace Words {
 			return true;
 		  
 		  
-		  std::unique_ptr<Words::Constraints::LinearConstraintBuilder> builder = nullptr;
+		  
 		  std::vector<Constraints::Constraint_ptr> newConstraints;
 		  
 		  //std::cout << sub << std::endl;
@@ -187,7 +185,6 @@ namespace Words {
 			  }
 			  auto constr = builder->makeConstraint ();
 			  auto lconstr = constr->getLinconstraint ();
-			  std::cerr << * constr << std::endl;
 			  if (lconstr->lhsEmpty () && lconstr->getRHS () < 0)
 				return false;
 			  newConstraints.push_back (constr);

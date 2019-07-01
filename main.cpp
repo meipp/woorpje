@@ -93,6 +93,7 @@ void printBanner (std::ostream& os) {
   os << Version::TOOLNAME << " "<<  Version::VERSION_MAJOR << "." << Version::VERSION_MINOR << " (" << __DATE__  << ")" <<std::endl;
   os << "Revision: " << Version::GIT_HASH << std::endl;
   os << Version::DEPSACK << std::endl;
+  os << "SMT: " << Words::SMT::makeSolver()->getVersionString () << std::endl;
   printContactDetails (os);
   os << std::endl;
 }
