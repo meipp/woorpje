@@ -90,7 +90,7 @@ namespace Words {
 		  auto comp = Z3_mk_le (context,added,rhs);
 		  Z3_solver_assert (context,solver,comp);
 		}
-		else 
+		else if (!l.isUnrestricted ())
 		  throw Words::ConstraintUnsupported ();
 	  }
 
@@ -205,7 +205,6 @@ namespace Words {
 	  }
 	  
 	  virtual void addConstraint (const Constraints::Constraint& l) {
-		std::cerr << l << std::endl;
 		if (l.isLinear ()) {
 		  std::vector<Z3_ast> ast;
 		  auto lin = l.getLinconstraint ();

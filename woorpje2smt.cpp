@@ -157,7 +157,7 @@ int main (int argc, char** argv) {
 	  outp.open (outputfile.c_str(),std::fstream::out);
 	}
 	
-	encodePreamble (*out,opt.context);
+	encodePreamble (*out,*opt.context);
 	for (auto& eq : opt.equations)
 	  encodeEquation (*out,eq);
 	for (auto& eq : opt.constraints) {

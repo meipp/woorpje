@@ -550,7 +550,7 @@ namespace Words {
   };
   
   struct Options : public std::enable_shared_from_this<Options>{
-	Context context;
+	std::shared_ptr<Context> context;
 	std::vector<Equation> equations;
 	std::vector<Constraints::Constraint_ptr> constraints;
 

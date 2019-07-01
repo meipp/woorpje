@@ -33,6 +33,7 @@ namespace Words {
 	  try {
 		this->err = &err; 
 		options = &opt;
+		options->context = std::make_shared<Words::Context> ();
 		if (parseVariablesDecl () && 
 			parseTerminalsDecl ()
 			) {

@@ -24,7 +24,7 @@ namespace Words {
 	  template<bool encoding>
 	  ::Words::Solvers::Result Solver<encoding>::Solve (Words::Options& opt,::Words::Solvers::MessageRelay& relay)   {
 		relay.pushMessage ("SatSolver Ready");
-		if (!opt.context.conformsToConventions ())  {
+		if (!opt.context->conformsToConventions ())  {
 		  relay.pushMessage ("Context does not conform to Upper/Lower-case convention");
 		  return ::Words::Solvers::Result::NoIdea;
 		}
@@ -87,7 +87,7 @@ namespace Words {
 		  i++;
 		  int currentBound = std::pow(i,2);
 		try {
-		  ret =  runSolver<encoding> (false,static_cast<size_t> (currentBound),opt.context,sub,timekeep,(diagnostic ? &diagStr : nullptr));
+		  ret =  runSolver<encoding> (false,static_cast<size_t> (currentBound),*opt.context,sub,timekeep,(diagnostic ? &diagStr : nullptr));
 		  if(ret == Words::Solvers::Result::HasSolution){
 			return ret;
 		  }

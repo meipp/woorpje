@@ -9,7 +9,7 @@ bool Words::Parser::parseVariablesDecl (){
   if (acceptKeyword (Keywords::Variables) && accept (LBRACE)) {
 	if (tryaccept(STRING,t)) {
 	  for (auto c : t) 
-		options->context.addVariable (c);
+		options->context->addVariable (c);
 	  accept(RBRACE);
 	  return true;
 	}
@@ -24,7 +24,7 @@ bool Words::Parser::parseTerminalsDecl (){
   if (acceptKeyword (Keywords::Terminals) && accept (LBRACE)) {
 	if (tryaccept (STRING,t)) {
 	  for (auto c : t) 
-		options->context.addTerminal (c);
+		options->context->addTerminal (c);
 	  
 	}
 	accept(RBRACE);
@@ -40,13 +40,13 @@ bool Words::Parser::parseEquation (){
   if (tryacceptKeyword (Keywords::Equation) && accept (Tokens::COLON) && accept (STRING,word1) && accept (Tokens::EQUAL) &&  accept (STRING,word2) ) {
 	options->equations.emplace_back ();
 	auto& eq = options->equations.back();
-	auto wb1 = options->context.makeWordBuilder (eq.lhs);	
+	auto wb1 = options->context->makeWordBuilder (eq.lhs);	
 	for (auto c : word1)
 	  *wb1 << c;
-	auto wb2 = options->context.makeWordBuilder (eq.rhs);
+	auto wb2 = options->context->makeWordBuilder (eq.rhs);
 	for (auto c : word2)
 	  *wb2 << c;
-	eq.ctxt = &options->context;
+	eq.ctxt = options->context.get();
 	return true;
   }
   return false;
@@ -123,7 +123,7 @@ Words::IEntry* Words::Parser::parseVarLength () {
 	accept (Tokens::STRING,text);
 	accept (Tokens::BAR);
 	if (text.length () == 1) {
-	  auto var = options->context.findSymbol (text[0]);
+	  auto var = options->context->findSymbol (text[0]);
 	  if (var->isVariable())
 		return var;
 	  else {

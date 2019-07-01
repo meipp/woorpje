@@ -62,10 +62,10 @@ namespace Words {
 	
 
 	inline void retriveSubstitution (Words::SMT::Solver& s, Words::Options& opt, Words::Substitution& sub) {
-		for (auto v :opt.context.getVariableAlphabet ()) {
+		for (auto v :opt.context->getVariableAlphabet ()) {
 		  Words::Word w;
 		  
-		  auto wb = opt.context.makeWordBuilder (w);
+		  auto wb = opt.context->makeWordBuilder (w);
 		  s.evaluate (v,*wb);
 		  wb->flush ();
 		  sub.insert (std::make_pair (v,w));
@@ -73,9 +73,9 @@ namespace Words {
 	  }
 	
 	inline void buildEquationSystem (Solver& solver, const Words::Options& opt) {
-	  for (auto i : opt.context.getVariableAlphabet ())
+	  for (auto i : opt.context->getVariableAlphabet ())
 		solver.addVariable (i);
-	  for (auto i : opt.context.getTerminalAlphabet ())
+	  for (auto i : opt.context->getTerminalAlphabet ())
 		solver.addTerminal (i);
 	  solver.addEquations (opt.equations.begin(),opt.equations.end());
 	  solver.addConstraints (opt.constraints.begin(),opt.constraints.end());

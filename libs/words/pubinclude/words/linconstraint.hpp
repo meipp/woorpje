@@ -23,7 +23,6 @@ namespace Words {
 	  auto end () const {return variables.end();}
 	  const auto& getRHS () const {return rhs;}
 	  std::ostream& output (std::ostream& o) const override {
-		o << this << ": ";
 		for  (auto& e : variables) {
 		  o << e.number   <<"*"<<  e.entry->getRepr() << " "; 
 		}

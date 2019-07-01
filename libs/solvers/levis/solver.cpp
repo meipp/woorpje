@@ -76,7 +76,7 @@ namespace Words {
 		if (intsolver->solve () == Words::SMT::SolverResult::Satis) {
 		  for (auto var : unrestricted) {
 			Words::Word w;
-			auto wb = const_cast<Words::Context&> (opt.context).makeWordBuilder (w);
+			auto wb = const_cast<Words::Context&> (*opt.context).makeWordBuilder (w);
 			for (size_t i = 0; i < intsolver->evaluate (const_cast<Variable*>(static_cast<const Words::Variable*> (var))); ++i) {
 			  *wb << '_';
 			}

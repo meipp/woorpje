@@ -372,7 +372,7 @@ namespace Words {
 			Words::Equation eq;
 			eq.lhs = { x.first };
 			eq.rhs = x.second;
-			eq.ctxt = &opt.context;
+			eq.ctxt = opt.context.get();
 			std::vector<Constraints::Constraint_ptr> cstr;
 			ConstSequenceFolding::solverReduce (eq,dummy,cstr);
 			opt.equations.push_back(eq);

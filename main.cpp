@@ -33,8 +33,8 @@ public:
   CoutResultGatherer (const Words::Options& opt) : opt(opt) {}
   void setSubstitution (Words::Substitution& w) {
 	std::cout << "Substitution: " << std::endl;
-	for (size_t var = 0; var < opt.context.nbVars(); var++) {
-	  auto variable = opt.context.getVariable (var);
+	for (size_t var = 0; var < opt.context->nbVars(); var++) {
+	  auto variable = opt.context->getVariable (var);
 	  std::cout << variable->getRepr () << ": ";
 	  for (auto c : w[variable]) {
 		std::cout << c->getRepr ();
@@ -274,6 +274,8 @@ int main (int argc, char** argv) {
   }
   CoutResultGatherer gatherer (foroutput);
   if (solver) {
+	std::cout << "Solving Equation System" << std::endl << opt << std::endl;;
+	  
 	if (simplifier) {
 	  std::cout << "Running Simplifiers" << std::endl;
 	  Words::Substitution sub;

@@ -89,7 +89,7 @@ namespace Words {
 		  auto comp = Z3_mk_le (context,added,rhs);
 		  Z3_solver_assert (context,solver,comp);*/
 		}
-		else 
+		else if (!l.isUnrestricted ())
 		  throw Words::ConstraintUnsupported ();
 	  }
 
@@ -244,8 +244,7 @@ namespace Words {
 		auto& e = exprs.at (v);
 		std::stringstream str;
 		str << engine.getValue (e);
-		std::cerr << str.str() << std::endl;
-		return 0;
+		return std::stoi (str.str());
 	  }
 	  
 	private:
