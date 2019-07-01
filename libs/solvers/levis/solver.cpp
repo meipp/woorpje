@@ -57,7 +57,7 @@ namespace Words {
         /*bool waitingListLimitExceededScaleTimeout(std::size_t wSize, std::size_t& timeout, std::size_t bound=35){
             if(!waitingListLimitExceeded(wSize,bound))
                 return false;
-            timeout = (wSize-bound)*10;
+				timeout = (wSize-bound)*10;
             return true;
 			}*/
 
@@ -243,9 +243,9 @@ namespace Words {
 std::cout << "=====================" <<  std::endl;
 */
 		  Words::Substitution simplSub;
-          auto res = Words::Solvers::CoreSimplifier::solverReduce (*to,simplSub);
-
-
+		  std::vector<Constraints::Constraint_ptr> ptr;
+          auto res = Words::Solvers::CoreSimplifier::solverReduce (*to,simplSub,ptr);
+		  std::copy(ptr.begin(),ptr.end(),std::back_inserter (to->constraints));
        /*   std::cout << "Second modification:" << *to << std::endl;
           std::cout << "Substitution was: " << simplSub << std::endl;
           std::cout << "----------------------"<< std::endl;
@@ -280,7 +280,7 @@ std::cout << "=====================" <<  std::endl;
 			}
 			else {
 			  smtSolverCalls = smtSolverCalls+1;
-            return runSMTSolver (simpnode,beforeSimp,heur);
+			  return runSMTSolver (simpnode,beforeSimp,heur);
 			}
 			
 		  }
@@ -366,13 +366,14 @@ std::cout << "=====================" <<  std::endl;
         // We need the substituion of the first simplifier run. This is just a quick hack...
         // Start THE SOLVER without simplify flag
         Words::Substitution simplSub;
+		std::vector<Constraints::Constraint_ptr> cstr;
 		auto first = opt.copy();
 		auto insert = opt.copy ();
-        auto res = Words::Solvers::CoreSimplifier::solverReduce (*insert,simplSub);
-
+        auto res = Words::Solvers::CoreSimplifier::solverReduce (*insert,simplSub,cstr);
+		std::copy(cstr.begin(),cstr.end(),std::back_inserter (insert->constraints));
 
         if (!handler.modifyLinearConstraints(insert, simplSub)){
-            return Words::Solvers::Result::DefinitelyNoSolution;
+		  return Words::Solvers::Result::DefinitelyNoSolution;
         }
 
 		auto inode = graph.makeNode (insert);
@@ -386,6 +387,8 @@ std::cout << "=====================" <<  std::endl;
 			graph.addEdge (fnode,inode,simplSub);
 			sub = findRootSolution (inode);
 			return Words::Solvers::Result::HasSolution;
+		  }
+		  else {
 		  }
 		}
 		//auto insert = opt.copy ();

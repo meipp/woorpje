@@ -2,6 +2,7 @@
 #define _SIMPLIFIER__
 
 #include "words/words.hpp"
+#include "words/linconstraint.hpp"
 #include "words/algorithms.hpp"
 
 #include <iostream>
@@ -32,8 +33,8 @@ namespace Words {
 	template<class T,class First>
 	class SequenceSimplifier2<T,First> {
 	public:
-      static Simplified solverReduce  (T& eq,Substitution& s) {
-        return First::solverReduce (eq,s);
+      static Simplified solverReduce  (T& eq,Substitution& s,std::vector<Constraints::Constraint_ptr>& cstr) {
+        return First::solverReduce (eq,s,cstr);
 	  }
 	};
 	
@@ -41,47 +42,64 @@ namespace Words {
 	class SequenceSimplifier2<T,First,Ts...> {
 	public:
 	  
-      static Simplified solverReduce  (T& eq,Substitution& s) {
-        auto res = First::solverReduce (eq,s);
+      static Simplified solverReduce  (T& eq, Substitution& s, std::vector<Constraints::Constraint_ptr>&  cstr) {
+        auto res = First::solverReduce (eq,s,cstr);
 		if (res == Simplified::ReducedSatis || res==Simplified::ReducedNsatis)
 		  return res;
 		else {
           s.clear ();
-		  return SequenceSimplifier2<T,Ts...>::solverReduce (eq,s);
+		  return SequenceSimplifier2<T,Ts...>::solverReduce (eq,s,cstr);
 		}
 	  }
 
 	};
 
-	template<class First, class T = Words::Equation>
-	class InnerSequenceSimplifier  {
-	protected:
-	  static Simplified innerSolverReduce  (T& eq) {
-		static Words::Substitution s;
-		s.clear ();
-		return First::solverReduce (eq,s);
-	  }
-	};
-
 	template<class Sub>
 	class RunAllEq : public EquationSystemSimplifier {
 	public:
-	  static Simplified solverReduce  (Words::Options& opt, Substitution& s) {
+	  static Simplified solverReduce  (Words::Options& opt, Substitution& s,std::vector<Constraints::Constraint_ptr>& cstr) {
 		std::vector<Equation> eqs;
+		std::vector<Constraints::Constraint_ptr> cstr2;
+		std::vector<Constraints::Constraint_ptr> tmp;
 		for (auto& eq :  opt.equations) {
 		  s.clear();
-		  auto res = Sub::solverReduce (eq,s);
+		  cstr2.clear();
+		  auto res = Sub::solverReduce (eq,s,cstr2);
 		  switch (res) {
 		  case Simplified::JustReduced:
 			eqs.push_back (eq);
+			std::copy (cstr2.begin (),cstr2.end(),std::back_inserter (tmp));
 			break;
 		  case Simplified::ReducedNsatis:
 			return Simplified::ReducedNsatis;
 			break;
 		  case Simplified::ReducedSatis:
+			std::copy (cstr2.begin (),cstr2.end(),std::back_inserter (tmp));
 			break;
 		  }
 		  
+		}
+
+		for (auto& it : tmp) {
+		  if (it->isUnrestricted ()) {
+			const Words::Constraints::Unrestricted* resr = it->getUnrestricted ();
+			if (eqs.size() == 0) {
+			  cstr.push_back (it);
+			}
+			else {
+			  bool add = true;
+			  for (auto&  w: eqs) {
+				
+				if (w.lhs.containsVariable (resr->getUnrestrictedVar ()) ||
+					w.rhs.containsVariable (resr->getUnrestrictedVar ()))
+				  add = false;
+			  }
+			  
+			  if (add)
+				cstr.push_back (it);
+			
+			}
+		  }
 		}
 		
 		opt.equations.clear();
@@ -96,7 +114,7 @@ namespace Words {
 
 	class PrefixReducer {
 	public:
-	  static Simplified solverReduce  (Words::Equation& eq, Substitution& s) {
+	  static Simplified solverReduce  (Words::Equation& eq, Substitution& s, std::vector<Constraints::Constraint_ptr>& cstr) {
 		auto& lhs = eq.lhs;
 		auto& rhs = eq.rhs;
 		while (lhs.ebegin () != lhs.eend () &&
@@ -104,12 +122,15 @@ namespace Words {
 		Word::entry_iterator lfirst = eq.lhs.ebegin();
 		Word::entry_iterator rfirst = eq.rhs.ebegin();
         if (*lfirst == *rfirst) {
-          lhs.erase_entry (lfirst);
-          rhs.erase_entry (rfirst);
-
+		  
           if ((*lfirst)->isVariable()){
-              s[(*lfirst)] = Words::Word();
-          }
+			cstr.push_back  (Constraints::Constraint_ptr(new Constraints::Unrestricted (*lfirst)));
+			s[(*lfirst)] = Words::Word();
+		  }
+		  
+		  
+		  lhs.erase_entry (lfirst);
+          rhs.erase_entry (rfirst);
 
 		}
 		else if ((*lfirst)->isSequence () && (*rfirst)->isSequence ()) {
@@ -131,8 +152,9 @@ namespace Words {
 			
 		  }
           else {
-              s.clear();
-              return Simplified::ReducedNsatis;
+			cstr.clear();
+			s.clear();
+			return Simplified::ReducedNsatis;
           }
 		}
 		else
@@ -140,6 +162,7 @@ namespace Words {
 		}
 		if (lhs.ebegin () == lhs.eend () &&
 			rhs.ebegin () == rhs.eend ()) {
+		  
 		  return Simplified::ReducedSatis;
         }
         s.clear();
@@ -149,7 +172,7 @@ namespace Words {
 	  
 	class SuffixReducer {
 	public:
-	  static Simplified solverReduce  (Words::Equation& eq, Substitution& s) {
+	  static Simplified solverReduce  (Words::Equation& eq, Substitution& s, std::vector<Constraints::Constraint_ptr>& cstr) {
 		auto& lhs = eq.lhs;
 		auto& rhs = eq.rhs;
 		while (lhs.ebegin () != lhs.eend () &&
@@ -158,12 +181,12 @@ namespace Words {
 		  auto lrfirst = lhs.rebegin();
 		  auto rrfirst = rhs.rebegin();
           if (*lrfirst == *rrfirst) {
+			if ((*lrfirst)->isVariable()){
+			  cstr.push_back  (Constraints::Constraint_ptr(new Constraints::Unrestricted (*lrfirst)));
+			}
+			
             eq.lhs.erase_entry (lrfirst);
             eq.rhs.erase_entry (rrfirst);
-
-            if ((*lrfirst)->isVariable()){
-                s[(*lrfirst)] = Words::Word();
-            }
 		  }
 		  else if ((*lrfirst)->isSequence () && (*rrfirst)->isSequence ()) {
 			Words::Sequence* ll = (*lrfirst)->getSequence ();
@@ -183,6 +206,7 @@ namespace Words {
 			}
             else {
               s.clear();
+			  cstr.clear();
 			  return Simplified::ReducedNsatis;
             }
           }
@@ -206,7 +230,7 @@ namespace Words {
 	
 	class ConstSequenceMismatch : public EquationSimplifier{
 	public:
-	  static Simplified solverReduce  (Words::Equation& eq,Substitution& s) {
+	  static Simplified solverReduce  (Words::Equation& eq,Substitution& s, std::vector<Constraints::Constraint_ptr>&) {
 		Words::Word* constSide;
 		Words::Word* variableSide;
 		if(eq.lhs.noVariableWord() && !eq.rhs.noVariableWord()){
@@ -233,7 +257,7 @@ namespace Words {
 
 	class ConstSequenceFolding {
 	public:
-	  static Simplified solverReduce  (Words::Equation& eq,Substitution& s) {
+	  static Simplified solverReduce  (Words::Equation& eq,Substitution& s, std::vector<Constraints::Constraint_ptr>&) {
 		foldWord (eq.lhs,eq);
 		foldWord (eq.rhs,eq);
 		return Simplified::JustReduced;
@@ -274,14 +298,14 @@ namespace Words {
 	template<class Inner>
 	class SubstitutionReasoningNew {
 	public:
-	  static Simplified replaceVarInEquation (Words::Equation& eq,  Words::IEntry* var, Words::Word& repl) {
+	  static Simplified replaceVarInEquation (Words::Equation& eq,  Words::IEntry* var, Words::Word& repl,std::vector<Constraints::Constraint_ptr>& cstr) {
 		Substitution subs;
         eq.lhs.substitudeVariable (var,repl);
         eq.rhs.substitudeVariable (var,repl);
-		return Inner::solverReduce (eq,subs);
+		return Inner::solverReduce (eq,subs,cstr);
 	  }
 
-	  static Simplified solverReduce  (Words::Options& opt, Substitution& substitution) {
+	  static Simplified solverReduce  (Words::Options& opt, Substitution& substitution, std::vector<Constraints::Constraint_ptr>& cstr) {
 		std::vector<Words::Equation>::iterator it = opt.equations.begin();
 		std::vector<Words::Equation>::iterator end = opt.equations.end();
 		while (it != end) {
@@ -315,14 +339,24 @@ namespace Words {
 				continue;
               }
 
-			  auto res = replaceVarInEquation (*iit,variable,*subsWord); 
+			  std::vector<Constraints::Constraint_ptr> cstr;
+			  auto res = replaceVarInEquation (*iit,variable,*subsWord,cstr); 
               if ( res == Simplified::ReducedNsatis)  {
 				return Simplified::ReducedNsatis;
 			  }
               else if ( res == Simplified::JustReduced) {
+				std::copy (cstr.begin(),cstr.end(),std::back_inserter(opt.constraints));
                 eqs.push_back (*iit);
 			  }
 
+			}
+			if (eqs.size() == 0) {
+			  for (auto et = subsWord->ebegin(); et != subsWord->eend(); ++et) {
+				if ((*et)->isVariable () ){
+				  Constraints::Constraint_ptr  constr (new Words::Constraints::Unrestricted (*et)); 
+				  cstr.push_back (constr);
+				}
+			  }
 			}
 			opt.equations = eqs;
 			it = opt.equations.begin();
@@ -339,7 +373,8 @@ namespace Words {
 			eq.lhs = { x.first };
 			eq.rhs = x.second;
 			eq.ctxt = &opt.context;
-			ConstSequenceFolding::solverReduce (eq,dummy);
+			std::vector<Constraints::Constraint_ptr> cstr;
+			ConstSequenceFolding::solverReduce (eq,dummy,cstr);
 			opt.equations.push_back(eq);
 		  }
 
@@ -489,7 +524,7 @@ namespace Words {
               return Simplified::JustReduced;
       }
 
-	  static Simplified solverReduce  (Words::Equation& eq,Substitution&) {
+	  static Simplified solverReduce  (Words::Equation& eq,Substitution&,std::vector<Constraints::Constraint_ptr>& cstr) {
 		  Words::Algorithms::ParikhMatrix lhs_p_pm;
 		  Words::Algorithms::ParikhMatrix lhs_s_pm;
 		  Words::Algorithms::ParikhMatrix rhs_p_pm;
@@ -643,7 +678,7 @@ namespace Words {
 
     using FoldPreSufParikh = SequenceSimplifier2<Words::Equation,ConstSequenceFolding,PrefixReducer,SuffixReducer,ParikhMatrixMismatch,ConstSequenceMismatch>;
 	using CoreSimplifier = SequenceSimplifier2<Words::Options,RunAllEq<FoldPreSufParikh>,
-    SubstitutionReasoningNew<FoldPreSufParikh>
+											   SubstitutionReasoningNew<FoldPreSufParikh>
 												   >;
 	//using CoreSimplifier = RunAllEq<ParikhMatrixMismatch>;
 	//using CoreSimplifier = RunAllEq<PrefixReducer>;

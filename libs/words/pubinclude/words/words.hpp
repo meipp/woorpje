@@ -391,7 +391,7 @@ namespace Words {
     }
 
 
-    bool containsVariable(IEntry* var){
+    bool containsVariable(const IEntry* var){
         for (auto i : word) {
             if (i->isVariable() && i == var)
                 return true;

@@ -276,7 +276,8 @@ int main (int argc, char** argv) {
 	if (simplifier) {
 	  std::cout << "Running Simplifiers" << std::endl;
 	  Words::Substitution sub;
-	  auto res = Words::Solvers::CoreSimplifier::solverReduce (opt,sub);
+	  std::vector<Words::Constraints::Constraint_ptr> cstr;
+	  auto res = Words::Solvers::CoreSimplifier::solverReduce (opt,sub,cstr);
 	  std::cout << "Equation System after simplification" << std::endl << opt << std::endl;;
 	  
 	  switch (res) {
