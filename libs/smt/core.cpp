@@ -3,6 +3,8 @@
 namespace Words {
   namespace Z3 {
 	Words::SMT::Solver_ptr makeZ3Solver ();
+	Words::SMT::IntSolver_ptr makeZ3IntSolver ();
+	
 	void setStr3 ();
   }
 
@@ -50,6 +52,19 @@ namespace Words {
 	  }
 	  return solver;
 
+	}
+
+	IntSolver_ptr makeIntSolver () {
+	  IntSolver_ptr solver;
+	  switch (msolve) {
+#ifdef ENABLEZ3
+	  case SMTSolver::Z3:
+	  case SMTSolver::Z3Str3:
+		solver = Words::Z3::makeZ3IntSolver ();
+		break;
+#endif
+	  }
+	  return solver;
 	}
   }
 }

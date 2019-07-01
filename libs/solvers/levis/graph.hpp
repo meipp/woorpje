@@ -45,14 +45,26 @@ namespace Words {
 		  }
 		}
 
+		Node* makeDummyNode () {
+		  auto hash = 0;
+		  auto it = nodes.find (hash);
+		  
+		  auto nnode = std::make_unique<Node> (nullptr);
+		  auto res = nnode.get ();
+		  nodes.insert (std::make_pair (hash,std::move(nnode)));
+		  return res;
+		}
+
+		
 		Node* getNode (const Words::Options& n) {
 		  return nodes.find(n.eqhash(0))->second.get();
 		}
 
-		void addEdge (Node* from, Node* to,const Words::Substitution& s) {
+		Edge* addEdge (Node* from, Node* to,const Words::Substitution& s) {
 		  auto edge = std::make_unique<Edge> (from,to,s);
 		  to->incoming.push_back (edge.get());
 		  edges.push_back(std::move(edge));
+		  return edges.back().get();
 		}
 		
 		auto begin () const {return edges.begin();}

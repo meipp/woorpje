@@ -59,7 +59,7 @@ namespace Words {
 	void setSMTSolver (SMTSolver);
 	void setDefaultTimeout (size_t);	  
 	Solver_ptr makeSolver (); 
-
+	
 
 	inline void retriveSubstitution (Words::SMT::Solver& s, Words::Options& opt, Words::Substitution& sub) {
 		for (auto v :opt.context.getVariableAlphabet ()) {
@@ -80,6 +80,20 @@ namespace Words {
 	  solver.addEquations (opt.equations.begin(),opt.equations.end());
 	  solver.addConstraints (opt.constraints.begin(),opt.constraints.end());
 	}
+
+	class IntegerSolver {
+	public:
+	  ~IntegerSolver () {}
+	  virtual void addVariable (const Words::Variable* ) {}
+	  virtual void addConstraint (const Constraints::Constraint& ) {}
+	  virtual SolverResult solve () {return SolverResult::Unknown;}
+	  virtual size_t evaluate (Words::Variable*) = 0;
+	};
+
+	using IntSolver_ptr = std::unique_ptr<IntegerSolver>;
+	IntSolver_ptr makeIntSolver (); 
+	
+	
   }
 }
 

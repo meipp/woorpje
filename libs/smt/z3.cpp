@@ -178,9 +178,88 @@ namespace Words {
 	  std::set<char> terminals;
 	  size_t timeout;
 	  };
-  
+
+	class Z3IntegerSolver : public Words::SMT::IntegerSolver {
+	public:
+	  Z3IntegerSolver () {	
+	  	cfg = Z3_mk_config ();
+		context = Z3_mk_context(cfg);
+		solver = Z3_mk_solver(context);
+		Z3_solver_inc_ref(context, solver);		
+		intsort = Z3_mk_int_sort (context);
+	  }
+	  
+	  virtual ~Z3IntegerSolver () {
+		Z3_solver_dec_ref(context, solver);
+		Z3_del_config(cfg);
+		Z3_del_context(context);
+	  }
+	  
+	  virtual void addVariable (const Words::Variable* v) {
+		
+		std::stringstream str;
+		str << v->getRepr ();
+		auto symb = Z3_mk_string_symbol (context,str.str().c_str());
+		auto ast = Z3_mk_const (context,symb,intsort);
+		asts.insert (std::make_pair (v,ast));
+	  }
+	  
+	  virtual void addConstraint (const Constraints::Constraint& l) {
+		std::cerr << l << std::endl;
+		if (l.isLinear ()) {
+		  std::vector<Z3_ast> ast;
+		  auto lin = l.getLinconstraint ();
+		  for (auto& mult : *lin) {
+			Z3_ast muls[2];
+			muls[0] = asts.at(mult.entry);
+			muls[1] = Z3_mk_int (context,mult.number,intsort);
+			ast.push_back (Z3_mk_mul (context,2,muls));
+		  }
+		  auto added = Z3_mk_add (context,ast.size(),ast.data ());
+		  auto rhs = Z3_mk_int (context,lin->getRHS (),intsort);
+		  auto comp = Z3_mk_le (context,added,rhs);
+		  Z3_solver_assert (context,solver,comp);
+		}
+	  }
+	  
+	  virtual Words::SMT::SolverResult solve () {
+		switch (Z3_solver_check (context,solver)) {
+		case Z3_L_TRUE:
+		  model = Z3_solver_get_model (context,solver);
+		  return Words::SMT::SolverResult::Satis;
+		  break;
+		case Z3_L_FALSE:
+		  return Words::SMT::SolverResult::NSatis;
+		  break;
+		case Z3_L_UNDEF:
+		default:
+		  return Words::SMT::SolverResult::Unknown;
+		}
+	  }
+	  
+	  virtual size_t evaluate (Words::Variable* v)  {
+		Z3_ast ast;
+		Z3_model_eval (context,model,asts.at(v),true,&ast);
+		unsigned res = 0;
+		Z3_get_numeral_uint (context,ast,&res);
+		return res;
+	  }
+	private:
+	  Z3_context context;
+	  Z3_config cfg;
+	  std::unordered_map<const Words::IEntry*,Z3_ast> asts;
+	  Z3_sort intsort;
+	  Z3_solver solver;
+	  Z3_model model;
+	  std::set<char> terminals;
+	  size_t timeout;
+	};
+	
 	Words::SMT::Solver_ptr makeZ3Solver () {
 	  return std::make_unique<Z3Solver> ();
+	}
+	Words::SMT::IntSolver_ptr makeZ3IntSolver () {
+	  return std::make_unique<Z3IntegerSolver> ();
 	}
   }
 }

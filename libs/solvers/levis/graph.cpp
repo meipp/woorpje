@@ -25,8 +25,10 @@ namespace Words {
 		  std::stringstream fstr;
 		  std::stringstream tstr;
 		  std::stringstream ledge;
-		  fstr << *(from->opt);
-          tstr << *(to->opt);
+		  if (from -> opt)
+			fstr << *(from->opt);
+		  if (to->opt)
+			tstr << *(to->opt);
 
 		  ledge << e->subs;
 		  auto fromn = agnode (graph,const_cast<char*> (fstr.str().c_str()),1);

@@ -1,5 +1,6 @@
 #include <sstream>
 #include <iostream>
+#include <set>
 
 #include <numeric>
 
@@ -37,6 +38,57 @@ namespace Words {
 		  }
 		}
 		return true;
+	  }
+
+	  bool solveDummy (const Words::Options& opt, Words::Substitution& s) {
+		std::cerr << opt << std::endl;
+		std::set<const Words::IEntry*> unrestricted;
+		auto intsolver = Words::SMT::makeIntSolver ();
+		for (auto& t : opt.constraints) {
+		  if (t->isUnrestricted ()) {
+			unrestricted.insert (t->getUnrestricted()->getUnrestrictedVar ());
+			intsolver->addVariable (static_cast<const Words::Variable*>(t->getUnrestricted()->getUnrestrictedVar ()));
+		  }
+		}
+		
+		
+		for (auto& t : opt.constraints) {
+		  if (t->isLinear()) {
+			
+			auto lin = t->getLinconstraint ();
+			
+			auto builder = Words::Constraints::makeLinConstraintBuilder (Words::Constraints::Cmp::LEq);
+			builder->addRHS (lin->getRHS ());
+			for (auto& vvar : *lin) {
+			  if (unrestricted.count (vvar.entry)) {
+				builder->addLHS (vvar.entry,vvar.number);
+			  }
+			}
+			
+			auto constraint = builder->makeConstraint ();
+			auto lconstraint = constraint->getLinconstraint ();
+			std::cerr << * constraint << std::endl;
+			if (lconstraint->lhsEmpty () && lconstraint->getRHS () < 0) {
+			  return false;
+			}
+			intsolver->addConstraint (*constraint);
+		  }
+		  
+		}
+		if (intsolver->solve () == Words::SMT::SolverResult::Satis) {
+		  for (auto var : unrestricted) {
+			Words::Word w;
+			auto wb = const_cast<Words::Context&> (opt.context).makeWordBuilder (w);
+			for (size_t i = 0; i < intsolver->evaluate (const_cast<Variable*>(static_cast<const Words::Variable*> (var))); ++i) {
+			  *wb << '_';
+			}
+			wb->flush ();
+			s[const_cast<IEntry*> (var)] = w;
+		  }
+		  
+		  return true;
+		}
+		return false;
 	  }
 	  
 	  class Handler {
@@ -103,125 +155,50 @@ namespace Words {
         bool modifyLinearConstraints(std::shared_ptr<Words::Options>& opt, const Words::Substitution& sub){
 		  if (opt->constraints.size() == 0 || sub.size() == 0)
 			return true;
-
+		  
 		  
 		  std::unique_ptr<Words::Constraints::LinearConstraintBuilder> builder = nullptr;
 		  std::vector<Constraints::Constraint_ptr> newConstraints;
 		  
 		  //std::cout << sub << std::endl;
-		  for (auto x : sub){
-			auto cBegin = opt->constraints.begin();
-			auto cEnd   = opt->constraints.end();
-			for (auto it = cBegin; it!=cEnd; ++it){
-			  if (!(*it)->isLinear()){
-				newConstraints.push_back((*it));
-				continue;
-			  }
-			  
-			  builder = Words::Constraints::makeLinConstraintBuilder (Words::Constraints::Cmp::LEq);
-			  auto lhsBegin = ((*it)->getLinconstraint())->begin();
-			  auto lhsEnd = ((*it)->getLinconstraint())->end();
-			  Constraints::Constraint_ptr cstr;
-			  
-			  // r(X) = \epsilon
-			  if (x.second.characters() == 0){
-				builder->addRHS((*it)->getLinconstraint()->getRHS());
-				for (auto lhsIt = lhsBegin; lhsIt != lhsEnd; ++lhsIt){
-				  if ((*lhsIt).entry != x.first){
-					builder->addLHS((*lhsIt).entry,(*lhsIt).number);
+
+		  auto cit = opt->constraints.begin();
+		  auto cend = opt->constraints.end ();
+
+		  for (; cit != cend; ++cit) {
+			if ((*cit)->isLinear ()) {
+			  auto lin = (*cit)->getLinconstraint();
+			  auto builder = Words::Constraints::makeLinConstraintBuilder (Words::Constraints::Cmp::LEq);
+			  builder->addRHS (lin->getRHS ());
+			  for (auto& vvar : *lin) {
+				if (!sub.count(vvar.entry)) {
+				  builder->addLHS (vvar.entry,vvar.number);
+				}
+				else {
+				  for (const auto entry : sub.at(vvar.entry)) {
+					if (entry->isVariable ()) {
+					  builder->addLHS (entry,vvar.number);
+					}
+					else {
+					  builder->addRHS (-vvar.number);
+					}
 				  }
 				}
-				
-				cstr = builder->makeConstraint();
-				if(cstr->lhsEmpty()){
-				  if(cstr->getLinconstraint()->getRHS() < 0){
-                                return false;
-				  }
-				} else {
-				  newConstraints.push_back(cstr);
-				}
-				continue;
 			  }
-			  
-			  // we need information about the amout of variables and chars later...
-			  size_t variableCount = 0;
-			  size_t terminalCount = 0;
-			  x.second.sepearteCharacterCount (terminalCount, variableCount);
-			  Words::Algorithms::ParikhImage p = Words::Algorithms::calculateParikh(x.second);
-			  
-			  
-			  // do the variable magic
-			  std::vector<IEntry*> usedVariables;
-			  std::map<IEntry*,int64_t> coefficents;
-			  int64_t coefficent = 0;
-			  x.second.getVariables (usedVariables);
-			  
-			  // get the coefficent of the substituions left hand side
-			  // rather naive right now...
-			  
-			  
-			  for (auto lhsIt = lhsBegin; lhsIt != lhsEnd; ++lhsIt){
-				if ((*lhsIt).entry == x.first){
-				  coefficent = (*lhsIt).number;
-				  break;
-				}
-			  }
-			  
-			  
-			  // left hand side not present inside the constraint
-			  if (coefficent == 0){
-				newConstraints.push_back((*it)->copy());
-				continue;
-			  }
-			  
-			  // add the right hand side
-			  int64_t rhsSum = (*it)->getLinconstraint()->getRHS()-(coefficent*((int64_t)terminalCount));
-			  builder->addRHS(rhsSum);
-			  
-			  
-			  // collect the other coefficents
-			  for (auto lhsIt = lhsBegin; lhsIt != lhsEnd; ++lhsIt){
-				if(std::find(usedVariables.begin(), usedVariables.end(), (*lhsIt).entry) != usedVariables.end()) {
-				  coefficents[(*lhsIt).entry] =  (*lhsIt).number;
-				} else if ((*lhsIt).entry != x.first) {
-				  builder->addLHS((*lhsIt).entry,(*lhsIt).number);
-				}
-			  }
-			  
-			  
-			  // fill coefficents for unused variables but occurring in the substitution
-			  for (auto y : usedVariables){
-				if (!coefficents.count(y))
-				  coefficents[y] = 0;
-			  }
-			  
-			  // create left hand side
-			  int64_t bSum = 0;
-			  for(auto y : coefficents){
-				if (y.first != x.first){
-				  bSum = p.at(y.first)*coefficent+y.second;
-				  if(bSum != 0)
-					builder->addLHS(y.first,bSum);
-				} else {
-				  builder->addLHS(x.first,coefficent);
-				}
-			  }
-			  
-			  cstr = builder->makeConstraint();
-			  if(cstr->lhsEmpty()){
-				//std::cout << "NICE" << x.first->getRepr() << x.second << std::endl;
-				if(cstr->getLinconstraint()->getRHS() < 0){
-				  return false;
-				}
-			  }
-			  else {
-				newConstraints.push_back(cstr);
-			  }
+			  auto constr = builder->makeConstraint ();
+			  auto lconstr = constr->getLinconstraint ();
+			  std::cerr << * constr << std::endl;
+			  if (lconstr->lhsEmpty () && lconstr->getRHS () < 0)
+				return false;
+			  newConstraints.push_back (constr);
 			}
-			if (newConstraints.size() > 0)
-			  opt->constraints = newConstraints;
+			else {
+			  newConstraints.push_back (*cit);
+			}
 		  }
+		  opt->constraints = newConstraints;
 		  return true;
+		  
         }
 		
 		//returns true if successor generation should stop
@@ -230,18 +207,18 @@ namespace Words {
           //auto beforeSimp = to->copy ();
 		  // Simplification
           if(!modifyLinearConstraints(to, sub))
-             return false;
-
+			return false;
+		  
 
   /*        std::cout << "----------------------"<< std::endl;
-          std::cout << "Start modification on:" << from << std::endl;
-          std::cout << "=====================" <<  std::endl; */
-         // modifyLinearConstraints(to, sub);
+			std::cout << "Start modification on:" << from << std::endl;
+			std::cout << "=====================" <<  std::endl; */
+		  // modifyLinearConstraints(to, sub);
           auto beforeSimp = to->copy ();
-  /*        std::cout << "First modification:" << *to << std::endl;
-          std::cout << "Substitution was: " << sub << std::endl;
-std::cout << "=====================" <<  std::endl;
-*/
+		  /*        std::cout << "First modification:" << *to << std::endl;
+					std::cout << "Substitution was: " << sub << std::endl;
+					std::cout << "=====================" <<  std::endl;
+		  */
 		  Words::Substitution simplSub;
 		  std::vector<Constraints::Constraint_ptr> ptr;
           auto res = Words::Solvers::CoreSimplifier::solverReduce (*to,simplSub,ptr);
@@ -263,13 +240,14 @@ std::cout << "=====================" <<  std::endl;
 		  auto node = graph.getNode (from);			
 		  auto simpnode = graph.makeNode (beforeSimp);
 		  auto nnode = graph.makeNode (to);
-
-		  graph.addEdge (node,simpnode,sub);
+		  
+		  Edge* edge = graph.addEdge (node,simpnode,sub);
 
           if (simpnode != nnode)
-            graph.addEdge (simpnode,nnode,simplSub);
-
+            edge = graph.addEdge (simpnode,nnode,simplSub);
+		  
 		  SMTHeuristic& heur = getSMTHeuristic ();
+		  Words::Substitution solution;
           if (res==Simplified::ReducedSatis ) {
 			if (linearsSatisfiedByEmpty (*to)) {
 			  result = Words::Solvers::Result::HasSolution;
@@ -278,9 +256,15 @@ std::cout << "=====================" <<  std::endl;
 			  waiting.clear();
 			  return true;
 			}
-			else {
-            return runSMTSolver (simpnode,beforeSimp,heur);
+			else if (solveDummy (*to,solution)) {
+			  auto dnode = graph.makeDummyNode ();
+			  graph.addEdge (nnode,dnode,solution);
+			  result = Words::Solvers::Result::HasSolution;
+			  subs = findRootSolution (dnode);
+			  waiting.clear();
+			  return true;
 			}
+			
 			
 		  }
 
@@ -388,14 +372,27 @@ std::cout << "=====================" <<  std::endl;
 			sub = findRootSolution (inode);
 			return Words::Solvers::Result::HasSolution;
           } else {
-             SMTHeuristic& heur = getSMTHeuristic ();
-             auto fnode = graph.makeNode (first);
-             if (handler.runSMTSolver(fnode,first,heur)){
-                 smtSolverCalls = handler.getSMTSolverCalls();
-                 return Words::Solvers::Result::HasSolution;
-             }
-             smtSolverCalls = handler.getSMTSolverCalls();
-             return Words::Solvers::Result::NoIdea;
+			/*else if (solveDummy (*to,solution)) {
+			  auto dnode = graph.makeDummyNode ();
+			  graph.addEdge (nnode,dnode,solution);
+			  result = Words::Solvers::Result::HasSolution;
+			  subs = findRootSolution (dnode);
+			  waiting.clear();
+			  return true;
+			  }*/
+			Words::Substitution solution;
+			auto fnode = graph.makeNode (first);
+			graph.addEdge (fnode,inode,simplSub);
+			if (solveDummy (*insert,solution)) {
+			  auto dnode = graph.makeDummyNode ();
+			  graph.addEdge (inode,dnode,solution);
+			  sub = findRootSolution (dnode);
+			  return Words::Solvers::Result::HasSolution;
+			}
+			
+			else
+			  Words::Solvers::Result::NoIdea;
+			
           }
 		}
 		//auto insert = opt.copy ();
