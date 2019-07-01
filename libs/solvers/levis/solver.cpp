@@ -26,6 +26,19 @@ namespace Words {
   namespace Solvers {
 	namespace Levis {
 
+	  inline bool linearsSatisfiedByEmpty (const Words::Options& opt) {
+		auto cBegin = opt.constraints.begin();
+		auto cEnd   = opt.constraints.end();
+		for (auto it = cBegin; it!=cEnd; ++it){
+		  if ((*it) ->isLinear ()) {
+			auto lin  = (*it) ->getLinconstraint ();
+			if (0> lin->getRHS ())
+			  return false;
+		  }
+		}
+		return true;
+	  }
+	  
 	  class Handler {
 	  public:
         Handler (PassedWaiting& w, Graph& g,Words::Substitution& s) : waiting(w),graph(g),subs(s) {
@@ -255,27 +268,33 @@ std::cout << "=====================" <<  std::endl;
 
           if (simpnode != nnode)
             graph.addEdge (simpnode,nnode,simplSub);
+
+		  SMTHeuristic& heur = getSMTHeuristic ();
+          if (res==Simplified::ReducedSatis ) {
+			if (linearsSatisfiedByEmpty (*to)) {
+			  result = Words::Solvers::Result::HasSolution;
+			  subs = findRootSolution (nnode);
+			  // rebuild subsitution here!>
+			  waiting.clear();
+			  return true;
+			}
+			else {
+			  smtSolverCalls = smtSolverCalls+1;
+            return runSMTSolver (simpnode,beforeSimp,heur);
+			}
 			
-          if (res==Simplified::ReducedSatis) {
-			result = Words::Solvers::Result::HasSolution;
-            subs = findRootSolution (nnode);
-			// rebuild subsitution here!>
-			waiting.clear();
-			return true;
 		  }
 
 		  
-          SMTHeuristic& heur = getSMTHeuristic ();
-          if (heur.doRunSMTSolver (from,*to,waiting)){
+          else if  (heur.doRunSMTSolver (from,*to,waiting)) {
             smtSolverCalls = smtSolverCalls+1;
             return runSMTSolver (nnode,to,heur);
           }
-          else {
-            TRACE ( "No solver " )
-          }
-          waiting.insert(to);
-			  
-			
+		  else {
+			waiting.insert(to);
+		  }
+
+
 
 		  //TODO Check if the equation is
 		  // Trivially satisfied,
@@ -360,16 +379,19 @@ std::cout << "=====================" <<  std::endl;
 
         if (res==Simplified::ReducedNsatis){
           return Words::Solvers::Result::DefinitelyNoSolution;
-        } else if (res==Simplified::ReducedSatis) {
-		  auto fnode = graph.makeNode (first); 
-		  graph.addEdge (fnode,inode,simplSub);
-          sub = findRootSolution (inode);
-          return Words::Solvers::Result::HasSolution;
         }
-        
-        //auto insert = opt.copy ();
-		waiting.insert (insert);
-		
+		else if (res==Simplified::ReducedSatis) {
+		  if (linearsSatisfiedByEmpty (*insert)) {
+			auto fnode = graph.makeNode (first); 
+			graph.addEdge (fnode,inode,simplSub);
+			sub = findRootSolution (inode);
+			return Words::Solvers::Result::HasSolution;
+		  }
+		}
+		//auto insert = opt.copy ();
+		else {
+		  waiting.insert (insert);
+		}
 		while (waiting.size()) {
           auto cur = waiting.pullElement ();
           RuleSequencer<Handler,PrefixReasoningLeftHandSide,PrefixReasoningRightHandSide,PrefixReasoningEqual,PrefixEmptyWordLeftHandSide,PrefixEmptyWordRightHandSide,PrefixLetterLeftHandSide,PrefixLetterRightHandSide,SuffixReasoningLeftHandSide,SuffixReasoningRightHandSide,SuffixReasoningEqual,SuffixEmptyWordLeftHandSide,SuffixEmptyWordRightHandSide,SuffixLetterLeftHandSide,SuffixLetterRightHandSide>::runRules (handler,*cur);
