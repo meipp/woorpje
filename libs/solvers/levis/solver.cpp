@@ -279,7 +279,6 @@ std::cout << "=====================" <<  std::endl;
 			  return true;
 			}
 			else {
-			  smtSolverCalls = smtSolverCalls+1;
             return runSMTSolver (simpnode,beforeSimp,heur);
 			}
 			
@@ -306,6 +305,7 @@ std::cout << "=====================" <<  std::endl;
 		}
 
         bool runSMTSolver (Node* n, const std::shared_ptr<Words::Options>& from, SMTHeuristic& heur) {
+          smtSolverCalls = smtSolverCalls+1;
 		  n->ranSMTSolver = true;
 		  auto smtsolver = Words::SMT::makeSolver ();
 		  heur.configureSolver (smtsolver);
@@ -386,7 +386,16 @@ std::cout << "=====================" <<  std::endl;
 			graph.addEdge (fnode,inode,simplSub);
 			sub = findRootSolution (inode);
 			return Words::Solvers::Result::HasSolution;
-		  }
+          } else {
+             SMTHeuristic& heur = getSMTHeuristic ();
+             auto fnode = graph.makeNode (first);
+             if (handler.runSMTSolver(fnode,first,heur)){
+                 smtSolverCalls = handler.getSMTSolverCalls();
+                 return Words::Solvers::Result::HasSolution;
+             }
+             smtSolverCalls = handler.getSMTSolverCalls();
+             return Words::Solvers::Result::NoIdea;
+          }
 		}
 		//auto insert = opt.copy ();
 		else {
