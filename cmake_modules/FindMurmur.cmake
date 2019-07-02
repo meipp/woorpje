@@ -20,10 +20,11 @@ ELSE(LIBMURMUR_FOUND)
 	INSTALL_COMMAND make install
 	)
 
-	add_library(murmur STATIC IMPORTED)	
+	add_library(murmur SHARED IMPORTED)	
 	add_dependencies(murmur murmurhash)
 	set_property(TARGET murmur PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/murmurhash/install/lib/libmurmurhash.so.2.0.0)
 	
+
 	SET(MURMUR_LIBRARIES  murmur)
 	SET(MURMUR_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/murmurhash/install/include)
 	install (FILES ${CMAKE_CURRENT_BINARY_DIR}/murmurhash/install/lib/libmurmurhash.so.2.0.0 DESTINATION lib)
