@@ -201,6 +201,9 @@ namespace Words {
 		str << v->getRepr ();
 		auto symb = Z3_mk_string_symbol (context,str.str().c_str());
 		auto ast = Z3_mk_const (context,symb,intsort);
+        auto zero = Z3_mk_int (context,0,intsort);
+        auto comp = Z3_mk_ge (context,ast,zero);
+        Z3_solver_assert (context,solver,comp);
 		asts.insert (std::make_pair (v,ast));
 	  }
 	  
