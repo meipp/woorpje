@@ -44,37 +44,23 @@ namespace Words {
 		std::set<const Words::IEntry*> unrestricted;
 		auto intsolver = Words::SMT::makeIntSolver ();
 		for (auto& t : opt.constraints) {
-		  if (t->isUnrestricted ()) {
-			unrestricted.insert (t->getUnrestricted()->getUnrestrictedVar ());
-			intsolver->addVariable (static_cast<const Words::Variable*>(t->getUnrestricted()->getUnrestrictedVar ()));
-		  }
-		}
-		
-		
-		for (auto& t : opt.constraints) {
 		  if (t->isLinear()) {
-			
 			auto lin = t->getLinconstraint ();
-			
-			auto builder = Words::Constraints::makeLinConstraintBuilder (Words::Constraints::Cmp::LEq);
-			builder->addRHS (lin->getRHS ());
 			for (auto& vvar : *lin) {
-			  if (unrestricted.count (vvar.entry)) {
-				builder->addLHS (vvar.entry,vvar.number);
+			  if (!unrestricted.count (vvar.entry) ) { 
+				intsolver->addVariable ((const Variable*)vvar.entry);
+				unrestricted.insert (vvar.entry);
 			  }
 			}
-			
-			auto constraint = builder->makeConstraint ();
-			auto lconstraint = constraint->getLinconstraint ();
-			if (lconstraint->lhsEmpty ()) {
-			  if (lconstraint->getRHS () < 0) {
-				return false;
+			auto lconstraint = lin;
+			  if (lconstraint->lhsEmpty ()) {
+				if (lconstraint->getRHS () < 0) {
+				  return false;
+				}
 			  }
+			  else 
+				intsolver->addConstraint (*lconstraint);
 			}
-			else 
-			  intsolver->addConstraint (*constraint);
-		  }
-		  
 		}
 		if (intsolver->solve () == Words::SMT::SolverResult::Satis) {
 		  for (auto var : unrestricted) {
@@ -188,9 +174,12 @@ namespace Words {
 			  }
 			  auto constr = builder->makeConstraint ();
 			  auto lconstr = constr->getLinconstraint ();
-			  if (lconstr->lhsEmpty () && lconstr->getRHS () < 0)
-				return false;
-			  newConstraints.push_back (constr);
+			  if (lconstr->lhsEmpty () ) {
+				if (lconstr->getRHS () < 0)
+				  return false;
+			  }
+			  else 
+				newConstraints.push_back (constr);
 			}
 			else {
 			  newConstraints.push_back (*cit);
@@ -221,8 +210,9 @@ namespace Words {
 		  */
 		  Words::Substitution simplSub;
 		  std::vector<Constraints::Constraint_ptr> ptr;
-          auto res = Words::Solvers::CoreSimplifier::solverReduce (*to,simplSub,ptr);
-		  std::copy(ptr.begin(),ptr.end(),std::back_inserter (to->constraints));
+		  auto res = Words::Solvers::CoreSimplifier::solverReduce (*to,simplSub,ptr);
+		  
+		  //std::copy(ptr.begin(),ptr.end(),std::back_inserter (to->constraints));
        /*   std::cout << "Second modification:" << *to << std::endl;
           std::cout << "Substitution was: " << simplSub << std::endl;
           std::cout << "----------------------"<< std::endl;
@@ -270,7 +260,6 @@ namespace Words {
 
 		  
           else if  (heur.doRunSMTSolver (from,*to,waiting)) {
-            smtSolverCalls = smtSolverCalls+1;
             return runSMTSolver (nnode,to,heur);
           }
 		  else {
@@ -354,7 +343,7 @@ namespace Words {
 		auto first = opt.copy();
 		auto insert = opt.copy ();
         auto res = Words::Solvers::CoreSimplifier::solverReduce (*insert,simplSub,cstr);
-		std::copy(cstr.begin(),cstr.end(),std::back_inserter (insert->constraints));
+		//std::copy(cstr.begin(),cstr.end(),std::back_inserter (insert->constraints));
 
         if (!handler.modifyLinearConstraints(insert, simplSub)){
 		  return Words::Solvers::Result::DefinitelyNoSolution;

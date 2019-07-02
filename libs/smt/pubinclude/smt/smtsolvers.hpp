@@ -88,6 +88,7 @@ namespace Words {
 	  virtual void addConstraint (const Constraints::Constraint& ) {}
 	  virtual SolverResult solve () {return SolverResult::Unknown;}
 	  virtual size_t evaluate (Words::Variable*) = 0;
+	  virtual void setTimeout (size_t t) { throw Words::WordException ("Timeout not implemented");}
 	};
 
 	using IntSolver_ptr = std::unique_ptr<IntegerSolver>;

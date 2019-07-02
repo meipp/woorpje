@@ -122,6 +122,9 @@ namespace Words {
 		std::vector<::CVC4::Expr> asts;
 		
 		std::stringstream str;
+		if (w.characters() == 0) {
+		  return em.mkConst (::CVC4::String (""));
+		}
 		for (auto i : w) {
 		  if (i->isVariable ()) {
 			if (str.str().size ()) {

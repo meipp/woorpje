@@ -70,6 +70,10 @@ namespace Words {
 		break;
 #endif
 	  }
+	  if (defaultTimeout ) {
+		solver->setTimeout (defaultTimeout);
+	  }
+	  
 	  return solver;
 	}
   }

@@ -308,6 +308,7 @@ namespace Words {
 	  static Simplified solverReduce  (Words::Options& opt, Substitution& substitution, std::vector<Constraints::Constraint_ptr>& cstr) {
 		std::vector<Words::Equation>::iterator it = opt.equations.begin();
 		std::vector<Words::Equation>::iterator end = opt.equations.end();
+		size_t i = 0;
 		while (it != end) {
 		  IEntry* variable = nullptr;
 		  Word* subsWord = nullptr;
@@ -335,7 +336,7 @@ namespace Words {
 			
 			
 			for (auto iit = opt.equations.begin(); iit != opt.equations.end();++iit) {
-              if (it == iit){
+			  if (it == iit){
 				continue;
               }
 
@@ -361,9 +362,11 @@ namespace Words {
 			opt.equations = eqs;
 			it = opt.equations.begin();
             end = opt.equations.end();
+			
 		  }
 		  else 
 			++it;
+		  i++;
 		}
 		
 		if (opt.equations.size ()){

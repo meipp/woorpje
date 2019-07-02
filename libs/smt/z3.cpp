@@ -112,10 +112,10 @@ namespace Words {
 
 
           if(eq.lhs.characters() == 0){
-              std::cout << " xxx : " << eq.lhs << std::endl;
-
-              std::cout << eq << std::endl;
-
+			std::cout << " xxx : " << eq.lhs << std::endl;
+			
+			std::cout << eq << std::endl;
+			
           }
 
           if(eq.rhs.characters() == 0){
@@ -132,6 +132,9 @@ namespace Words {
 		std::vector<Z3_ast> asts;
 		
 		std::stringstream str;
+		if (w.characters () == 0) {
+		  return Z3_mk_seq_empty (context,strsort);
+		}
 		for (auto i : w) {
 		  if (i->isVariable ()) {
 			if (str.str().size ()) {
@@ -225,6 +228,16 @@ namespace Words {
 	  }
 	  
 	  virtual Words::SMT::SolverResult solve () {
+		Z3_params solverParams = Z3_mk_params(context);
+		Z3_symbol timeoutParamStrSymbol = Z3_mk_string_symbol(context, "timeout");
+		Z3_params_inc_ref(context, solverParams);
+		Z3_params_set_uint(context,
+						   solverParams,
+						   timeoutParamStrSymbol,
+						   timeout); 
+		Z3_solver_set_params(context, solver, solverParams);
+		Z3_params_dec_ref(context, solverParams);
+		
 		switch (Z3_solver_check (context,solver)) {
 		case Z3_L_TRUE:
 		  model = Z3_solver_get_model (context,solver);
@@ -246,6 +259,9 @@ namespace Words {
 		Z3_get_numeral_uint (context,ast,&res);
 		return res;
 	  }
+
+	  void setTimeout (size_t t ) {timeout = t;}
+	  
 	private:
 	  Z3_context context;
 	  Z3_config cfg;
