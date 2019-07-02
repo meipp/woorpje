@@ -181,6 +181,9 @@ namespace Words {
 		std::stringstream str;
 		str << v->getRepr ();
 		exprs.insert (std::make_pair (v,em.mkVar (str.str(),em.integerType())));
+
+		auto zero = em.mkConst (::CVC4::Rational (0));
+		asserts.push_back (em.mkExpr ( ::CVC4::kind::GEQ,exprs.at(v),zero));
 	  }
 	  
 	  virtual void addConstraint (const Constraints::Constraint& l) {

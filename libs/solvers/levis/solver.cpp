@@ -66,10 +66,13 @@ namespace Words {
 			
 			auto constraint = builder->makeConstraint ();
 			auto lconstraint = constraint->getLinconstraint ();
-			if (lconstraint->lhsEmpty () && lconstraint->getRHS () < 0) {
-			  return false;
+			if (lconstraint->lhsEmpty ()) {
+			  if (lconstraint->getRHS () < 0) {
+				return false;
+			  }
 			}
-			intsolver->addConstraint (*constraint);
+			else 
+			  intsolver->addConstraint (*constraint);
 		  }
 		  
 		}
@@ -369,14 +372,6 @@ namespace Words {
 			sub = findRootSolution (inode);
 			return Words::Solvers::Result::HasSolution;
           } else {
-			/*else if (solveDummy (*to,solution)) {
-			  auto dnode = graph.makeDummyNode ();
-			  graph.addEdge (nnode,dnode,solution);
-			  result = Words::Solvers::Result::HasSolution;
-			  subs = findRootSolution (dnode);
-			  waiting.clear();
-			  return true;
-			  }*/
 			Words::Substitution solution;
 			auto fnode = graph.makeNode (first);
 			graph.addEdge (fnode,inode,simplSub);
