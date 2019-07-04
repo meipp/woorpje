@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.10)
 SET (ToolName woorpje)
 SET (Translator ${ToolName}2SMT)
 SET (VERSION_MAJOR 0)
-SET (VERSION_MINOR 3)
+SET (VERSION_MINOR "3-1")
 SET (MAINDEVELOPERNAME "Mitja Kulczynski, Danny Boegsted Poulsen and Thorsten Ehlers")
 SET (MAINDEVELOPEREMAIL "{mku,dbp,the}@informatik.uni-kiel.de")
 SET (ORGANISATION "Dependable Systems Group, Kiel Univeristy")
@@ -43,7 +43,6 @@ configure_file (
  "${PROJECT_BINARY_DIR}/config.h"
 )
 add_subdirectory(libs)
-add_subdirectory(documentation)
 
 SET(Boost_USE_STATIC_LIBS ON)
 FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
