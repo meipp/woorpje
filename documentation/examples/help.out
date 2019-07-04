@@ -1,0 +1,20 @@
+SMT Options:
+  -S [ --smtsolver ] arg     SMT Solver
+                              0 Z3
+                              1 CVC4
+                              2 Z3Str3
+                             
+  --smttimeout arg           Set timeout for SMTSolver (ms)
+
+LevisSMT Options:
+  --levisheuristics arg      Levi Heuristics
+                              0 VariableTerminalRatio
+                              1 WaitingListLimitReached
+                              2 EquationGrowth
+                              3 EquationLengthExceeded
+                              4 None
+                             
+  --VarTerminalRation arg    Variable Terminal Ratio
+  --WaitingLimit arg         WaitingListLimit
+  --growth arg               Equation Growth Ratio
+  --eqLength arg             Equation Length

@@ -5,27 +5,21 @@ SMT: Z3 4.8.5.0
 Dependable Systems Group, Kiel Univeristy
 Mitja Kulczynski, Danny Boegsted Poulsen and Thorsten Ehlers - {mku,dbp,the}@informatik.uni-kiel.de
 
-Using Solver from input file.
+Using command line forced  solver.
 Solving Equation System
 aX == Yb
 -1*X  <= -5
 
-SatSolver Ready
-c last restart ## conflicts  :  1 11 
+Levis Algorithm
+Using Heuristic: VariableTerminalRatio - 1.1
+SMTCalls: 0 
 
 
 Substitution: 
-X: babbbbbb
-Y: ababbbbb
+X: ____b
+Y: a____
 
 Equations after substition
-ababbbbbb == ababbbbbb
-
-Timing info
-Encoding  : 0 milliseconds
-Encoding  : 0 milliseconds
-Encoding  : 0 milliseconds
-Solving : 0 milliseconds
-Overall Solving Time : 1 milliseconds
+a____b == a____b
 
 Found a solution
