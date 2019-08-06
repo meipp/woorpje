@@ -1,6 +1,6 @@
 %{
  #include <stdexcept>
- #include "parser/tokens.hpp"
+ #include "tokens.hpp"
 %}
 %includes
 struct KeywordInfo;

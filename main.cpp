@@ -7,7 +7,7 @@
 #include "words/exceptions.hpp"
 #include "host/resources.hpp"
 #include "host/exitcodes.hpp"
-#include "parser/parser.hpp"
+#include "parser/parsing.hpp"
 #include "solvers/solvers.hpp"
 #include "smt/smtsolvers.hpp"
 
@@ -256,7 +256,7 @@ int main (int argc, char** argv) {
   try {
 	std::fstream inp;
 	inp.open (conffile);
-	auto parser = Words::Parser::Create (inp);
+	auto parser = Words::makeParser (Words::ParserType::Standard,inp);//Words::Parser::Create (inp);
 	auto s = parser->Parse (opt,std::cout);
 	if (!solver) {
 	  std::cout << "Using Solver from input file." << std::endl;

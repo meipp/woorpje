@@ -2,7 +2,7 @@
 #include <ostream>
 #include <memory>
 #include <istream>
-#include "parser/tokens.hpp"
+#include "tokens.hpp"
   int mylineno = 1;
   int column = 1;
   using namespace std;

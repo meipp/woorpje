@@ -57,7 +57,9 @@ struct LexObject {
 };
 
 struct KeywordInfo {
-  const char* name; Tokens token; Keywords keyword;
+  const char* name;
+  Tokens token;
+  Keywords keyword;
 };
 
 class KeywordChecker {

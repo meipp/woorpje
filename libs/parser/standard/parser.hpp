@@ -4,10 +4,11 @@
 #include <string>
 #include <ostream>
 
+#include "parser/parsing.hpp"
 #include "words/words.hpp"
 #include "words/exceptions.hpp"
 #include "solvers/solvers.hpp"
-#include "parser/tokens.hpp"
+#include "tokens.hpp"
 
 
 std::unique_ptr<FlexLexer> makeFlexer (std::istream& is);
@@ -23,7 +24,7 @@ namespace Words {
 	ParserException () : WordException ("Parser  Error") {}
   };
   
-  class Parser {
+  class Parser : public ParserInterface {
   public:
 	static std::unique_ptr<Parser> Create (std::istream& is)  {
 	  return std::unique_ptr<Parser> (new Parser (makeFlexer (is)));

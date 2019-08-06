@@ -1,6 +1,6 @@
 #include "words/words.hpp"
 #include "words/linconstraint.hpp"
-#include "parser/parser.hpp"
+#include "parser.hpp"
 
 
 bool Words::Parser::parseVariablesDecl (){
@@ -191,4 +191,11 @@ bool Words::Parser::tryacceptKeyword (Keywords k) {
 void Words::Parser::unexpected () {
   *err << "On " << lexobject.lineno << "." << lexobject.colStart <<": " << " unexpected " << lexobject.text << std::endl;
   throw ParserException ();
+}
+
+namespace Words {
+  Parser_ptr makeStdParser (std::istream& is) {
+	return Parser::Create (is);
+  }
+  
 }

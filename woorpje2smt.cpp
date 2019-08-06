@@ -8,7 +8,7 @@
 #include "words/exceptions.hpp"
 #include "host/resources.hpp"
 #include "host/exitcodes.hpp"
-#include "parser/parser.hpp"
+#include "parser/parsing.hpp"
 #include "solvers/solvers.hpp"
 #include "solvers/exceptions.hpp"
 #include "words/linconstraint.hpp"
@@ -141,7 +141,7 @@ int main (int argc, char** argv) {
   try {
 	std::fstream inp;
 	inp.open (conffile);
-	auto parser = Words::Parser::Create (inp);
+	auto parser = Words::makeParser (Words::ParserType::Standard,inp);
 	solver = parser->Parse (opt,std::cout);
 	inp.close ();
   }catch (Words::WordException& e) {
