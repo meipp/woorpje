@@ -7,7 +7,7 @@ target_include_directories(smtsolver PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/pubinclu
 
 if (ENABLE_Z3)
    find_package(Z3)
-   add_definitions (-DENABLEZ3)
+    add_definitions (-DENABLEZ3)
    target_sources (smtsolver PRIVATE z3.cpp)
    target_link_Libraries (smtsolver ${Z3_LIBRARIES})
 endif(ENABLE_Z3)
