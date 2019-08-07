@@ -541,6 +541,8 @@ namespace Words {
   };
 
   struct Equation {
+	Equation () {}
+	Equation (const Word& lhs, Word& rhs) : lhs(lhs),rhs(rhs) {}
 	Word lhs;
 	Word rhs;
 	Context* ctxt;
