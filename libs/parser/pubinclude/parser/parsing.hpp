@@ -1,14 +1,25 @@
 #ifndef _PARSING__
 #define _PARSING__
 #include <istream>
+#include "words/words.hpp"
 #include "solvers/solvers.hpp"
 
 namespace Words {
-  class Options;
+
+  struct Job {
+	Words::Options options;
+	Solvers::Solver_ptr solver;
+  };
+  
+  class JobGenerator {
+  public:
+	virtual std::unique_ptr<Job> newJob ()  = 0;
+  };
+  
   class ParserInterface {
   public:
 	virtual ~ParserInterface () {}
-	virtual Solvers::Solver_ptr Parse (Words::Options& opt,std::ostream& err) = 0;
+	virtual std::unique_ptr<JobGenerator> Parse (std::ostream& err) = 0;
   };
 
   using Parser_ptr = std::unique_ptr<ParserInterface>;

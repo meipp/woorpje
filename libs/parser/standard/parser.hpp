@@ -16,6 +16,15 @@ std::unique_ptr<FlexLexer> makeFlexer (std::istream& is);
 int getLineNumber ();
 int getColumn ();
 
+class JGenerator : public Words::JobGenerator  {
+  public:
+  JGenerator ()  {
+	job = std::make_unique<Words::Job> ();}
+  std::unique_ptr<Words::Job> newJob ()  {
+	return std::move(job);
+  }
+  std::unique_ptr<Words::Job> job = nullptr;
+};
 
 
 namespace Words {
@@ -30,10 +39,11 @@ namespace Words {
 	  return std::unique_ptr<Parser> (new Parser (makeFlexer (is)));
 	}
 	
-	Solvers::Solver_ptr Parse (Words::Options& opt,std::ostream& err) {
+	std::unique_ptr<JobGenerator> Parse (std::ostream& err) {
+	  auto gen = std::make_unique<JGenerator> (); 
 	  try {
 		this->err = &err; 
-		options = &opt;
+		options = &gen->job->options;
 		options->context = std::make_shared<Words::Context> ();
 		if (parseVariablesDecl () && 
 			parseTerminalsDecl ()
@@ -46,7 +56,7 @@ namespace Words {
 				accept(Tokens::NUMBER,text) && 
 				accept(Tokens::RPARAN)
 				)
-			  return Solvers::makeSolver<Solvers::Types::SatEncoding> (static_cast<size_t> (std::atoi (text.c_str ())));
+			  gen->job->solver = Solvers::makeSolver<Solvers::Types::SatEncoding> (static_cast<size_t> (std::atoi (text.c_str ())));
 		  }
 		  if (tryacceptKeyword (SatGlucoseOld)) {
 			std::string text;
@@ -55,7 +65,7 @@ namespace Words {
 				accept(Tokens::RPARAN)
 				)
 			  
-			  return Solvers::makeSolver<Solvers::Types::SatEncodingOld> (static_cast<size_t> (std::atoi (text.c_str ())));
+			  gen->job->solver = Solvers::makeSolver<Solvers::Types::SatEncodingOld> (static_cast<size_t> (std::atoi (text.c_str ())));
 		  }
 		  
 		  /*if (tryacceptKeyword (Reachability)) {
@@ -68,17 +78,19 @@ namespace Words {
 			return Solvers::makeSolver<Solvers::Types::Reachability> (static_cast<size_t> (std::atoi (text.c_str ())));
 			}*/
 		  if (tryacceptKeyword (SMT)) {
-			return Solvers::makeSolver<Solvers::Types::PureSMT> ();
+			gen->job->solver = Solvers::makeSolver<Solvers::Types::PureSMT> ();
 		  }
 		  if (tryacceptKeyword (Levis)) {
-			return Solvers::makeSolver<Solvers::Types::Levis> ();
+			gen->job->solver = Solvers::makeSolver<Solvers::Types::Levis> ();
 		  }
 		}
+
 	  }
 	  catch (ParserException& p) {
-		
+		gen->job = nullptr;
 	  }
-	  return nullptr;
+	  
+	  return gen;
 	}
 	
   private:

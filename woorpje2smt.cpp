@@ -136,42 +136,41 @@ int main (int argc, char** argv) {
   }
   
   
-  Words::Options opt;
-  Words::Solvers::Solver_ptr solver = nullptr;
+  
   try {
 	std::fstream inp;
 	inp.open (conffile);
 	auto parser = Words::makeParser (Words::ParserType::Standard,inp);
-	solver = parser->Parse (opt,std::cout);
+	auto jg =  parser->Parse (std::cout);
 	inp.close ();
+	
+	auto job = jg->newJob ();
+	while (job) {
+	  Words::Options& opt = job->options;
+	  std::ostream* out = &std::cout;
+	  std::fstream outp;
+	  if (outputfile != "") {
+		out = &outp;
+		outp.open (outputfile.c_str(),std::fstream::out);
+	  }
+	  
+	  encodePreamble (*out,*opt.context);
+	  for (auto& eq : opt.equations)
+		encodeEquation (*out,eq);
+	  for (auto& eq : opt.constraints) {
+		if (eq->isLinear ()) {
+		  encodeLinConstraint (*out,eq->getLinconstraint ());
+		}
+		else {
+		  std::cerr << "Encountered non-lineary constraint" << std::endl;
+		}
+	  }
+	  encodeEnd (*out);
+	}
+	
   }catch (Words::WordException& e) {
 	std::cerr << e.what () << std::endl;
 	return -1;
-  }
-  
-  if (solver) {
-	std::ostream* out = &std::cout;
-	std::fstream outp;
-	if (outputfile != "") {
-	  out = &outp;
-	  outp.open (outputfile.c_str(),std::fstream::out);
-	}
-	
-	encodePreamble (*out,*opt.context);
-	for (auto& eq : opt.equations)
-	  encodeEquation (*out,eq);
-	for (auto& eq : opt.constraints) {
-	  if (eq->isLinear ()) {
-		encodeLinConstraint (*out,eq->getLinconstraint ());
-	  }
-	  else {
-		std::cerr << "Encountered non-lineary constraint" << std::endl;
-	  }
-	}
-	encodeEnd (*out);
-  }
-  else {
-	std::cerr << "Configuration Error" << std::endl;
   }
   
 }
