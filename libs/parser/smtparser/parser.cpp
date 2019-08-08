@@ -147,7 +147,12 @@ namespace Words {
 		entry = nullptr;
 	  }
 	}
+
 	
+	virtual void caseDisjunction (const Disjunction& c)
+	{
+	  
+	}
   private:
 	Words::Options& opt;
 	std::unique_ptr<Words::Constraints::LinearConstraintBuilder> builder;
@@ -169,7 +174,6 @@ namespace Words {
 	virtual void caseIdentifier (const Identifier& i) {
 	  if (i.getSort () == Sort::String) {
 		auto symb = i.getSymbol ();
-		assert(symb->getVal().size() == 1);
 		*wb << symb->getVal ();
 	  }
 	}
@@ -226,6 +230,11 @@ namespace Words {
 	{
 	  
 	}
+
+	virtual void caseDisjunction (const Disjunction& c)
+	{
+	  
+	}
 	
 	virtual void caseStrLen (const StrLen& c)
 	{
@@ -243,6 +252,7 @@ namespace Words {
 	virtual void error (const std::string& err) {
 	  herror = true;
 	  os  << err << std::endl;
+	  throw std::runtime_error ("HH");
 	}
 
 	virtual bool hasError () {return herror;}
