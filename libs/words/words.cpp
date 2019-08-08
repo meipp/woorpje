@@ -24,7 +24,7 @@ namespace Words {
 		delete v;
 	}
 	
-	std::unordered_map<char,IEntry*> reprToEntry;
+	std::unordered_map<std::string,IEntry*> reprToEntry;
 	std::unordered_map<size_t,Sequence*> hashToSequence;
 	std::vector<Variable*> vars;
 	std::vector<Terminal*> terminals;
@@ -40,7 +40,7 @@ namespace Words {
 	
   }
   
-  IEntry* Context::addVariable (char c) {
+  IEntry* Context::addVariable (const std::string& c) {
 	if (_internal->reprToEntry.count (c)) {
 	  return _internal->reprToEntry[c];
 	}
@@ -50,11 +50,11 @@ namespace Words {
   }
 
   IEntry* Context::addTerminal (char c) {
-	if (_internal->reprToEntry.count (c)) {
-	  return _internal->reprToEntry[c];
+	if (_internal->reprToEntry.count (std::string(1,c))) {
+	  return _internal->reprToEntry[std::string(1,c)];
 	}
 	_internal->terminals.push_back(new Terminal(c,_internal->terminals.size(),this));
-	_internal->reprToEntry[c] = _internal->terminals.back();
+	_internal->reprToEntry[std::string(1,c)] = _internal->terminals.back();
 	return _internal->terminals.back();
 	
   }
@@ -113,7 +113,7 @@ namespace Words {
   const std::vector<Variable*>& Context::getVariableAlphabet() const {
 	return _internal->vars;
   }
-  IEntry* Context::findSymbol (char c) const {
+  IEntry* Context::findSymbol (const std::string& c) const {
 	auto it = _internal->reprToEntry.find(c);
 	if (it != _internal->reprToEntry.end ())
 	  return it->second;
@@ -132,6 +132,10 @@ namespace Words {
   }
   
   WordBuilder& WordBuilder::operator<< (char c) {
+	return operator<< (std::string(1,c));
+  }
+
+  WordBuilder& WordBuilder::operator<< (const std::string& c) {
 	auto entry = ctxt.findSymbol (c);
 	if (entry->isTerminal ()) {
 	  input.push_back (entry);
@@ -155,8 +159,9 @@ namespace Words {
   }
   
   std::ostream& operator<< (std::ostream& os, const Word& w) {
-	for (auto c : w) {
-	  c->output(os);
+	for (auto it = w.ebegin(); it != w.eend();++it) {
+	  os << **it;
+	  os << ' ';
 	}
 	return os;
   }

@@ -34,7 +34,7 @@ namespace Words {
 	virtual const Sequence* getSequence () const {return nullptr;}
 	Context* getContext () const {return context;}
 	virtual std::ostream& output (std::ostream& os) const  {return  os << getRepr ();}
-	char getRepr () const {return repr;}
+	virtual char getRepr () const {return repr;}
 	virtual std::size_t length () const {return 1;}
   private:
 	size_t index;
@@ -48,8 +48,12 @@ namespace Words {
 	bool isVariable () const override {return true;}
 	virtual Variable* getVariable () {return this;}
 	virtual const Variable* getVariable () const {return this;}
+	virtual char getRepr () const {return str.at(0);}
+	virtual std::ostream& output (std::ostream& os) const  {return  os <<'{' << str <<  '}';}
   protected:
-	Variable (char repr, size_t index,Context* ctxt) : IEntry(repr,index,ctxt) {}
+	Variable (const std::string& s, size_t index,Context* ctxt) : IEntry('@',index,ctxt),str(s) {}
+  private:
+	std::string str;
   };
 
   class Sequence : public IEntry {
@@ -77,10 +81,12 @@ namespace Words {
 	reverse_iterator rend ()  {return entries.rend();}
 	
 	std::ostream& output (std::ostream& os) const  override {
+	  os <<'[';
 	  for (auto i : entries) {
 		i->output (os);
 	  }
-	  return os;
+	  
+	  return os <<']';
 	}
    
 	size_t hash () const {
@@ -508,7 +514,8 @@ namespace Words {
 	}
 	~WordBuilder ();
 	WordBuilder& operator<< (char c);
-
+	WordBuilder& operator<< (const std::string& c);
+	
 	void flush ();
 	
   private:
@@ -522,10 +529,12 @@ namespace Words {
 	using SeqInput = std::vector<IEntry*>;
 	Context ();
 	~Context ();
-	IEntry* addVariable (char c);
+	IEntry* addVariable (const std::string&);
+	IEntry* addVariable (char c) {return addVariable (std::string(1,c));}
 	IEntry* addTerminal (char c);
 	IEntry* addSequence (const SeqInput&);
-	IEntry* findSymbol (char c) const;
+	IEntry* findSymbol (const std::string& c) const;
+	IEntry* findSymbol (char c) const { return findSymbol (std::string(1,c));}
 	Terminal* getEpsilon ();
 	std::unique_ptr<WordBuilder> makeWordBuilder (Word& w)  {return std::make_unique<WordBuilder> (*this,w);}
 	bool conformsToConventions () const;

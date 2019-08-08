@@ -128,7 +128,7 @@ namespace Words {
 	
 	virtual void caseStringLiteral (const StringLiteral& ) {}
 	virtual void caseIdentifier (const Identifier& c) {
-	  entry = opt.context->findSymbol (c.getSymbol()->getVal().at(0));
+	  entry = opt.context->findSymbol (c.getSymbol()->getVal());
 	}
 
 	virtual void caseAssert (const Assert& c) {
@@ -170,7 +170,7 @@ namespace Words {
 	  if (i.getSort () == Sort::String) {
 		auto symb = i.getSymbol ();
 		assert(symb->getVal().size() == 1);
-		*wb << symb->getVal ().at(0);
+		*wb << symb->getVal ();
 	  }
 	}
 	
@@ -263,10 +263,10 @@ namespace Words {
 	  std::stringstream str;
 	  for (auto& s : parser.getVars ()) {
 		str << *s << std::endl;
-		if (str.str().size() == 2)  {
-		  opt.context->addVariable (str.str().at(0));
-		  str.str("");
-		}
+		std::string ss = str.str();
+		ss.pop_back();
+		opt.context->addVariable (ss);
+		str.str("");
 	  }
 
 	  TerminalAdder tadder(opt);
