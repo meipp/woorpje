@@ -156,6 +156,7 @@ namespace Words {
 	  auto seq = ctxt.addSequence (input);
 	  word.append (seq);
 	}
+	input.clear ();
   }
   
   std::ostream& operator<< (std::ostream& os, const Word& w) {

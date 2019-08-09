@@ -550,10 +550,19 @@ namespace Words {
   };
 
   struct Equation {
+	enum class EqType{
+					  Eq,
+					  NEq
+	};
 	Equation () {}
-	Equation (const Word& lhs, Word& rhs) : lhs(lhs),rhs(rhs) {}
+	Equation (const Word& lhs, Word& rhs,EqType type = EqType::Eq) : lhs(lhs),rhs(rhs),type(type) {}
+	Equation (const Equation& eq) : lhs(eq.lhs),
+									rhs(eq.rhs),
+									type(eq.type),
+									ctxt(eq.ctxt) {}
 	Word lhs;
 	Word rhs;
+	EqType type;
 	Context* ctxt;
 	uint32_t hash (uint32_t seed) const {
 	  return rhs.hash (lhs.hash(seed));
@@ -577,7 +586,13 @@ namespace Words {
 	
 	std::shared_ptr<Options> copy () const  {return std::make_shared<Options> (*this);}
 																			   
-	
+	bool hasIneqquality () {
+	  for (auto& eq : equations) {
+		if (eq.type == Equation::EqType::NEq)
+		  return true;
+	  }
+	  return false;
+	}
   };
   
   using Substitution = std::map<IEntry*, Word >;
@@ -588,7 +603,7 @@ namespace Words {
   std::ostream& operator<< (std::ostream&, const Word& w);
   
   inline std::ostream& operator<< (std::ostream& os, const Equation& w) {
-	return os << w.lhs << " == " << w.rhs; 
+	return os << w.lhs << ((w.type == Equation::EqType::Eq) ? " == " : "!=") << w.rhs; 
   }
 
   std::ostream& operator<< (std::ostream& os, const Substitution& sub);

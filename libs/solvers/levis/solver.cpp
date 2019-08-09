@@ -325,7 +325,9 @@ namespace Words {
 	  
 	  ::Words::Solvers::Result Solver::Solve (Words::Options& opt,::Words::Solvers::MessageRelay& relay)   {
 		relay.pushMessage ("Levis Algorithm");
-		relay.pushMessage ((Formatter ("Using Heuristic: %1%") % getSMTHeuristic().getDescription ()).str()); 
+		relay.pushMessage ((Formatter ("Using Heuristic: %1%") % getSMTHeuristic().getDescription ()).str());
+		if (opt.hasIneqquality ())
+		  return ::Words::Solvers::Result::NoIdea;
 		PassedWaiting waiting;
 		Graph graph;
         Handler handler (waiting,graph,sub);

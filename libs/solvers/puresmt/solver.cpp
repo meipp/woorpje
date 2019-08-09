@@ -17,6 +17,9 @@ namespace Words {
 	  
 	  ::Words::Solvers::Result Solver::Solve (Words::Options& opt,::Words::Solvers::MessageRelay& relay)   {
 		relay.pushMessage (Words::Solvers::Formatter (("Encode to SMT")).str());
+		if (opt.hasIneqquality ())
+		  return ::Words::Solvers::Result::NoIdea;
+		
 		auto smtsolver = Words::SMT::makeSolver ();
 		buildEquationSystem (*smtsolver,opt);
 		relay.pushMessage ((Words::Solvers::Formatter (("Using: %1%")) % smtsolver->getVersionString ()).str());

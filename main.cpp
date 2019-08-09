@@ -258,7 +258,12 @@ int main (int argc, char** argv) {
 	auto parser = Words::makeParser (Words::ParserType::Standard,inp);//Words::Parser::Create (inp);
 	auto jg = parser->Parse (std::cout);
 	auto job = jg->newJob ();
+	size_t noSolutionCount = 0;
+	size_t DefinitelyNoSolutionCount = 0;
+	size_t noIdeaCount = 0;
+	size_t totalcount = 0;
 	while (job) {
+	  totalcount++;
 	  Words::Solvers::Solver_ptr solver = buildSolver (solverr);
 	  auto s = std::move(job->solver);
 	  
@@ -277,20 +282,26 @@ int main (int argc, char** argv) {
 	  std::cout << "Solving Equation System" << std::endl << job->options << std::endl;;
 	  
 	  if (simplifier) {
-		std::cout << "Running Simplifiers" << std::endl;
-		Words::Substitution sub;
-		std::vector<Words::Constraints::Constraint_ptr> cstr;
-		auto res = Words::Solvers::CoreSimplifier::solverReduce (job->options,sub,cstr);
-		std::cout << "Equation System after simplification" << std::endl << job->options << std::endl;;
+		if (!job->options.hasIneqquality ()) {
+		  
 		
-		switch (res) {
-		case ::Words::Solvers::Simplified::JustReduced:
+		  std::cout << "Running Simplifiers" << std::endl;
+		  Words::Substitution sub;
+		  std::vector<Words::Constraints::Constraint_ptr> cstr;
+		  auto res = Words::Solvers::CoreSimplifier::solverReduce (job->options,sub,cstr);
+		  std::cout << "Equation System after simplification" << std::endl << job->options << std::endl;;
+		  
+		  switch (res) {
+		  case ::Words::Solvers::Simplified::JustReduced:
 		  break;
-		case ::Words::Solvers::Simplified::ReducedNsatis:
-		  Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
-		case ::Words::Solvers::Simplified::ReducedSatis:
-		  gatherer.setSubstitution (sub);
-		  Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
+		  case ::Words::Solvers::Simplified::ReducedNsatis:
+			//Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
+			DefinitelyNoSolutionCount++;
+			break;
+		  case ::Words::Solvers::Simplified::ReducedSatis:
+			gatherer.setSubstitution (sub);
+			Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
+		  }
 		}
 		
 	  }
@@ -312,14 +323,19 @@ int main (int argc, char** argv) {
 		  Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
 		}
 		case Words::Solvers::Result::NoSolution: {
-		  Words::Host::Terminate (Words::Host::ExitCode::NoSolution,std::cout);
+		  //Words::Host::Terminate (Words::Host::ExitCode::NoSolution,std::cout);
+		  noSolutionCount++;
+		  break;
 		}
 		case Words::Solvers::Result::DefinitelyNoSolution: {
-		  Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
+		  //Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
+		  DefinitelyNoSolutionCount++;
+		  break;
 		}
 		  
 		default:
-		  Words::Host::Terminate (Words::Host::ExitCode::NoIdea,std::cout);
+		  //Words::Host::Terminate (Words::Host::ExitCode::NoIdea,std::cout);
+		  noIdeaCount++;
 		}
 	  }catch (Words::Solvers::OutOfMemoryException&) {
 		Words::Host::Terminate (Words::Host::ExitCode::OutOfMemory,std::cout);
@@ -333,9 +349,21 @@ int main (int argc, char** argv) {
 	else {
 	  Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
 	}
+	job = jg->newJob ();
+	}
+	if (noSolutionCount) {
+	  Words::Host::Terminate (Words::Host::ExitCode::NoSolution,std::cout);
+	}
+	else if (DefinitelyNoSolutionCount ==totalcount) {
+	  Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
+	}
+	else {
+	  Words::Host::Terminate (Words::Host::ExitCode::NoIdea,std::cout);
 	}
   }catch (Words::WordException& e) {
 	std::cerr << e.what () << std::endl;
 	return -1;
   }
+
+  
 }

@@ -24,6 +24,8 @@ namespace Words {
 	  template<bool encoding>
 	  ::Words::Solvers::Result Solver<encoding>::Solve (Words::Options& opt,::Words::Solvers::MessageRelay& relay)   {
 		relay.pushMessage ("SatSolver Ready");
+		if (opt.hasIneqquality ())
+		  return ::Words::Solvers::Result::NoIdea;
 		if (!opt.context->conformsToConventions ())  {
 		  relay.pushMessage ("Context does not conform to Upper/Lower-case convention");
 		  return ::Words::Solvers::Result::NoIdea;
