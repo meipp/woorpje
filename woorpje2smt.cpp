@@ -166,6 +166,7 @@ int main (int argc, char** argv) {
 		}
 	  }
 	  encodeEnd (*out);
+	  job = jg->newJob ();
 	}
 	
   }catch (Words::WordException& e) {

@@ -27,10 +27,10 @@ namespace Words {
 		  auto val = solver.modelValue(it.first);
 		  
 		  if (val == l_True) {
-			clause.push(~Glucose::mkLit (it.first));
+			clause.push(~Glucose::mkLit(it.first));
 		  }
 		  else if (val == l_False) {
-			clause.push(Glucose::mkLit (it.first));
+			clause.push(Glucose::mkLit(it.first));
 		  }
 		  if (val == l_True) {
 			job->options.equations.push_back (it.second);
@@ -66,7 +66,7 @@ namespace Words {
 	virtual void caseStringLiteral (StringLiteral& s) {
 	  for (auto c : s.getVal ()) {
 		ctxt.addTerminal (c);
-	}
+	  }
 	}
 	virtual void caseAssert (Assert& c)
 	{
@@ -116,7 +116,7 @@ namespace Words {
 
 	template<Words::Constraints::Cmp cmp>
 	void visitRedirect (DummyApplication& c) {
-	  var = var_Undef;
+	  var = Glucose::lit_Undef;
 	  if (c.getExpr (0)->getSort () == Sort::Integer) {
 		builder = Words::Constraints::makeLinConstraintBuilder (cmp);
 		adder = std::make_unique< Adder <Words::Constraints::LinearConstraintBuilder> > (builder);
@@ -125,7 +125,8 @@ namespace Words {
 		c.getExpr(1)->accept(*this);
 		//opt.constraints.push_back(builder->makeConstraint ());
 		builder = nullptr;
-		var = solver.newVar ();
+		auto v = solver.newVar (); 
+		var = Glucose::mkLit (v);
 	  }
 	}
 	
@@ -180,13 +181,24 @@ namespace Words {
 	
 	virtual void caseStringLiteral (StringLiteral& ) {}
 	virtual void caseIdentifier (Identifier& c) {
-	  entry = ctxt.findSymbol (c.getSymbol()->getVal());
-  }
+	  if (c.getSort () != Sort::Bool)
+		entry = ctxt.findSymbol (c.getSymbol()->getVal());
+	  else {
+		auto v = solver.newVar ();
+		var = Glucose::mkLit (v);
+	  }
+	}
 
+	virtual void caseNegLiteral (NegLiteral& c) override {
+	  std::cerr << "NegLit" << std::endl;
+	  c.inner()->accept(*this);
+	  var = ~var;
+	}
+	
 	virtual void caseAssert (Assert& c) {
 	  c.getExpr()->accept(*this);
-	  if (var != var_Undef) {
-		solver.addClause (Glucose::mkLit (var));
+	  if (var != Glucose::lit_Undef) {
+		solver.addClause (var);
 	  }
 	}
 
@@ -208,16 +220,17 @@ namespace Words {
 	  Glucose::vec<Glucose::Lit> vec;
 	  for (auto cc : c) {
 		cc->accept (*this);
-		if (var != var_Undef)
-		  vec.push(Glucose::mkLit (var));
+		if (var != Glucose::lit_Undef)
+		  vec.push(var);
 	  }
 	  if (vec.size()) {
-		var = solver.newVar ();
-		reify_or (solver,Glucose::mkLit (var),vec);
+		auto v = solver.newVar ();
+		var = Glucose::mkLit(v);
+		reify_or (solver,var,vec);
 		
 	  }
 	  else
-		var = var_Undef;
+		var = Glucose::lit_Undef;
 	}
 	
 	virtual void caseConjunction (Conjunction& c)
@@ -225,16 +238,17 @@ namespace Words {
 	  Glucose::vec<Glucose::Lit> vec;
 	  for (auto cc : c) {
 		cc->accept (*this);
-		if (var != var_Undef)
-		  vec.push(Glucose::mkLit (var));
+		if (var != Glucose::lit_Undef)
+		  vec.push(var);
 	  }
 	  if (vec.size()) {
-		var = solver.newVar ();
-		reify_and (solver,Glucose::mkLit (var),vec);
+		auto v = solver.newVar();
+		var = Glucose::mkLit (v);
+		reify_and (solver,var,vec);
 		
 	  }
 	  else
-		var = var_Undef;
+		var = Glucose::lit_Undef;
 	}
 
    
@@ -246,7 +260,7 @@ namespace Words {
 	IEntry* entry = nullptr;
 	Glucose::Solver& solver;
 	std::unordered_map<Glucose::Var,Words::Constraints::Constraint_ptr>& constraints;
-	Glucose::Var var = var_Undef;
+	Glucose::Lit var = Glucose::lit_Undef;
   };
   
   class StrConstraintBuilder : public BaseVisitor {
@@ -271,6 +285,14 @@ namespace Words {
 		auto symb = i.getSymbol ();
 		*wb << symb->getVal ();
 	  }
+	  else if (i.getSort () == Sort::Bool) {
+		var = solver.newVar ();
+	  }
+	}
+
+	virtual void caseNegLiteral (NegLiteral& c) {
+	  c.inner()->accept(*this);
+	  var = ~var;
 	}
 	
 	virtual void caseAssert (Assert& c) {
