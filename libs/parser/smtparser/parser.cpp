@@ -18,6 +18,7 @@ namespace Words {
 
 	}
 	std::unique_ptr<Words::Job> newJob ()  {
+	  solver.toDimacs ("DIMACS");
 	  if (solver.solve ()) {
 		auto  job  = std::make_unique<Job> ();
 		job->options.context= context;
@@ -142,7 +143,7 @@ namespace Words {
 		c.getExpr(1)->accept(*this);
 		//opt.constraints.push_back(builder->makeConstraint ());
 		
-
+		
 		auto v = solver.newVar (); 
 		var = Glucose::mkLit (v);
 		constraints.insert (std::make_pair(v,builder->makeConstraint ()));
@@ -196,9 +197,62 @@ namespace Words {
 		var = Glucose::mkLit (v);
 		eqs.insert(std::make_pair (v,eq));
 	  }
-	  else  {
+	  else if (lexpr->getSort () == Sort::Integer)  {
 		visitRedirect<Words::Constraints::Cmp::LEq> (c);
 		visitRedirect<Words::Constraints::Cmp::GEq> (c);
+	  }
+
+	  else if (lexpr->getSort () == Sort::Bool) {
+		std::cerr << "EQUALITY" << std::endl;
+		lexpr->accept(*this);
+		auto l = var;
+		rexpr->accept(*this);
+		auto r = var;
+		auto v = solver.newVar ();
+		
+		//(~v | l | ~l) & (~v | l | ~r) & (~v | r | ~l) & (~v | r | ~r) & (~l | ~r | v) & (l | r | v)
+
+		// v l r 0
+		
+		auto vv = Glucose::mkLit (v);
+		
+		Glucose::vec<Glucose::Lit> ps;
+		ps.push(~vv);
+		ps.push(~l);
+		ps.push(l);
+		solver.addClause (ps);
+		
+		Glucose::vec<Glucose::Lit> ps2;
+		ps2.push(~vv);
+		ps2.push(~r);
+		ps2.push(l);
+		solver.addClause (ps2);
+		
+		Glucose::vec<Glucose::Lit> ps3;
+		ps3.push(~l);
+		ps3.push(r);
+		ps3.push(~vv);
+		solver.addClause (ps3);
+		
+		Glucose::vec<Glucose::Lit> ps4;
+		ps4.push(r);
+		ps4.push(~r);
+		ps4.push(~vv);
+		solver.addClause (ps4);
+		//
+		Glucose::vec<Glucose::Lit> ps5;
+		ps4.push(~r);
+		ps4.push(~l);
+		ps4.push(vv);
+		solver.addClause (ps5);
+
+		Glucose::vec<Glucose::Lit> ps6;
+		ps4.push(r);
+		ps4.push(l);
+		ps4.push(vv);
+		solver.addClause (ps6);
+		
+		var = vv;	
 	  }
 	}
 
@@ -270,11 +324,17 @@ namespace Words {
 		throw Words::WordException ("Integer Variables currently not supported");
 	  }
 	  else {
-		auto v = solver.newVar ();
-		var = Glucose::mkLit (v);
+		if (boolvar.count(&c)) {
+		  var = boolvar[&c];
+		}
+		else {
+		  auto v = solver.newVar ();
+		  var = Glucose::mkLit (v);
+		  boolvar[&c] = var;
+		}
 	  }
 	}
-
+	
 	virtual void caseNegLiteral (NegLiteral& c) override {
 	  std::cerr << "NegLit" << std::endl;
 	  c.inner()->accept(*this);
@@ -352,6 +412,8 @@ namespace Words {
 
 	std::unique_ptr<WordBuilder> wb;
 	std::unordered_map<Glucose::Var,Words::Equation>& eqs;
+	std::unordered_map<void*,Glucose::Lit> boolvar;
+	
 	bool instrlen = false;
   };
   
