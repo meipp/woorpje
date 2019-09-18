@@ -50,10 +50,19 @@ void encodeWord (std::ostream& os, const Words::Word& w) {
 }
 
 void encodeEquation (std::ostream& os, const Words::Equation& w) {
-  os << "(assert (=";
+  os << "(assert";
+  if (w.type == Words::Equation::EqType::NEq) {
+    os << "(not ";
+  }
+  os << "(=";
   encodeWord (os,w.lhs);
   encodeWord (os,w.rhs);
-  os << ") )" << std::endl; 
+  os << ")";
+  if (w.type == Words::Equation::EqType::NEq) {
+     os << ")";
+  }
+  os << ")" << std::endl;
+ 
 }
 
 template<class T>
@@ -143,15 +152,18 @@ int main (int argc, char** argv) {
 	auto parser = Words::makeParser (Words::ParserType::Standard,inp);
 	auto jg =  parser->Parse (std::cout);
 	inp.close ();
-	
+	size_t seg = 0;
 	auto job = jg->newJob ();
 	while (job) {
 	  Words::Options& opt = job->options;
 	  std::ostream* out = &std::cout;
 	  std::fstream outp;
 	  if (outputfile != "") {
-		out = &outp;
-		outp.open (outputfile.c_str(),std::fstream::out);
+	    std::stringstream str;
+	    str << outputfile << "_" << ++seg;
+	    outp.open (str.str().c_str(),std::fstream::out);
+	    out = &outp;
+	    
 	  }
 	  
 	  encodePreamble (*out,*opt.context);

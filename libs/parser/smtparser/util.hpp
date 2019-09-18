@@ -11,6 +11,7 @@ namespace Words {
 	  ps.push(~lhs);
 	  s.addClause(ps);
 	}
+	
   }
 
   // lhs -> \/ rhs
@@ -19,8 +20,8 @@ namespace Words {
 	// lhs -> \/ rhs
 	Glucose::vec<Glucose::Lit> ps;
 	for(int i = 0 ; i < rhs.size();i++)
-	ps.push(rhs[i]);
+	  ps.push(rhs[i]);
 	ps.push(~lhs);
-  s.addClause(ps);
+	s.addClause(ps);
   }
 }
