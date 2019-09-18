@@ -347,6 +347,7 @@ int main (int argc, char** argv) {
 	  
 	}
 	else {
+	  std::cerr << "No solver specified" << std::endl;
 	  Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
 	}
 	job = jg->newJob ();
@@ -361,8 +362,8 @@ int main (int argc, char** argv) {
 	  Words::Host::Terminate (Words::Host::ExitCode::NoIdea,std::cout);
 	}
   }catch (Words::WordException& e) {
-	std::cerr << e.what () << std::endl;
-	return -1;
+    std::cerr << e.what () << std::endl;
+    return -1;
   }
 
   

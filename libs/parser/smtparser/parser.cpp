@@ -17,8 +17,7 @@ namespace Words {
 	JGenerator ()  {
 
 	}
-	std::unique_ptr<Words::Job> newJob ()  {
-	  solver.toDimacs ("DIMACS");
+	std::unique_ptr<Words::Job> newJob ()  { 
 	  if (solver.solve ()) {
 		auto  job  = std::make_unique<Job> ();
 		job->options.context= context;
