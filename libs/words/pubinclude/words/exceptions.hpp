@@ -7,10 +7,15 @@ namespace Words {
   public:
 	WordException (const std::string& str) : runtime_error (str) {}
   };
-
+  
   class ConstraintUnsupported : public WordException  {
   public:
 	ConstraintUnsupported () : WordException ("A constraint is unsupported for the solver") {}
+  };
+
+  class UnsupportedFeature : public WordException  {
+  public:
+	UnsupportedFeature () : WordException ("A feature is unsupported by Woorpje") {}
   };
 
 }

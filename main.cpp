@@ -264,93 +264,101 @@ int main (int argc, char** argv) {
 	size_t totalcount = 0;
 	while (job) {
 	  totalcount++;
-	  Words::Solvers::Solver_ptr solver = buildSolver (solverr);
-	  auto s = std::move(job->solver);
-	  
-	  if (!solver) {
-		std::cout << "Using Solver from input file." << std::endl;
-		std::swap (solver,s);
-	  }
-	  else {
-		std::cout << "Using command line forced  solver." << std::endl;
-	  }
-	  Words::Options foroutput = job->options;
-	  inp.close ();
+	  if (!job->options.hasIneqquality ()) {
 	
-	CoutResultGatherer gatherer (foroutput);
-	if (solver) {
-	  std::cout << "Solving Equation System" << std::endl << job->options << std::endl;;
-	  
-	  if (simplifier) {
-		if (!job->options.hasIneqquality ()) {
-		  
 		
-		  std::cout << "Running Simplifiers" << std::endl;
-		  Words::Substitution sub;
-		  std::vector<Words::Constraints::Constraint_ptr> cstr;
-		  auto res = Words::Solvers::CoreSimplifier::solverReduce (job->options,sub,cstr);
-		  std::cout << "Equation System after simplification" << std::endl << job->options << std::endl;;
+		Words::Solvers::Solver_ptr solver = buildSolver (solverr);
+		auto s = std::move(job->solver);
+	  
+		if (!solver) {
+		  std::cout << "Using Solver from input file." << std::endl;
+		  std::swap (solver,s);
+		}
+		else {
+		  std::cout << "Using command line forced  solver." << std::endl;
+		}
+		Words::Options foroutput = job->options;
+		inp.close ();
+		
+		CoutResultGatherer gatherer (foroutput);
+		if (solver) {
+		  std::cout << "Solving Equation System" << std::endl << job->options << std::endl;;
 		  
-		  switch (res) {
-		  case ::Words::Solvers::Simplified::JustReduced:
-		  break;
-		  case ::Words::Solvers::Simplified::ReducedNsatis:
-			//Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
-			DefinitelyNoSolutionCount++;
-			break;
-		  case ::Words::Solvers::Simplified::ReducedSatis:
-			gatherer.setSubstitution (sub);
-			Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
+		  if (simplifier) {  
+			
+			std::cout << "Running Simplifiers" << std::endl;
+			Words::Substitution sub;
+			std::vector<Words::Constraints::Constraint_ptr> cstr;
+			auto res = Words::Solvers::CoreSimplifier::solverReduce (job->options,sub,cstr);
+			std::cout << "Equation System after simplification" << std::endl << job->options << std::endl;;
+			
+			switch (res) {
+			case ::Words::Solvers::Simplified::JustReduced:
+			  break;
+			case ::Words::Solvers::Simplified::ReducedNsatis:
+			  //Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
+			  DefinitelyNoSolutionCount++;
+			  break;
+			case ::Words::Solvers::Simplified::ReducedSatis:
+			  gatherer.setSubstitution (sub);
+			  Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
+			}
+			
+		  }
+		  
+		  if (diagnostic)
+			solver->enableDiagnosticOutput ();	
+		  try {
+			Words::Solvers::StreamRelay relay (std::cout);
+			auto ret =  solver->Solve (job->options,relay);
+			
+			solver->getMoreInformation(std::cout);
+			
+			std::cout << "\n" << std::endl;
+			
+			switch (ret) {
+			  
+			case Words::Solvers::Result::HasSolution: {
+			  solver->getResults (gatherer);
+			  Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
+			}
+			case Words::Solvers::Result::NoSolution: {
+			  //Words::Host::Terminate (Words::Host::ExitCode::NoSolution,std::cout);
+			  noSolutionCount++;
+			  break;
+			}
+			case Words::Solvers::Result::DefinitelyNoSolution: {
+			  //Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
+			  DefinitelyNoSolutionCount++;
+			  break;
+			}
+			  
+			default:
+			  //Words::Host::Terminate (Words::Host::ExitCode::NoIdea,std::cout);
+			  noIdeaCount++;
+			}
+			
+		  }catch (Words::Solvers::OutOfMemoryException&) {
+			Words::Host::Terminate (Words::Host::ExitCode::OutOfMemory,std::cout);
+		  }
+		  catch (Words::UnsupportedFeature& o) {
+			std::cout << o.what () << std::endl;
+			Words::Host::Terminate (Words::Host::ExitCode::UnsupportedFeature,std::cout);
+		  }	
+		  catch (Words::WordException& o) {
+			std::cout << o.what () << std::endl;
+			Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
 		  }
 		}
-		
+		else {
+		  std::cerr << "No solver specified" << std::endl;
+		  Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
+		}
 	  }
-	  
-	  if (diagnostic)
-		solver->enableDiagnosticOutput ();	
-	  try {
-		Words::Solvers::StreamRelay relay (std::cout);
-		auto ret =  solver->Solve (job->options,relay);
-		
-		solver->getMoreInformation(std::cout);
-		
-		std::cout << "\n" << std::endl;
-		
-		switch (ret) {
-		  
-		case Words::Solvers::Result::HasSolution: {
-		  solver->getResults (gatherer);
-		  Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
-		}
-		case Words::Solvers::Result::NoSolution: {
-		  //Words::Host::Terminate (Words::Host::ExitCode::NoSolution,std::cout);
-		  noSolutionCount++;
-		  break;
-		}
-		case Words::Solvers::Result::DefinitelyNoSolution: {
-		  //Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
-		  DefinitelyNoSolutionCount++;
-		  break;
-		}
-		  
-		default:
-		  //Words::Host::Terminate (Words::Host::ExitCode::NoIdea,std::cout);
-		  noIdeaCount++;
-		}
-	  }catch (Words::Solvers::OutOfMemoryException&) {
-		Words::Host::Terminate (Words::Host::ExitCode::OutOfMemory,std::cout);
+	  else {
+		std::cerr << "System has inequalities...skipping" << std::endl;
 	  }
-	  catch (Words::WordException& o) {
-		std::cout << o.what () << std::endl;
-		Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
-	  }
-	  
-	}
-	else {
-	  std::cerr << "No solver specified" << std::endl;
-	  Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
-	}
-	job = jg->newJob ();
+	  job = jg->newJob ();
 	}
 	if (noSolutionCount) {
 	  Words::Host::Terminate (Words::Host::ExitCode::NoSolution,std::cout);

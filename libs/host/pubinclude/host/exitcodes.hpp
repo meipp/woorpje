@@ -12,7 +12,8 @@ namespace Words {
 						  NoIdea = 20,
 						  OutOfMemory = 30,
 						  TimeOut = 40,
-						  ConfigurationError = 50
+						  ConfigurationError = 50,
+						  UnsupportedFeature = 60
 	};
 
 	inline void Terminate (ExitCode e, std::ostream& os) {

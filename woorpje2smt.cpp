@@ -12,6 +12,7 @@
 #include "solvers/solvers.hpp"
 #include "solvers/exceptions.hpp"
 #include "words/linconstraint.hpp"
+#include "host/exitcodes.hpp"
 
 void encodeVariable (std::ostream& os, const Words::IEntry* v) {
   os << "(declare-fun " << v->getRepr () << "() String" << ")" << std::endl;
@@ -155,33 +156,41 @@ int main (int argc, char** argv) {
 	size_t seg = 0;
 	auto job = jg->newJob ();
 	while (job) {
-	  Words::Options& opt = job->options;
-	  std::ostream* out = &std::cout;
-	  std::fstream outp;
-	  if (outputfile != "") {
-	    std::stringstream str;
-	    str << outputfile << "_" << ++seg;
-	    outp.open (str.str().c_str(),std::fstream::out);
-	    out = &outp;
+	  if (!job->options.hasIneqquality ()) {
+	   
+		Words::Options& opt = job->options;
+		std::ostream* out = &std::cout;
+		std::fstream outp;
+		if (outputfile != "") {
+		  std::stringstream str;
+		  str << outputfile << "_" << ++seg;
+		  outp.open (str.str().c_str(),std::fstream::out);
+		  out = &outp;
 	    
-	  }
-	  
-	  encodePreamble (*out,*opt.context);
-	  for (auto& eq : opt.equations)
-		encodeEquation (*out,eq);
-	  for (auto& eq : opt.constraints) {
-		if (eq->isLinear ()) {
-		  encodeLinConstraint (*out,eq->getLinconstraint ());
 		}
-		else {
-		  std::cerr << "Encountered non-lineary constraint" << std::endl;
+		
+		encodePreamble (*out,*opt.context);
+		for (auto& eq : opt.equations)
+		  encodeEquation (*out,eq);
+		for (auto& eq : opt.constraints) {
+		  if (eq->isLinear ()) {
+			encodeLinConstraint (*out,eq->getLinconstraint ());
+		  }
+		  else {
+			std::cerr << "Encountered non-lineary constraint" << std::endl;
+		  }
 		}
+		encodeEnd (*out);
 	  }
-	  encodeEnd (*out);
 	  job = jg->newJob ();
 	}
 	
-  }catch (Words::WordException& e) {
+  }
+  catch (Words::UnsupportedFeature& e) {
+	std::cerr << e.what () << std::endl;
+	Words::Host::Terminate (Words::Host::ExitCode::UnsupportedFeature,std::cerr);
+  }
+  catch (Words::WordException& e) {
 	std::cerr << e.what () << std::endl;
 	return -1;
   }

@@ -23,46 +23,46 @@ namespace Words {
       static int i = 0;
       
       if (solver.solve ()) {
-	std::stringstream str;
-	auto  job  = std::make_unique<Job> ();
-	job->options.context= context;
-	Glucose::vec<Glucose::Lit> clause;
-	for (auto it : eqs) {
-	  auto val = solver.modelValue(it.first);
+		std::stringstream str;
+		auto  job  = std::make_unique<Job> ();
+		job->options.context= context;
+		Glucose::vec<Glucose::Lit> clause;
+		for (auto it : eqs) {
+		  auto val = solver.modelValue(it.first);
 		  
-	  if (val == l_True) {
-	    clause.push(~Glucose::mkLit(it.first));
-	  }
-	  else if (val == l_False) {
-	    clause.push(Glucose::mkLit(it.first));
-	  }
-	  if (val == l_True) {
-	    job->options.equations.push_back (it.second);
-	  }
+		  if (val == l_True) {
+			clause.push(~Glucose::mkLit(it.first));
+		  }
+		  else if (val == l_False) {
+			clause.push(Glucose::mkLit(it.first));
+		  }
+		  if (val == l_True) {
+			job->options.equations.push_back (it.second);
+		  }
 		  
-	}
+		}
 
-	for (auto it : constraints) {	  
-	  auto val = solver.modelValue(it.first);
+		for (auto it : constraints) {	  
+		  auto val = solver.modelValue(it.first);
 		  
-	  if (val == l_True) {
-	    clause.push(~Glucose::mkLit(it.first));
-	  }
-	  else if (val == l_False) {
-	    clause.push(Glucose::mkLit(it.first));
-	  }
-	  if (val == l_True) {
-	    job->options.constraints.push_back(it.second);
-	  }
+		  if (val == l_True) {
+			clause.push(~Glucose::mkLit(it.first));
+		  }
+		  else if (val == l_False) {
+			clause.push(Glucose::mkLit(it.first));
+		  }
+		  if (val == l_True) {
+			job->options.constraints.push_back(it.second);
+		  }
 	  
-	}
+		}
 		
-	solver.addClause (clause);
+		solver.addClause (clause);
 		
-	return job;
+		return job;
       }
       else
-	return nullptr;
+		return nullptr;
     }
     std::shared_ptr<Words::Context> context = nullptr;
     Glucose::Solver solver;
@@ -85,7 +85,7 @@ namespace Words {
     TerminalAdder (Words::Context& opt)  : ctxt(opt) {}
     virtual void caseStringLiteral (StringLiteral& s) {
       for (auto c : s.getVal ()) {
-	ctxt.addTerminal (c);
+		ctxt.addTerminal (c);
       }
     }
     virtual void caseAssert (Assert& c)
@@ -94,6 +94,10 @@ namespace Words {
 						  
     }
 
+	virtual void caseFunctionApplication ( FunctionApplication& c) {
+	  throw UnsupportedFeature();
+	}
+	
   private:
     Words::Context& ctxt;
   };
@@ -104,16 +108,16 @@ namespace Words {
     Adder (std::unique_ptr<T>& t)  : inner(t),left(true) {}
     void add (int64_t val) {
       if (left)
-	inner->addLHS (val);
+		inner->addLHS (val);
       else
-	inner->addRHS (val);
+		inner->addRHS (val);
     }
 
     void add (Words::Constraints::VarMultiplicity& v) {
       if (left)
-	inner->addLHS (v.entry,v.number);
+		inner->addLHS (v.entry,v.number);
       else
-	inner->addRHS (v.entry,v.number);
+		inner->addRHS (v.entry,v.number);
     }
 
     void switchSide () {left = !left;}
@@ -126,31 +130,31 @@ namespace Words {
   class LengthConstraintBuilder : public BaseVisitor {
   public:
     LengthConstraintBuilder (
-			     Words::Context&ctxt,
-			     Glucose::Solver& solver,
-			     std::unordered_map<Glucose::Var,Words::Constraints::Constraint_ptr>& c,
-			     std::unordered_map<Glucose::Var,Words::Equation>&eqs
-			     )  : ctxt(ctxt),
-				  solver(solver),
-				  constraints(c),eqs(eqs)
+							 Words::Context&ctxt,
+							 Glucose::Solver& solver,
+							 std::unordered_map<Glucose::Var,Words::Constraints::Constraint_ptr>& c,
+							 std::unordered_map<Glucose::Var,Words::Equation>&eqs
+							 )  : ctxt(ctxt),
+								  solver(solver),
+								  constraints(c),eqs(eqs)
     {}
 
     template<Words::Constraints::Cmp cmp>
     void visitRedirect (DummyApplication& c) {
       var = Glucose::lit_Undef;
       if (c.getExpr (0)->getSort () == Sort::Integer) {
-	builder = Words::Constraints::makeLinConstraintBuilder (cmp);
-	adder = std::make_unique< Adder <Words::Constraints::LinearConstraintBuilder> > (builder);
-	c.getExpr(0)->accept(*this);
-	adder->switchSide ();
-	c.getExpr(1)->accept(*this);
-	//opt.constraints.push_back(builder->makeConstraint ());
+		builder = Words::Constraints::makeLinConstraintBuilder (cmp);
+		adder = std::make_unique< Adder <Words::Constraints::LinearConstraintBuilder> > (builder);
+		c.getExpr(0)->accept(*this);
+		adder->switchSide ();
+		c.getExpr(1)->accept(*this);
+		//opt.constraints.push_back(builder->makeConstraint ());
 		
 		
-	auto v = solver.newVar (); 
-	var = Glucose::mkLit (v);
-	constraints.insert (std::make_pair(v,builder->makeConstraint ()));
-	builder = nullptr;
+		auto v = solver.newVar (); 
+		var = Glucose::mkLit (v);
+		constraints.insert (std::make_pair(v,builder->makeConstraint ()));
+		builder = nullptr;
       }
     }
 
@@ -189,78 +193,31 @@ namespace Words {
       auto lexpr = c.getExpr (0);
       auto rexpr = c.getExpr (1);
       if (lexpr->getSort () == Sort::String) {
-	Words::Word left;
-	Words::Word right;
-	AutoNull<Words::WordBuilder> nuller (wb);
-	wb = ctxt.makeWordBuilder (left);
-	lexpr->accept(*this);
-	wb->flush();
-	wb = ctxt.makeWordBuilder (right);
-	rexpr->accept(*this);
-	wb->flush();
-	//opt.equations.emplace_back(left,right);
-	//opt.equations.back().ctxt = opt.context.get();
+		Words::Word left;
+		Words::Word right;
+		AutoNull<Words::WordBuilder> nuller (wb);
+		wb = ctxt.makeWordBuilder (left);
+		lexpr->accept(*this);
+		wb->flush();
+		wb = ctxt.makeWordBuilder (right);
+		rexpr->accept(*this);
+		wb->flush();
+		//opt.equations.emplace_back(left,right);
+		//opt.equations.back().ctxt = opt.context.get();
 
-	Words::Equation eq (left,right);
-	eq.ctxt = &ctxt;
-	auto v = solver.newVar ();
-	var = Glucose::mkLit (v);
-	eqs.insert(std::make_pair (v,eq));
+		Words::Equation eq (left,right);
+		eq.ctxt = &ctxt;
+		auto v = solver.newVar ();
+		var = Glucose::mkLit (v);
+		eqs.insert(std::make_pair (v,eq));
       }
       else if (lexpr->getSort () == Sort::Integer)  {
-	visitRedirect<Words::Constraints::Cmp::LEq> (c);
-	visitRedirect<Words::Constraints::Cmp::GEq> (c);
+		visitRedirect<Words::Constraints::Cmp::LEq> (c);
+		visitRedirect<Words::Constraints::Cmp::GEq> (c);
       }
 
       else if (lexpr->getSort () == Sort::Bool) {
-	lexpr->accept(*this);
-	auto l = var;
-	rexpr->accept(*this);
-	auto r = var;
-	auto v = solver.newVar ();
-		
-	//(~v | l | ~l) & (~v | l | ~r) & (~v | r | ~l) & (~v | r | ~r) & (~l | ~r | v) & (l | r | v)
-
-		
-	auto vv = Glucose::mkLit (v);
-		
-	Glucose::vec<Glucose::Lit> ps;
-	ps.push(~vv);
-	ps.push(~l);
-	ps.push(l);
-	solver.addClause (ps);
-		
-	Glucose::vec<Glucose::Lit> ps2;
-	ps2.push(~vv);
-	ps2.push(~r);
-	ps2.push(l);
-	solver.addClause (ps2);
-		
-	Glucose::vec<Glucose::Lit> ps3;
-	ps3.push(~l);
-	ps3.push(r);
-	ps3.push(~vv);
-	solver.addClause (ps3);
-		
-	Glucose::vec<Glucose::Lit> ps4;
-	ps4.push(r);
-	ps4.push(~r);
-	ps4.push(~vv);
-	solver.addClause (ps4);
-	//
-	Glucose::vec<Glucose::Lit> ps5;
-	ps4.push(~r);
-	ps4.push(~l);
-	ps4.push(vv);
-	solver.addClause (ps5);
-
-	Glucose::vec<Glucose::Lit> ps6;
-	ps4.push(r);
-	ps4.push(l);
-	ps4.push(vv);
-	solver.addClause (ps6);
-		
-	var = vv;	
+		throw Words::WordException ("SHouldn't get here");
       }
     }
 
@@ -270,46 +227,48 @@ namespace Words {
       auto lexpr = c.getExpr (0);
       auto rexpr = c.getExpr (1);
       if (lexpr->getSort () == Sort::String) {
-	std::cerr << "Inequality" << std::endl;
-	Words::Word left;
-	Words::Word right;
-	AutoNull<Words::WordBuilder> nuller (wb);
-	wb = ctxt.makeWordBuilder (left);
-	lexpr->accept(*this);
-	wb->flush();
-	wb = ctxt.makeWordBuilder (right);
-	rexpr->accept(*this);
-	wb->flush();
+		Words::Word left;
+		Words::Word right;
+		AutoNull<Words::WordBuilder> nuller (wb);
+		wb = ctxt.makeWordBuilder (left);
+		lexpr->accept(*this);
+		wb->flush();
+		wb = ctxt.makeWordBuilder (right);
+		rexpr->accept(*this);
+		wb->flush();
         
 
-	Words::Equation eq (left,right,Words::Equation::EqType::NEq);
-	eq.ctxt = &ctxt;
-	auto v = solver.newVar ();
-	var = Glucose::mkLit(v);
-	eqs.insert(std::make_pair (v,eq));
+		Words::Equation eq (left,right,Words::Equation::EqType::NEq);
+		eq.ctxt = &ctxt;
+		auto v = solver.newVar ();
+		var = Glucose::mkLit(v);
+		eqs.insert(std::make_pair (v,eq));
       }
       else {
-	throw Words::WordException ("NEQ not supported");
+		throw Words::UnsupportedFeature ();
       }
     }
 
     virtual void caseNumericLiteral (NumericLiteral& c) {
 	
       if (!vm) {
-	adder->add (c.getVal ());
+		adder->add (c.getVal ());
       }
       else {
-	vm->number = c.getVal ();
+		vm->number = c.getVal ();
       }
     }
 
+	virtual void caseFunctionApplication (FunctionApplication& c) {
+	  throw UnsupportedFeature ();
+    }
 
     virtual void caseMultiplication (Multiplication& c)
     {
       Words::Constraints::VarMultiplicity kk (nullptr,1);
       vm = &kk;
       for (auto& cc : c)
-	cc->accept (*this);
+		cc->accept (*this);
       assert(kk.entry);
       adder->add (kk);
       vm = nullptr;
@@ -318,31 +277,31 @@ namespace Words {
     virtual void caseStringLiteral (StringLiteral& s) {
 	  
       for (auto c : s.getVal ()) {
-	*wb << c;
+		*wb << c;
       }
     }
     virtual void caseIdentifier (Identifier& c) {
       if (c.getSort () == Sort::String && instrlen  )
-	entry = ctxt.findSymbol (c.getSymbol()->getVal());
+		entry = ctxt.findSymbol (c.getSymbol()->getVal());
       else if (c.getSort () == Sort::String && !instrlen) {
-	auto symb = c.getSymbol ();
-	*wb << symb->getVal ();
+		auto symb = c.getSymbol ();
+		*wb << symb->getVal ();
       }
       else if (c.getSort () == Sort::Integer) {
-	throw Words::WordException ("Integer Variables currently not supported");
-      }
+		UnsupportedFeature ();
+	  }
       else if (c.getSort ()== Sort::Bool) {
-	if (boolvar.count(&c)) {
-	  var = boolvar.at(&c);
-	}
-	else {
-	   auto v = solver.newVar ();
-	  var = Glucose::mkLit (v);
-	  boolvar.insert(std::make_pair (&c,var));
-	}
+		if (boolvar.count(&c)) {
+		  var = boolvar.at(&c);
+		}
+		else {
+		  auto v = solver.newVar ();
+		  var = Glucose::mkLit (v);
+		  boolvar.insert(std::make_pair (&c,var));
+		}
       }
       else
-	throw Words::WordException ("Error");
+		throw Words::WordException ("Error");
     }
 	
     virtual void caseNegLiteral (NegLiteral& c) override {
@@ -353,62 +312,61 @@ namespace Words {
     virtual void caseAssert (Assert& c) {
       c.getExpr()->accept(*this);
       if (var != Glucose::lit_Undef) {
-	std::cerr << "Add Clause "<< std::endl;
-	solver.addClause (var);
+		solver.addClause (var);
       }
     }
-
+	
     virtual void caseStrLen (StrLen& c) {
       instrlen = true;
       c.getExpr (0)->accept(*this);
       instrlen = false;
       if (vm) {
-	vm->entry = entry;
-	entry= nullptr;
+		vm->entry = entry;
+		entry= nullptr;
       }
       else {
-	Words::Constraints::VarMultiplicity kk (entry,1);
-	adder->add (kk);
-	entry = nullptr;
+		Words::Constraints::VarMultiplicity kk (entry,1);
+		adder->add (kk);
+		entry = nullptr;
       }
     }
-
+	
     virtual void caseDisjunction (Disjunction& c)
     {
       Glucose::vec<Glucose::Lit> vec;
       for (auto cc : c) {
-	cc->accept (*this);
-	if (var != Glucose::lit_Undef)
-	  vec.push(var);
+		cc->accept (*this);
+		if (var != Glucose::lit_Undef)
+		  vec.push(var);
       }
       if (vec.size()) {
-	std::cerr << "Reify_or" << std::endl;
-	auto v = solver.newVar ();
-	var = Glucose::mkLit(v);
-	reify_or (solver,var,vec);
+		std::cerr << "Reify_or" << std::endl;
+		auto v = solver.newVar ();
+		var = Glucose::mkLit(v);
+		reify_or (solver,var,vec);
 		
       }
       else
-	var = Glucose::lit_Undef;
+		var = Glucose::lit_Undef;
     }
 	
     virtual void caseConjunction (Conjunction& c)
     {
       Glucose::vec<Glucose::Lit> vec;
       for (auto cc : c) {
-	cc->accept (*this);
-	if (var != Glucose::lit_Undef)
-	  vec.push(var);
+		cc->accept (*this);
+		if (var != Glucose::lit_Undef)
+		  vec.push(var);
       }
       if (vec.size()) {
-	std::cerr << "Reify_and" << std::endl;
-	auto v = solver.newVar();
-	var = Glucose::mkLit (v);
-	reify_and (solver,var,vec);
+		std::cerr << "Reify_and" << std::endl;
+		auto v = solver.newVar();
+		var = Glucose::mkLit (v);
+		reify_and (solver,var,vec);
 		
       }
       else
-	var = Glucose::lit_Undef;
+		var = Glucose::lit_Undef;
 
     }
 
@@ -458,13 +416,13 @@ namespace Words {
       parser.Parse (str,handler);
       std::stringstream str;
       for (auto& s : parser.getVars ()) {
-	if (s->getSort () == Sort::String) {
-	  str << *s << std::endl;
-	  std::string ss = str.str();
-	  ss.pop_back();
-	  jg->context->addVariable (ss);
-	  str.str("");
-	}
+		if (s->getSort () == Sort::String) {
+		  str << *s << std::endl;
+		  std::string ss = str.str();
+		  ss.pop_back();
+		  jg->context->addVariable (ss);
+		  str.str("");
+		}
 	
       }
 
@@ -472,8 +430,8 @@ namespace Words {
 	  
       LengthConstraintBuilder lbuilder(*jg->context,jg->solver,jg->constraints,jg->eqs);
       for (auto& t : parser.getAssert ()) {
-	t->accept (tadder);
-	lbuilder.Run (*t);	
+		t->accept (tadder);
+		lbuilder.Run (*t);	
       }
       return jg;
     }
