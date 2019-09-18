@@ -228,16 +228,17 @@ namespace Words {
 	  }
 	  
 	  virtual Words::SMT::SolverResult solve () {
-		Z3_params solverParams = Z3_mk_params(context);
-		Z3_symbol timeoutParamStrSymbol = Z3_mk_string_symbol(context, "timeout");
-		Z3_params_inc_ref(context, solverParams);
-		Z3_params_set_uint(context,
-						   solverParams,
-						   timeoutParamStrSymbol,
-						   timeout); 
-		Z3_solver_set_params(context, solver, solverParams);
-		Z3_params_dec_ref(context, solverParams);
-		
+		if (timeout) {
+		  Z3_params solverParams = Z3_mk_params(context);
+		  Z3_symbol timeoutParamStrSymbol = Z3_mk_string_symbol(context, "timeout");
+		  Z3_params_inc_ref(context, solverParams);
+		  Z3_params_set_uint(context,
+							 solverParams,
+							 timeoutParamStrSymbol,
+							 timeout); 
+		  Z3_solver_set_params(context, solver, solverParams);
+		  Z3_params_dec_ref(context, solverParams);
+		}
 		switch (Z3_solver_check (context,solver)) {
 		case Z3_L_TRUE:
 		  model = Z3_solver_get_model (context,solver);
@@ -270,7 +271,7 @@ namespace Words {
 	  Z3_solver solver;
 	  Z3_model model;
 	  std::set<char> terminals;
-	  size_t timeout;
+	  size_t timeout = 0; 
 	};
 	
 	Words::SMT::Solver_ptr makeZ3Solver () {
