@@ -310,12 +310,15 @@ int main (int argc, char** argv) {
 			solver->enableDiagnosticOutput ();	
 		  try {
 			Words::Solvers::StreamRelay relay (std::cout);
-			auto ret =  solver->Solve (job->options,relay);
+			Words::Solvers::Result ret;
+		     
+			
+			ret =  solver->Solve (job->options,relay);
 			
 			solver->getMoreInformation(std::cout);
 			
 			std::cout << "\n" << std::endl;
-			
+			  
 			switch (ret) {
 			  
 			case Words::Solvers::Result::HasSolution: {

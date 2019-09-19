@@ -18,7 +18,6 @@ namespace Words {
 
     }
     std::unique_ptr<Words::Job> newJob ()  { 
-      std::cerr << "SatSolver " << std::endl;
       std::stringstream str;
       static int i = 0;
       
@@ -159,10 +158,7 @@ namespace Words {
     }
 
     void Run (ASTNode& m) {
-      std::cerr << m << std::endl;
       m.accept (*this);
-      Glucose::vec<Glucose::Lit> dum;
-      solver.toDimacs (stdout,dum);
     }
     
     virtual void caseLEQ (LEQ& c)
@@ -340,7 +336,6 @@ namespace Words {
 		  vec.push(var);
       }
       if (vec.size()) {
-		std::cerr << "Reify_or" << std::endl;
 		auto v = solver.newVar ();
 		var = Glucose::mkLit(v);
 		reify_or (solver,var,vec);
@@ -359,7 +354,6 @@ namespace Words {
 		  vec.push(var);
       }
       if (vec.size()) {
-		std::cerr << "Reify_and" << std::endl;
 		auto v = solver.newVar();
 		var = Glucose::mkLit (v);
 		reify_and (solver,var,vec);

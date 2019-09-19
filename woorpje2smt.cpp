@@ -182,6 +182,9 @@ int main (int argc, char** argv) {
 		}
 		encodeEnd (*out);
 	  }
+	  else {
+	    std::cerr << "System has inequality...skipping" << std::endl;
+	  }
 	  job = jg->newJob ();
 	}
 	
