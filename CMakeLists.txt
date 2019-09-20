@@ -1,13 +1,22 @@
 project(wordsolver)
 cmake_minimum_required(VERSION 3.10)
 
+option(HIDEDEVNAMES "Hide developers names for review")
+
 SET (ToolName woorpje)
 SET (Translator ${ToolName}2SMT)
 SET (VERSION_MAJOR 0)
 SET (VERSION_MINOR "3_1")
+if (HIDEDEVNAMES)
+SET (MAINDEVELOPERNAME "Developers Hidden for  review")
+SET (MAINDEVELOPEREMAIL "Hidden@review.com")
+SET (ORGANISATION "Organisation hidde for review")
+else()
 SET (MAINDEVELOPERNAME "Mitja Kulczynski, Danny Boegsted Poulsen and Thorsten Ehlers")
 SET (MAINDEVELOPEREMAIL "{mku,dbp,the}@informatik.uni-kiel.de")
 SET (ORGANISATION "Dependable Systems Group, Kiel Univeristy")
+endif(HIDEDEVNAMES)
+
 SET (DEPSACK "${ToolName} is a word equation solver based on Glucose.")
 
 option (ENABLE_STATIC "STATIC_LINKING")
