@@ -24,4 +24,17 @@ namespace Words {
 	ps.push(~lhs);
 	s.addClause(ps);
   }
+
+  // lhs <-> \/ rhs
+  void reify_or_bi(Glucose::Solver & s, Glucose::Lit lhs, Glucose::vec<Glucose::Lit> & rhs){
+    reify_or (s,lhs,rhs);
+    for(int i = 0 ; i < rhs.size();i++){
+      Glucose::vec<Glucose::Lit> ps;
+      ps.push(~rhs[i]);
+      ps.push(lhs);
+      s.addClause(ps);
+    }
+    
+  }
+  
 }

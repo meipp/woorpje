@@ -21,11 +21,13 @@ namespace Words {
       std::stringstream str;
       static int i = 0;
       
-      if (solver.solve ()) {
+      if (solver.solve (assumptions)) {
 		std::stringstream str;
 		auto  job  = std::make_unique<Job> ();
 		job->options.context= context;
 		Glucose::vec<Glucose::Lit> clause;
+		auto selector = solver.newVar ();
+		auto selLit = Glucose::mkLit (selector);
 		for (auto it : eqs) {
 		  auto val = solver.modelValue(it.first);
 		  
@@ -55,9 +57,8 @@ namespace Words {
 		  }
 	  
 		}
-		
-		solver.addClause (clause);
-		
+		reify_or_bi(solver,selLit,clause);
+		assumptions.push(selLit);
 		return job;
       }
       else
@@ -65,6 +66,7 @@ namespace Words {
     }
     std::shared_ptr<Words::Context> context = nullptr;
     Glucose::Solver solver;
+    Glucose::vec<Glucose::Lit> assumptions;
     std::unordered_map<Glucose::Var,Words::Equation> eqs;
     std::unordered_map<Glucose::Var,Words::Constraints::Constraint_ptr> constraints;	
   };
