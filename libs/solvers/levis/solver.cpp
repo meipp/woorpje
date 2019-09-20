@@ -333,8 +333,15 @@ namespace Words {
         Handler handler (waiting,graph,sub);
         smtSolverCalls = 0;
 
-	if (opt.equations.size() == 0 && opt.constraints.size()==0) {
-	  return Words::Solvers::Result::HasSolution;
+	if (opt.equations.size() == 0) {
+	  if (solveDummy (opt,sub)) {
+	    return Words::Solvers::Result::HasSolution;
+	  }
+	  else {
+	    return Words::Solvers::Result::DefinitelyNoSolution;
+	  }
+	  
+	  
 	}
 
 #ifdef ENABLEGRAPH

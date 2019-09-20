@@ -103,41 +103,17 @@ namespace Words {
     Words::Context& ctxt;
   };
 
-  template<class T>
-  class Adder {
-  public:
-    Adder (std::unique_ptr<T>& t)  : inner(t),left(true) {}
-    void add (int64_t val) {
-      if (left)
-		inner->addLHS (val);
-      else
-		inner->addRHS (val);
-    }
-
-    void add (Words::Constraints::VarMultiplicity& v) {
-      if (left)
-		inner->addLHS (v.entry,v.number);
-      else
-		inner->addRHS (v.entry,v.number);
-    }
-
-    void switchSide () {left = !left;}
-	
-  private:
-    std::unique_ptr<T>& inner;
-    bool left;
-  };
   
   class LengthConstraintBuilder : public BaseVisitor {
   public:
     LengthConstraintBuilder (
-							 Words::Context&ctxt,
-							 Glucose::Solver& solver,
-							 std::unordered_map<Glucose::Var,Words::Constraints::Constraint_ptr>& c,
-							 std::unordered_map<Glucose::Var,Words::Equation>&eqs
-							 )  : ctxt(ctxt),
-								  solver(solver),
-								  constraints(c),eqs(eqs)
+			     Words::Context&ctxt,
+			     Glucose::Solver& solver,
+			     std::unordered_map<Glucose::Var,Words::Constraints::Constraint_ptr>& c,
+			     std::unordered_map<Glucose::Var,Words::Equation>&eqs
+			     )  : ctxt(ctxt),
+				  solver(solver),
+				  constraints(c),eqs(eqs)
     {}
 
     template<Words::Constraints::Cmp cmp>
@@ -146,6 +122,7 @@ namespace Words {
       if (c.getExpr (0)->getSort () == Sort::Integer) {
 		builder = Words::Constraints::makeLinConstraintBuilder (cmp);
 		adder = std::make_unique< Adder <Words::Constraints::LinearConstraintBuilder> > (builder);
+		AutoNull < Adder <Words::Constraints::LinearConstraintBuilder> > nuller (adder);
 		c.getExpr(0)->accept(*this);
 		adder->switchSide ();
 		c.getExpr(1)->accept(*this);
@@ -268,7 +245,6 @@ namespace Words {
 	
 	
 	std::vector<ASTNode_ptr> disjuncts;
-	
 	for (auto a : ctxt.getTerminalAlphabet ()) {
 	  if (a->getRepr () == '_')
 	    continue;
@@ -288,10 +264,22 @@ namespace Words {
 	  disjuncts.push_back (std::make_shared<Conjunction> (std::initializer_list<ASTNode_ptr> ({outeq,disj})));
 	  
 	}
+
+
+	ASTNode_ptr llength = std::make_shared<StrLen> (std::initializer_list<ASTNode_ptr> ({lexpr})); 
+	ASTNode_ptr rlength = std::make_shared<StrLen> (std::initializer_list<ASTNode_ptr> ({rexpr}));
+	ASTNode_ptr gt = std::make_shared<GT> (std::initializer_list<ASTNode_ptr> ({llength,rlength}));
+	ASTNode_ptr lt = std::make_shared<LT> (std::initializer_list<ASTNode_ptr> ({llength,rlength}));
+	
+	disjuncts.push_back (gt);
+	disjuncts.push_back (lt);
+	
+							
 	ASTNode_ptr outdisj = std::make_shared<Disjunction> (std::move(disjuncts));
-	std::cerr << *outdisj << std::endl;
 	outdisj->accept(*this);
 	
+
+
 	
 	
       }
@@ -319,24 +307,31 @@ namespace Words {
       Words::Constraints::VarMultiplicity kk (nullptr,1);
       vm = &kk;
       for (auto& cc : c)
-		cc->accept (*this);
+	cc->accept (*this);
       assert(kk.entry);
       adder->add (kk);
       vm = nullptr;
     }
 	
     virtual void caseStringLiteral (StringLiteral& s) {
-	  
-      for (auto c : s.getVal ()) {
-		*wb << c;
+      if (adder) {
+	adder->add (s.getVal ().size());
       }
+      else
+	for (auto c : s.getVal ()) {
+	  *wb << c;
+	}
     }
     virtual void caseIdentifier (Identifier& c) {
-      if (c.getSort () == Sort::String && instrlen  )
-		entry = ctxt.findSymbol (c.getSymbol()->getVal());
+      if (c.getSort () == Sort::String && instrlen  ) {
+	if (vm)
+	  vm->entry = ctxt.findSymbol (c.getSymbol()->getVal());
+	else 
+	  entry = ctxt.findSymbol (c.getSymbol()->getVal());
+      }
       else if (c.getSort () == Sort::String && !instrlen) {
-		auto symb = c.getSymbol ();
-		*wb << symb->getVal ();
+	auto symb = c.getSymbol ();
+	*wb << symb->getVal ();
       }
       else if (c.getSort () == Sort::Integer) {
 		UnsupportedFeature ();
@@ -371,14 +366,24 @@ namespace Words {
       instrlen = true;
       c.getExpr (0)->accept(*this);
       instrlen = false;
-      if (vm) {
-		vm->entry = entry;
-		entry= nullptr;
+      if (entry && !vm) {	
+	Words::Constraints::VarMultiplicity kk (entry,1);
+	adder->add (kk);
+	entry = nullptr;
       }
-      else {
-		Words::Constraints::VarMultiplicity kk (entry,1);
-		adder->add (kk);
-		entry = nullptr;
+    }
+
+    virtual void caseStrConcat ( StrConcat& c)
+    {
+      for (auto& cc : c) {
+	cc->accept (*this);
+	if (instrlen) {
+	  if (entry) {
+	    Words::Constraints::VarMultiplicity kk (entry,1);
+	    adder->add (kk);
+	    entry = nullptr;
+	  }
+	}
       }
     }
 	

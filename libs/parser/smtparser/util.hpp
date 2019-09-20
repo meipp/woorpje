@@ -36,5 +36,33 @@ namespace Words {
     }
     
   }
+
+  template<class T>
+  class Adder {
+  public:
+    Adder (std::unique_ptr<T>& t)  : inner(t),left(true) {}
+    void add (int64_t val) {
+      if (left)
+		inner->addLHS (val);
+      else
+		inner->addRHS (val);
+    }
+
+    void add (Words::Constraints::VarMultiplicity& v) {
+      if (left)
+		inner->addLHS (v.entry,v.number);
+      else
+		inner->addRHS (v.entry,v.number);
+    }
+
+    void switchSide () {left = !left;}
+	
+  private:
+    std::unique_ptr<T>& inner;
+    bool left;
+  };
+
+
+  
   
 }
