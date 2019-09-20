@@ -49,7 +49,7 @@ namespace Words {
 	virtual Variable* getVariable () {return this;}
 	virtual const Variable* getVariable () const {return this;}
 	virtual char getRepr () const {return str.at(0);}
-	virtual std::ostream& output (std::ostream& os) const  {return  os <<'{' << str <<  '}';}
+	virtual std::ostream& output (std::ostream& os) const  {return  os <<'_' << str <<  '_';}
   protected:
 	Variable (const std::string& s, size_t index,Context* ctxt) : IEntry('@',index,ctxt),str(s) {}
   private:

@@ -15,7 +15,7 @@
 #include "host/exitcodes.hpp"
 
 void encodeVariable (std::ostream& os, const Words::IEntry* v) {
-  os << "(declare-fun " << v->getRepr () << "() String" << ")" << std::endl;
+  os << "(declare-fun " << *v << "() String" << ")" << std::endl;
 }
 
 void encodePreamble (std::ostream& os, Words::Context& c) {
@@ -39,7 +39,8 @@ void encodeWord (std::ostream& os, const Words::Word& w) {
 		os << " \"" << str.str() << "\" ";
 		str.str("");
 	  }
-	  os << c->getRepr ()<< " ";
+	  
+	  os << *c << " ";
 	}
 	else {
 	  str << c->getRepr ();

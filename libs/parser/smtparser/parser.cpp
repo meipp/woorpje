@@ -86,7 +86,7 @@ namespace Words {
     TerminalAdder (Words::Context& opt)  : ctxt(opt) {}
     virtual void caseStringLiteral (StringLiteral& s) {
       for (auto c : s.getVal ()) {
-		ctxt.addTerminal (c);
+	ctxt.addTerminal (c);
       }
     }
     virtual void caseAssert (Assert& c)
@@ -95,10 +95,10 @@ namespace Words {
 						  
     }
 
-	virtual void caseFunctionApplication ( FunctionApplication& c) {
-	  throw UnsupportedFeature();
-	}
-	
+    virtual void caseFunctionApplication ( FunctionApplication& c) {
+      throw UnsupportedFeature();
+    }
+    
   private:
     Words::Context& ctxt;
   };
@@ -225,7 +225,8 @@ namespace Words {
       auto lexpr = c.getExpr (0);
       auto rexpr = c.getExpr (1);
       if (lexpr->getSort () == Sort::String) {
-		Words::Word left;
+	static size_t i = 0;
+	/*Words::Word left;
 		Words::Word right;
 		AutoNull<Words::WordBuilder> nuller (wb);
 		wb = ctxt.makeWordBuilder (left);
@@ -234,13 +235,65 @@ namespace Words {
 		wb = ctxt.makeWordBuilder (right);
 		rexpr->accept(*this);
 		wb->flush();
-        
+		
 
 		Words::Equation eq (left,right,Words::Equation::EqType::NEq);
 		eq.ctxt = &ctxt;
 		auto v = solver.newVar ();
 		var = Glucose::mkLit(v);
-		eqs.insert(std::make_pair (v,eq));
+		eqs.insert(std::make_pair (v,eq));*/
+	std::stringstream str;
+	str << "_woorpje_diseq_pref" << i;
+	auto symb_pref = std::make_shared<Symbol> (str.str());
+	ctxt.addVariable (str.str());
+	str.str("");
+	str << "_woorpje_diseq_suf_l" << i;
+	auto symb_sufl = std::make_shared<Symbol> (str.str());
+	ctxt.addVariable (str.str());
+	str.str("");
+	str << "_woorpje_diseq_suf_r" << i;
+	i++;
+	auto symb_sufr = std::make_shared<Symbol> (str.str());
+	ctxt.addVariable (str.str());
+
+	symb_pref->setSort (Sort::String);
+	symb_sufl->setSort (Sort::String);
+	symb_sufr->setSort (Sort::String);
+	
+	
+	ASTNode_ptr Z = std::make_shared<Identifier> (*symb_pref);
+	ASTNode_ptr X = std::make_shared<Identifier> (*symb_sufl);
+	ASTNode_ptr Y = std::make_shared<Identifier> (*symb_sufr);
+
+	
+	
+	std::vector<ASTNode_ptr> disjuncts;
+	
+	for (auto a : ctxt.getTerminalAlphabet ()) {
+	  if (a->getRepr () == '_')
+	    continue;
+	  std::vector<ASTNode_ptr> innerdisjuncts;
+	  ASTNode_ptr strl = std::make_shared<StringLiteral> (std::string(1,a->getRepr ()));
+	  auto concat = std::make_shared<StrConcat> (std::initializer_list<ASTNode_ptr> ({Z,strl,X}));
+	  ASTNode_ptr outeq = std::make_shared<EQ> (std::initializer_list<ASTNode_ptr> ({lexpr,concat})); 
+	  for (auto b : ctxt.getTerminalAlphabet ()) {
+	    if (b == a || b->getRepr () == '_')
+	      continue;
+	    ASTNode_ptr strr = std::make_shared<StringLiteral> (std::string(1,b->getRepr ()));
+	    ASTNode_ptr concat_nnner = std::make_shared<StrConcat> (std::initializer_list<ASTNode_ptr> ({Z,strr,Y}));
+	    ASTNode_ptr in_eq = std::make_shared<EQ> ( std::initializer_list<ASTNode_ptr> ({rexpr,concat_nnner}));
+	    innerdisjuncts.push_back (in_eq);
+	  }
+	  ASTNode_ptr disj = std::make_shared<Disjunction> (std::move(innerdisjuncts));
+	  disjuncts.push_back (std::make_shared<Conjunction> (std::initializer_list<ASTNode_ptr> ({outeq,disj})));
+	  
+	}
+	ASTNode_ptr outdisj = std::make_shared<Disjunction> (std::move(disjuncts));
+	std::cerr << *outdisj << std::endl;
+	outdisj->accept(*this);
+	
+	
+	
       }
       else {
 		throw Words::UnsupportedFeature ();
@@ -299,7 +352,7 @@ namespace Words {
 		}
       }
       else
-		throw Words::WordException ("Error");
+	throw Words::WordException ("Error hh");
     }
 	
     virtual void caseNegLiteral (NegLiteral& c) override {
@@ -412,13 +465,13 @@ namespace Words {
       parser.Parse (str,handler);
       std::stringstream str;
       for (auto& s : parser.getVars ()) {
-		if (s->getSort () == Sort::String) {
-		  str << *s << std::endl;
-		  std::string ss = str.str();
-		  ss.pop_back();
-		  jg->context->addVariable (ss);
-		  str.str("");
-		}
+	if (s->getSort () == Sort::String) {
+	  str << *s << std::endl;
+	  std::string ss = str.str();
+	  ss.pop_back();
+	  jg->context->addVariable (ss);
+	  str.str("");
+	}
 	
       }
 
