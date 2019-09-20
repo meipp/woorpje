@@ -39,6 +39,7 @@ bool Words::Parser::parseEquation (){
   std::string word2;
   if (tryacceptKeyword (Keywords::Equation) && accept (Tokens::COLON) && accept (STRING,word1) && accept (Tokens::EQUAL) &&  accept (STRING,word2) ) {
 	options->equations.emplace_back ();
+	options->equations.back().type = Words::Equation::EqType::Eq;	
 	auto& eq = options->equations.back();
 	auto wb1 = options->context->makeWordBuilder (eq.lhs);	
 	for (auto c : word1)

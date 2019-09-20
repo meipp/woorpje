@@ -557,9 +557,9 @@ namespace Words {
 	Equation () {}
 	Equation (const Word& lhs, Word& rhs,EqType type = EqType::Eq) : lhs(lhs),rhs(rhs),type(type) {}
 	Equation (const Equation& eq) : lhs(eq.lhs),
-									rhs(eq.rhs),
-									type(eq.type),
-									ctxt(eq.ctxt) {}
+					rhs(eq.rhs),
+					type(eq.type),
+					ctxt(eq.ctxt) {}
 	Word lhs;
 	Word rhs;
 	EqType type;
@@ -600,10 +600,19 @@ namespace Words {
   inline std::ostream& operator<< (std::ostream& os, const IEntry& w) {
 	return w.output (os);
   }
+
+  inline std::ostream& operator<< (std::ostream& os, const Equation::EqType& eq) {
+    if (eq == Equation::EqType::Eq)
+      return os << " == ";
+    else
+      return os << " != ";
+    
+  }
+  
   std::ostream& operator<< (std::ostream&, const Word& w);
   
   inline std::ostream& operator<< (std::ostream& os, const Equation& w) {
-	return os << w.lhs << ((w.type == Equation::EqType::Eq) ? " == " : "!=") << w.rhs; 
+	return os << w.lhs << w.type  << w.rhs; 
   }
 
   std::ostream& operator<< (std::ostream& os, const Substitution& sub);

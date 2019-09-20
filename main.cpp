@@ -46,7 +46,7 @@ public:
 	std::cout << "Equations after substition" <<std::endl;
 	for (auto& eq : opt.equations) {
 	  printWordWithSubstitution (eq.lhs,w);
-	  std::cout << " == ";
+	  std::cout << eq.type;
 	  printWordWithSubstitution (eq.rhs,w);
 	  std::cout <<std::endl;
 	}
