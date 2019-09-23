@@ -27,7 +27,7 @@ struct LevisHeuristics {
   double growthFactor = 1.1;
   size_t eqLength = 100;
 };
-
+  
 class CoutResultGatherer : public Words::Solvers::DummyResultGatherer {
 public:
   CoutResultGatherer (const Words::Options& opt) : opt(opt) {}

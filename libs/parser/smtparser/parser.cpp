@@ -22,53 +22,53 @@ namespace Words {
       static int i = 0;
       
       if (solver.solve (assumptions)) {
-		std::stringstream str;
-		auto  job  = std::make_unique<Job> ();
-		job->options.context= context;
-		Glucose::vec<Glucose::Lit> clause;
-		auto selector = solver.newVar ();
-		auto selLit = Glucose::mkLit (selector);
-		for (auto it : eqs) {
-		  auto val = solver.modelValue(it.first);
-		  
-		  if (val == l_True) {
-			clause.push(~Glucose::mkLit(it.first));
-		  }
-		  else if (val == l_False) {
-			clause.push(Glucose::mkLit(it.first));
-		  }
-		  if (val == l_True) {
-			job->options.equations.push_back (it.second);
-		  }
-		  
-		}
-
-		for (auto it : constraints) {	  
-		  auto val = solver.modelValue(it.first);
-		  
-		  if (val == l_True) {
-			clause.push(~Glucose::mkLit(it.first));
-		  }
-		  else if (val == l_False) {
-			clause.push(Glucose::mkLit(it.first));
-		  }
-		  if (val == l_True) {
-			job->options.constraints.push_back(it.second);
-		  }
+	std::stringstream str;
+	auto  job  = std::make_unique<Job> ();
+	job->options.context= context;
+	Glucose::vec<Glucose::Lit> clause;
+	auto selector = solver.newVar ();
+	auto selLit = Glucose::mkLit (selector);
+	for (auto it : eqs) {
+	  auto val = solver.modelValue(it.first);
 	  
-		}
-		reify_or_bi(solver,selLit,clause);
-		assumptions.push(selLit);
-		return job;
+	  if (val == l_True) {
+	    clause.push(~Glucose::mkLit(it.first));
+	  }
+	  else if (val == l_False) {
+	    clause.push(Glucose::mkLit(it.first));
+	  }
+	  if (val == l_True) {
+	    job->options.equations.push_back (it.second);
+	  }
+	  
+	}
+	
+	for (auto it : constraints) {	  
+	  auto val = solver.modelValue(it.first);
+	  
+	  if (val == l_True) {
+	    clause.push(~Glucose::mkLit(it.first));
+	  }
+	  else if (val == l_False) {
+	    clause.push(Glucose::mkLit(it.first));
+	  }
+	  if (val == l_True) {
+	    job->options.constraints.push_back(it.second);
+	  }
+	  
+	}
+	reify_or(solver,selLit,clause);
+	assumptions.push(selLit);
+	return job;
       }
       else
-		return nullptr;
+	return nullptr;
     }
     std::shared_ptr<Words::Context> context = nullptr;
     Glucose::Solver solver;
     Glucose::vec<Glucose::Lit> assumptions;
     std::unordered_map<Glucose::Var,Words::Equation> eqs;
-    std::unordered_map<Glucose::Var,Words::Constraints::Constraint_ptr> constraints;	
+    std::unordered_map<Glucose::Var,Words::Constraints::Constraint_ptr> constraints;
   };
   
   
@@ -118,22 +118,25 @@ namespace Words {
 
     template<Words::Constraints::Cmp cmp>
     void visitRedirect (DummyApplication& c) {
-      var = Glucose::lit_Undef;
-      if (c.getExpr (0)->getSort () == Sort::Integer) {
-		builder = Words::Constraints::makeLinConstraintBuilder (cmp);
-		adder = std::make_unique< Adder <Words::Constraints::LinearConstraintBuilder> > (builder);
-		AutoNull < Adder <Words::Constraints::LinearConstraintBuilder> > nuller (adder);
-		c.getExpr(0)->accept(*this);
-		adder->switchSide ();
-		c.getExpr(1)->accept(*this);
-		//opt.constraints.push_back(builder->makeConstraint ());
-		
-		
-		auto v = solver.newVar (); 
-		var = Glucose::mkLit (v);
-		constraints.insert (std::make_pair(v,builder->makeConstraint ()));
-		builder = nullptr;
-      }
+      if (!checkAlreadyIn (c,var)) {
+	 var = Glucose::lit_Undef;
+	 if (c.getExpr (0)->getSort () == Sort::Integer) {
+	   builder = Words::Constraints::makeLinConstraintBuilder (cmp);
+	   adder = std::make_unique< Adder <Words::Constraints::LinearConstraintBuilder> > (builder);
+	   AutoNull < Adder <Words::Constraints::LinearConstraintBuilder> > nuller (adder);
+	   c.getExpr(0)->accept(*this);
+	   adder->switchSide ();
+	   c.getExpr(1)->accept(*this);
+	   
+	   
+	   auto v = solver.newVar (); 
+	   var = Glucose::mkLit (v);
+	   constraints.insert (std::make_pair(v,builder->makeConstraint ()));
+	   builder = nullptr;
+	   insert(c,var);
+	 }
+	 
+       }
     }
 
     void Run (ASTNode& m) {
@@ -163,42 +166,49 @@ namespace Words {
 	
     virtual void caseEQ (EQ& c)
     {
-     
-      var = Glucose::lit_Undef;
-      auto lexpr = c.getExpr (0);
-      auto rexpr = c.getExpr (1);
-      if (lexpr->getSort () == Sort::String) {
-	if (equalities.count (&c)) {
-	  var = equalities.at (&c);
-	}
-	else {
-	  Words::Word left;
-	  Words::Word right;
-	  AutoNull<Words::WordBuilder> nuller (wb);
-	  wb = ctxt.makeWordBuilder (left);
-	  lexpr->accept(*this);
-	  wb->flush();
-	  wb = ctxt.makeWordBuilder (right);
-	  rexpr->accept(*this);
-	  wb->flush();
-	  //opt.equations.emplace_back(left,right);
-	  //opt.equations.back().ctxt = opt.context.get();
-	  
-	  Words::Equation eq (left,right);
-	  eq.ctxt = &ctxt;
-	  var = makeEquLit (c);
-	  eqs.insert(std::make_pair (Glucose::var(var),eq));
-	  
-	  
-	}
-      }
-      else if (lexpr->getSort () == Sort::Integer)  {
-	visitRedirect<Words::Constraints::Cmp::LEq> (c);
-	visitRedirect<Words::Constraints::Cmp::GEq> (c);
-      }
 
-      else if (lexpr->getSort () == Sort::Bool) {
-	throw Words::WordException ("SHouldn't get here");
+      if (!checkAlreadyIn (c,var)) {
+	
+	
+	var = Glucose::lit_Undef;
+	auto lexpr = c.getExpr (0);
+	auto rexpr = c.getExpr (1);
+	if (lexpr->getSort () == Sort::String) {
+	  if (equalities.count (&c)) {
+	    var = equalities.at (&c);
+	  }
+	  else {
+	    Words::Word left;
+	    Words::Word right;
+	    AutoNull<Words::WordBuilder> nuller (wb);
+	    wb = ctxt.makeWordBuilder (left);
+	    lexpr->accept(*this);
+	    wb->flush();
+	    wb = ctxt.makeWordBuilder (right);
+	    rexpr->accept(*this);
+	    wb->flush();
+	    //opt.equations.emplace_back(left,right);
+	    //opt.equations.back().ctxt = opt.context.get();
+	    
+	    Words::Equation eq (left,right);
+	    eq.ctxt = &ctxt;
+	    var = makeEquLit (c);
+	    eqs.insert(std::make_pair (Glucose::var(var),eq));
+	    
+	    
+	  }
+	  insert(c,var);
+	}
+	else if (lexpr->getSort () == Sort::Integer)  {
+	  //Throw for now,  as the visitRedirect cannot handle LEQ and GEQ simultaneously
+	  throw UnsupportedFeature ();
+	  visitRedirect<Words::Constraints::Cmp::LEq> (c);
+	  visitRedirect<Words::Constraints::Cmp::GEq> (c);
+	}
+	
+	else if (lexpr->getSort () == Sort::Bool) {
+	  throw Words::WordException ("SHouldn't get here");
+	}
       }
     }
 
@@ -214,89 +224,94 @@ namespace Words {
     
     virtual void caseNEQ (NEQ& c)
     {
-      var = Glucose::lit_Undef;
-      auto lexpr = c.getExpr (0);
-      auto rexpr = c.getExpr (1);
-      if (lexpr->getSort () == Sort::String) {
-	auto eqLit = makeEquLit (*c.getInnerEQ ());
-	//WE need to grab the inner equality,
-	//negate the literal associated to it (pass that upwards)
-	//and add a biimplication to the disjunction created below.
-	  
-	static size_t i = 0;
+      if (!checkAlreadyIn (c,var)) {
+
 	
-	std::stringstream str;
-	str << "_woorpje_diseq_pref" << i;
-	auto symb_pref = std::make_shared<Symbol> (str.str());
-	ctxt.addVariable (str.str());
-	str.str("");
-	str << "_woorpje_diseq_suf_l" << i;
-	auto symb_sufl = std::make_shared<Symbol> (str.str());
-	ctxt.addVariable (str.str());
-	str.str("");
-	str << "_woorpje_diseq_suf_r" << i;
-	i++;
-	auto symb_sufr = std::make_shared<Symbol> (str.str());
-	ctxt.addVariable (str.str());
+      
+	var = Glucose::lit_Undef;
+	auto lexpr = c.getExpr (0);
+	auto rexpr = c.getExpr (1);
+	if (lexpr->getSort () == Sort::String) {
+	  auto eqLit = makeEquLit (*c.getInnerEQ ());
+	  //WE need to grab the inner equality,
+	  //negate the literal associated to it (pass that upwards)
+	  //and add a biimplication to the disjunction created below.
+	  
+	  static size_t i = 0;
+	
+	  std::stringstream str;
+	  str << "_woorpje_diseq_pref" << i;
+	  auto symb_pref = std::make_shared<Symbol> (str.str());
+	  ctxt.addVariable (str.str());
+	  str.str("");
+	  str << "_woorpje_diseq_suf_l" << i;
+	  auto symb_sufl = std::make_shared<Symbol> (str.str());
+	  ctxt.addVariable (str.str());
+	  str.str("");
+	  str << "_woorpje_diseq_suf_r" << i;
+	  i++;
+	  auto symb_sufr = std::make_shared<Symbol> (str.str());
+	  ctxt.addVariable (str.str());
 	
 
 	
 		
-	std::vector<ASTNode_ptr> disjuncts;
-	if (ctxt.getTerminalAlphabet ().size () > 2) {
-	  //Greater than 2, because it only makes to distinguish the middle character,
-	  //when we have more than an epsilon and one extra character in the terminals
-	  symb_pref->setSort (Sort::String);
-	  symb_sufl->setSort (Sort::String);
-	  symb_sufr->setSort (Sort::String);
+	  std::vector<ASTNode_ptr> disjuncts;
+	  if (ctxt.getTerminalAlphabet ().size () > 2) {
+	    //Greater than 2, because it only makes to distinguish the middle character,
+	    //when we have more than an epsilon and one extra character in the terminals
+	    symb_pref->setSort (Sort::String);
+	    symb_sufl->setSort (Sort::String);
+	    symb_sufr->setSort (Sort::String);
 	  
 	  
-	  ASTNode_ptr Z = std::make_shared<Identifier> (*symb_pref);
-	  ASTNode_ptr X = std::make_shared<Identifier> (*symb_sufl);
-	  ASTNode_ptr Y = std::make_shared<Identifier> (*symb_sufr);
+	    ASTNode_ptr Z = std::make_shared<Identifier> (*symb_pref);
+	    ASTNode_ptr X = std::make_shared<Identifier> (*symb_sufl);
+	    ASTNode_ptr Y = std::make_shared<Identifier> (*symb_sufr);
 	  
 	  
-	  for (auto a : ctxt.getTerminalAlphabet ()) {
-	    if (a->getRepr () == '_')
-	      continue;
-	    std::vector<ASTNode_ptr> innerdisjuncts;
-	    ASTNode_ptr strl = std::make_shared<StringLiteral> (std::string(1,a->getRepr ()));
-	    auto concat = std::make_shared<StrConcat> (std::initializer_list<ASTNode_ptr> ({Z,strl,X}));
-	    ASTNode_ptr outeq = std::make_shared<EQ> (std::initializer_list<ASTNode_ptr> ({lexpr,concat})); 
-	    for (auto b : ctxt.getTerminalAlphabet ()) {
-	      if (b == a || b->getRepr () == '_')
+	    for (auto a : ctxt.getTerminalAlphabet ()) {
+	      if (a->getRepr () == '_')
 		continue;
-	      ASTNode_ptr strr = std::make_shared<StringLiteral> (std::string(1,b->getRepr ()));
-	      ASTNode_ptr concat_nnner = std::make_shared<StrConcat> (std::initializer_list<ASTNode_ptr> ({Z,strr,Y}));
-	      ASTNode_ptr in_eq = std::make_shared<EQ> ( std::initializer_list<ASTNode_ptr> ({rexpr,concat_nnner}));
-	      innerdisjuncts.push_back (in_eq);
-	    }
-	    ASTNode_ptr disj = std::make_shared<Disjunction> (std::move(innerdisjuncts));
-	    disjuncts.push_back (std::make_shared<Conjunction> (std::initializer_list<ASTNode_ptr> ({outeq,disj})));
+	      std::vector<ASTNode_ptr> innerdisjuncts;
+	      ASTNode_ptr strl = std::make_shared<StringLiteral> (std::string(1,a->getRepr ()));
+	      auto concat = std::make_shared<StrConcat> (std::initializer_list<ASTNode_ptr> ({Z,strl,X}));
+	      ASTNode_ptr outeq = std::make_shared<EQ> (std::initializer_list<ASTNode_ptr> ({lexpr,concat})); 
+	      for (auto b : ctxt.getTerminalAlphabet ()) {
+		if (b == a || b->getRepr () == '_')
+		  continue;
+		ASTNode_ptr strr = std::make_shared<StringLiteral> (std::string(1,b->getRepr ()));
+		ASTNode_ptr concat_nnner = std::make_shared<StrConcat> (std::initializer_list<ASTNode_ptr> ({Z,strr,Y}));
+		ASTNode_ptr in_eq = std::make_shared<EQ> ( std::initializer_list<ASTNode_ptr> ({rexpr,concat_nnner}));
+		innerdisjuncts.push_back (in_eq);
+	      }
+	      ASTNode_ptr disj = std::make_shared<Disjunction> (std::move(innerdisjuncts));
+	      disjuncts.push_back (std::make_shared<Conjunction> (std::initializer_list<ASTNode_ptr> ({outeq,disj})));
 	    
+	    }
 	  }
-	}
 		
 	
-	ASTNode_ptr llength = std::make_shared<StrLen> (std::initializer_list<ASTNode_ptr> ({lexpr})); 
-	ASTNode_ptr rlength = std::make_shared<StrLen> (std::initializer_list<ASTNode_ptr> ({rexpr}));
-	ASTNode_ptr gt = std::make_shared<GT> (std::initializer_list<ASTNode_ptr> ({llength,rlength}));
-	ASTNode_ptr lt = std::make_shared<LT> (std::initializer_list<ASTNode_ptr> ({llength,rlength}));
+	  ASTNode_ptr llength = std::make_shared<StrLen> (std::initializer_list<ASTNode_ptr> ({lexpr})); 
+	  ASTNode_ptr rlength = std::make_shared<StrLen> (std::initializer_list<ASTNode_ptr> ({rexpr}));
+	  ASTNode_ptr gt = std::make_shared<GT> (std::initializer_list<ASTNode_ptr> ({llength,rlength}));
+	  ASTNode_ptr lt = std::make_shared<LT> (std::initializer_list<ASTNode_ptr> ({llength,rlength}));
 	
-	disjuncts.push_back (gt);
-	disjuncts.push_back (lt);
+	  disjuncts.push_back (gt);
+	  disjuncts.push_back (lt);
 	
 	
-	ASTNode_ptr outdisj = std::make_shared<Disjunction> (std::move(disjuncts));
-	outdisj->accept(*this);
+	  ASTNode_ptr outdisj = std::make_shared<Disjunction> (std::move(disjuncts));
+	  outdisj->accept(*this);
 
-	Glucose::vec<Glucose::Lit> clause;
-	clause.push (~eqLit);
-	reify_and_bi (solver,var,clause);
-	
-      }
-      else {
-	throw Words::UnsupportedFeature ();
+	  Glucose::vec<Glucose::Lit> clause;
+	  clause.push (~eqLit);
+	  reify_and_bi (solver,var,clause);
+	  insert(c,var);
+	}
+	else {
+	  throw Words::UnsupportedFeature ();
+	}
       }
     }
 
@@ -349,98 +364,122 @@ namespace Words {
 		UnsupportedFeature ();
 	  }
       else if (c.getSort ()== Sort::Bool) {
-		if (boolvar.count(&c)) {
-		  var = boolvar.at(&c);
-		}
-		else {
-		  auto v = solver.newVar ();
-		  var = Glucose::mkLit (v);
-		  boolvar.insert(std::make_pair (&c,var));
-		}
+	if (!checkAlreadyIn (c,var)) {
+	  if (boolvar.count(&c)) {
+	    var = boolvar.at(&c);
+	  }
+	  else {
+	    auto v = solver.newVar ();
+	    var = Glucose::mkLit (v);
+	    boolvar.insert(std::make_pair (&c,var));
+	  }
+	  insert(c,var);
+	}
+	
       }
       else
 	throw Words::WordException ("Error hh");
     }
 	
     virtual void caseNegLiteral (NegLiteral& c) override {
-      c.inner()->accept(*this);
-      var = ~var;
+      if (!checkAlreadyIn (c,var)) { 
+	c.inner()->accept(*this);
+	var = ~var;
+	insert(c,var);
+      }
     }
 	
     virtual void caseAssert (Assert& c) {
       c.getExpr()->accept(*this);
       if (var != Glucose::lit_Undef) {
-		solver.addClause (var);
+	solver.addClause (var);
       }
     }
 	
     virtual void caseStrLen (StrLen& c) {
-      instrlen = true;
-      c.getExpr (0)->accept(*this);
-      instrlen = false;
-      if (entry && !vm) {	
-		Words::Constraints::VarMultiplicity kk (entry,1);
-		adder->add (kk);
-		entry = nullptr;
-      }
+	instrlen = true;
+	c.getExpr (0)->accept(*this);
+	instrlen = false;
+	if (entry && !vm) {	
+	  Words::Constraints::VarMultiplicity kk (entry,1);
+	  adder->add (kk);
+	  entry = nullptr;
+	}
     }
 
     virtual void caseStrConcat ( StrConcat& c)
     {
-      for (auto& cc : c) {
-	cc->accept (*this);
-	if (instrlen) {
-	  if (entry) {
-	    Words::Constraints::VarMultiplicity kk (entry,1);
-	    adder->add (kk);
+	for (auto& cc : c) {
+	  cc->accept (*this);
+	  if (instrlen) {
+	    if (entry) {
+	      Words::Constraints::VarMultiplicity kk (entry,1);
+	      adder->add (kk);
 	    entry = nullptr;
+	    }
 	  }
 	}
-      }
     }
 	
     virtual void caseDisjunction (Disjunction& c)
     {
-      Glucose::vec<Glucose::Lit> vec;
-      for (auto cc : c) {
-		cc->accept (*this);
-		if (var != Glucose::lit_Undef)
-		  vec.push(var);
+      if (!checkAlreadyIn (c,var)) { 
+	Glucose::vec<Glucose::Lit> vec;
+	for (auto cc : c) {
+	  cc->accept (*this);
+	  if (var != Glucose::lit_Undef)
+	    vec.push(var);
+	}
+	if (vec.size()) {
+	  auto v = solver.newVar ();
+	  var = Glucose::mkLit(v);
+	  reify_or (solver,var,vec);
+	  
+	  insert(c,var);
+	}
+	else
+	  var = Glucose::lit_Undef;
       }
-      if (vec.size()) {
-		auto v = solver.newVar ();
-		var = Glucose::mkLit(v);
-		reify_or_bi (solver,var,vec);
-
-		//AT most one true (minimising systems to explore)
-		//at_most_one (solver,vec);
-		
-      }
-      else
-		var = Glucose::lit_Undef;
     }
 	
     virtual void caseConjunction (Conjunction& c)
     {
-      Glucose::vec<Glucose::Lit> vec;
-      for (auto cc : c) {
-		cc->accept (*this);
-		if (var != Glucose::lit_Undef)
-		  vec.push(var);
+      if (!checkAlreadyIn (c,var)) {
+	Glucose::vec<Glucose::Lit> vec;
+	for (auto cc : c) {
+	  cc->accept (*this);
+	  if (var != Glucose::lit_Undef)
+	    vec.push(var);
+	}
+	if (vec.size()) {
+	  auto v = solver.newVar();
+	  var = Glucose::mkLit (v);
+	  reify_and_bi (solver,var,vec);
+	  insert(c,var);
+	}
+	else
+	  var = Glucose::lit_Undef;
+	
       }
-      if (vec.size()) {
-		auto v = solver.newVar();
-		var = Glucose::mkLit (v);
-		reify_and_bi (solver,var,vec);
-		
-      }
-      else
-		var = Glucose::lit_Undef;
-
     }
 
    
   private:
+
+    bool checkAlreadyIn (ASTNode& n,Glucose::Lit& l) {
+      l = Glucose::lit_Undef;
+      auto h = n.hash ();
+      if (alreadyCreated.count (h)){
+	l = alreadyCreated.at (h);
+	return true;
+      }
+      return false;
+    }
+
+    void insert (ASTNode& n, Glucose::Lit& l) {
+      alreadyCreated.insert(std::make_pair (n.hash(),l));
+    }
+    
     Words::Context& ctxt;
     std::unique_ptr<Words::Constraints::LinearConstraintBuilder> builder;
     Words::Constraints::VarMultiplicity* vm = nullptr;
@@ -457,6 +496,7 @@ namespace Words {
     std::unordered_map<EQ*,Glucose::Lit> equalities;
     
     bool instrlen = false;
+    std::unordered_map<size_t, Glucose::Lit> alreadyCreated;
   };
   
     
