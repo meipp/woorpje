@@ -100,6 +100,152 @@ void reify_or_bi(Glucose::Solver & s, Glucose::Lit lhs, Glucose::vec<Glucose::Li
   };
 
 
-  
+  class UpdateSolverBuilder : public BaseVisitor {
+  public:
+	UpdateSolverBuilder(
+							 std::unordered_map<size_t, Glucose::Lit>& hlit,
+							 std::unordered_map<Glucose::Var,Words::Constraints::Constraint_ptr>& c,
+							 std::unordered_map<Glucose::Var,Words::Equation>& e,
+							 Glucose::Solver& s,
+							 std::unordered_map<NEQ*,ASTNode_ptr>& neqmap
+							 )  : alreadyCreated (hlit),
+								  constraints(c),
+								  eqs(e),
+								  solver(s),
+								  neqmap(neqmap)
+								  
+    {}
+	
+	template<class T>
+	void visitRedirect (T& c) {
+	  assert(alreadyCreated.count(c.hash()));
+	  auto l = Glucose::var(alreadyCreated.at(c.hash()));
+	  auto res = solver.modelValue(l);
+	  if (res == l_True) {
+		
+		if (constraints.count(l)) {
+		  job->options.constraints.push_back(constraints.at(l));
+		}
+		
+		if (eqs.count(l)) {
+		  job->options.equations.push_back(eqs.at(l));
+		}
+
+		clause.push(~Glucose::mkLit(l));
+		
+	  
+	  }
+	  else if (res == l_False) {
+		clause.push(Glucose::mkLit(l));
+	  }
+	}
+	
+    void Run (ASTNode& m) {
+	  m.accept (*this);
+	  
+	}
+
+	auto finalise () {
+	  solver.addClause (clause);
+	  return std::move(job);
+	}
+    
+    virtual void caseLEQ (LEQ& c)
+    {
+      visitRedirect (c);
+    }
+	
+	
+    virtual void caseLT (LT& c)
+    {
+      visitRedirect (c);
+    }
+	
+    virtual void caseGEQ (GEQ& c)
+    {
+      visitRedirect (c);
+    }
+	
+    virtual void caseGT (GT& c)
+    {
+      visitRedirect (c);
+    }
+	
+	virtual void caseEQ (EQ& c)
+	 {
+	   visitRedirect(c);
+	   
+	} 
+	 
+	 virtual void caseNEQ (NEQ& c)
+	 {
+	   neqmap.at(&c)->accept (*this);
+	 }
+		
+    
+    virtual void caseFunctionApplication (FunctionApplication& c) {
+      throw UnsupportedFeature ();
+    }
+    
+
+	virtual void caseNegLiteral (NegLiteral& c) override {
+	  c.inner()->accept(*this);
+    }
+	
+	
+    virtual void caseAssert (Assert& c) {
+      c.getExpr()->accept(*this);
+    }
+	 
+	
+	 virtual void caseDisjunction (Disjunction& c)
+	 {
+	   assert(alreadyCreated.count(c.hash()));
+	   auto l = Glucose::var(alreadyCreated.at(c.hash()));
+	   if (solver.modelValue (l) == l_True) {
+		 for (auto cc : c)  {
+		   auto ll = Glucose::var(alreadyCreated.at(cc->hash()));
+		   auto res = solver.modelValue (ll);
+		   if (res!=l_False)
+			 cc->accept (*this);
+		   if ( res== l_True)
+			 break;
+		 }
+		 clause.push(~Glucose::mkLit(l));
+	   }
+	   
+	   else if (solver.modelValue (l) == l_False){
+		 clause.push(Glucose::mkLit(l));
+	   }
+			 
+	   
+	 }
+
+	virtual void caseConjunction (Disjunction& c)
+	{
+
+	  assert(alreadyCreated.count(c.hash()));
+	   auto l = Glucose::var(alreadyCreated.at(c.hash()));
+	   if (solver.modelValue (l) == l_True) {
+		 for (auto cc : c) 
+		   cc->accept (*this);
+		 clause.push(~Glucose::mkLit(l));
+	   }
+
+	   else if (solver.modelValue (l) == l_False) {
+		 clause.push(Glucose::mkLit(l));
+	   }
+	}
+   
+  private:
+	
+    std::unordered_map<size_t, Glucose::Lit>& alreadyCreated;
+	std::unordered_map<Glucose::Var,Words::Constraints::Constraint_ptr>& constraints;
+	std::unordered_map<Glucose::Var,Words::Equation>& eqs;
+	std::unique_ptr<Words::Job>  job  = std::make_unique<Words::Job> ();
+	Glucose::Solver& solver;
+	Glucose::vec<Glucose::Lit> clause;
+	std::unordered_map<NEQ*,ASTNode_ptr>& neqmap;
+  };
   
 }

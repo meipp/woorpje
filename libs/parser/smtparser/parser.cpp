@@ -20,55 +20,28 @@ namespace Words {
     std::unique_ptr<Words::Job> newJob ()  { 
       std::stringstream str;
       static int i = 0;
-      
-      if (solver.solve (assumptions)) {
-	std::stringstream str;
-	auto  job  = std::make_unique<Job> ();
-	job->options.context= context;
-	Glucose::vec<Glucose::Lit> clause;
-	auto selector = solver.newVar ();
-	auto selLit = Glucose::mkLit (selector);
-	for (auto it : eqs) {
-	  auto val = solver.modelValue(it.first);
 	  
-	  if (val == l_True) {
-	    clause.push(~Glucose::mkLit(it.first));
-	  }
-	  else if (val == l_False) {
-	    clause.push(Glucose::mkLit(it.first));
-	  }
-	  if (val == l_True) {
-	    job->options.equations.push_back (it.second);
+      if (solver.solve ()) {
+		UpdateSolverBuilder builder (hashToLit,constraints,eqs,solver,neqmap);
+		for (auto& t : parser.getAssert ()) {
+		  builder.Run(*t);
+		}
+		auto job =  builder.finalise ();
+		job->options.context = context;;
+		return job;
 	  }
 	  
-	}
-	
-	for (auto it : constraints) {	  
-	  auto val = solver.modelValue(it.first);
-	  
-	  if (val == l_True) {
-	    clause.push(~Glucose::mkLit(it.first));
-	  }
-	  else if (val == l_False) {
-	    clause.push(Glucose::mkLit(it.first));
-	  }
-	  if (val == l_True) {
-	    job->options.constraints.push_back(it.second);
-	  }
-	  
-	}
-	reify_or(solver,selLit,clause);
-	assumptions.push(selLit);
-	return job;
-      }
       else
-	return nullptr;
+		return nullptr;
     }
     std::shared_ptr<Words::Context> context = nullptr;
     Glucose::Solver solver;
     Glucose::vec<Glucose::Lit> assumptions;
     std::unordered_map<Glucose::Var,Words::Equation> eqs;
     std::unordered_map<Glucose::Var,Words::Constraints::Constraint_ptr> constraints;
+	std::unordered_map<size_t, Glucose::Lit> hashToLit;
+	SMTParser::Parser parser;
+	std::unordered_map<NEQ*,ASTNode_ptr> neqmap;
   };
   
   
@@ -110,10 +83,14 @@ namespace Words {
 			     Words::Context&ctxt,
 			     Glucose::Solver& solver,
 			     std::unordered_map<Glucose::Var,Words::Constraints::Constraint_ptr>& c,
-			     std::unordered_map<Glucose::Var,Words::Equation>&eqs
-			     )  : ctxt(ctxt),
-				  solver(solver),
-				  constraints(c),eqs(eqs)
+			     std::unordered_map<Glucose::Var,Words::Equation>&eqs,
+				 std::unordered_map<size_t, Glucose::Lit>& hlit,
+				 std::unordered_map<NEQ*,ASTNode_ptr>& neqmap
+							 )  : ctxt(ctxt),
+								  solver(solver),
+								  constraints(c),eqs(eqs),
+								  alreadyCreated (hlit),
+								  neqmap(neqmap)
     {}
 
     template<Words::Constraints::Cmp cmp>
@@ -308,6 +285,7 @@ namespace Words {
 	  clause.push (~eqLit);
 	  reify_and_bi (solver,var,clause);
 	  insert(c,var);
+	  neqmap.insert(std::make_pair(&c,outdisj));
 	}
 	else {
 	  throw Words::UnsupportedFeature ();
@@ -433,7 +411,7 @@ namespace Words {
 	if (vec.size()) {
 	  auto v = solver.newVar ();
 	  var = Glucose::mkLit(v);
-	  reify_or (solver,var,vec);
+	  reify_or_bi (solver,var,vec);
 	  
 	  insert(c,var);
 	}
@@ -496,7 +474,8 @@ namespace Words {
     std::unordered_map<EQ*,Glucose::Lit> equalities;
     
     bool instrlen = false;
-    std::unordered_map<size_t, Glucose::Lit> alreadyCreated;
+    std::unordered_map<size_t, Glucose::Lit>& alreadyCreated;
+	std::unordered_map<NEQ*,ASTNode_ptr>& neqmap;
   };
   
     
@@ -523,10 +502,9 @@ namespace Words {
       auto jg = std::make_unique<JGenerator> ();
       jg-> context = std::make_shared<Words::Context> ();
       MyErrorHandler handler (err);
-      SMTParser::Parser parser;
-      parser.Parse (str,handler);
+      jg->parser.Parse (str,handler);
       std::stringstream str;
-      for (auto& s : parser.getVars ()) {
+      for (auto& s : jg->parser.getVars ()) {
 		if (s->getSort () == Sort::String) {
 		  str << *s << std::endl;
 		  std::string ss = str.str();
@@ -539,8 +517,8 @@ namespace Words {
 	  
       TerminalAdder tadder(*jg->context);
 	  
-      LengthConstraintBuilder lbuilder(*jg->context,jg->solver,jg->constraints,jg->eqs);
-      for (auto& t : parser.getAssert ()) {
+      LengthConstraintBuilder lbuilder(*jg->context,jg->solver,jg->constraints,jg->eqs,jg->hashToLit,jg->neqmap);
+      for (auto& t : jg->parser.getAssert ()) {
 		t->accept (tadder);
 		lbuilder.Run (*t);	
       }
