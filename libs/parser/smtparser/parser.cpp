@@ -163,147 +163,157 @@ namespace Words {
 	
     virtual void caseEQ (EQ& c)
     {
-
+     
       var = Glucose::lit_Undef;
       auto lexpr = c.getExpr (0);
       auto rexpr = c.getExpr (1);
       if (lexpr->getSort () == Sort::String) {
-		Words::Word left;
-		Words::Word right;
-		AutoNull<Words::WordBuilder> nuller (wb);
-		wb = ctxt.makeWordBuilder (left);
-		lexpr->accept(*this);
-		wb->flush();
-		wb = ctxt.makeWordBuilder (right);
-		rexpr->accept(*this);
-		wb->flush();
-		//opt.equations.emplace_back(left,right);
-		//opt.equations.back().ctxt = opt.context.get();
-
-		Words::Equation eq (left,right);
-		eq.ctxt = &ctxt;
-		auto v = solver.newVar ();
-		var = Glucose::mkLit (v);
-		eqs.insert(std::make_pair (v,eq));
+	if (equalities.count (&c)) {
+	  var = equalities.at (&c);
+	}
+	else {
+	  Words::Word left;
+	  Words::Word right;
+	  AutoNull<Words::WordBuilder> nuller (wb);
+	  wb = ctxt.makeWordBuilder (left);
+	  lexpr->accept(*this);
+	  wb->flush();
+	  wb = ctxt.makeWordBuilder (right);
+	  rexpr->accept(*this);
+	  wb->flush();
+	  //opt.equations.emplace_back(left,right);
+	  //opt.equations.back().ctxt = opt.context.get();
+	  
+	  Words::Equation eq (left,right);
+	  eq.ctxt = &ctxt;
+	  var = makeEquLit (c);
+	  eqs.insert(std::make_pair (Glucose::var(var),eq));
+	  
+	  
+	}
       }
       else if (lexpr->getSort () == Sort::Integer)  {
-		visitRedirect<Words::Constraints::Cmp::LEq> (c);
-		visitRedirect<Words::Constraints::Cmp::GEq> (c);
+	visitRedirect<Words::Constraints::Cmp::LEq> (c);
+	visitRedirect<Words::Constraints::Cmp::GEq> (c);
       }
 
       else if (lexpr->getSort () == Sort::Bool) {
-		throw Words::WordException ("SHouldn't get here");
+	throw Words::WordException ("SHouldn't get here");
       }
     }
 
+    Glucose::Lit makeEquLit (EQ& c) {
+      if (equalities.count (&c)) {
+	return equalities.at ( &c);
+      }
+      auto v = solver.newVar ();
+      auto var = Glucose::mkLit (v);
+      equalities.insert(std::make_pair(&c,var));
+      return var;
+    }
+    
     virtual void caseNEQ (NEQ& c)
     {
       var = Glucose::lit_Undef;
       auto lexpr = c.getExpr (0);
       auto rexpr = c.getExpr (1);
       if (lexpr->getSort () == Sort::String) {
-		static size_t i = 0;
-		/*Words::Word left;
-		  Words::Word right;
-		  AutoNull<Words::WordBuilder> nuller (wb);
-		  wb = ctxt.makeWordBuilder (left);
-		  lexpr->accept(*this);
-		  wb->flush();
-		  wb = ctxt.makeWordBuilder (right);
-		  rexpr->accept(*this);
-		  wb->flush();
-		  
-		  
-		  Words::Equation eq (left,right,Words::Equation::EqType::NEq);
-		  eq.ctxt = &ctxt;
-		  auto v = solver.newVar ();
-		  var = Glucose::mkLit(v);
-		  eqs.insert(std::make_pair (v,eq));*/
-		std::stringstream str;
-		str << "_woorpje_diseq_pref" << i;
-		auto symb_pref = std::make_shared<Symbol> (str.str());
-		ctxt.addVariable (str.str());
-		str.str("");
-		str << "_woorpje_diseq_suf_l" << i;
-		auto symb_sufl = std::make_shared<Symbol> (str.str());
-		ctxt.addVariable (str.str());
-		str.str("");
-		str << "_woorpje_diseq_suf_r" << i;
-		i++;
-		auto symb_sufr = std::make_shared<Symbol> (str.str());
-		ctxt.addVariable (str.str());
-		
+	auto eqLit = makeEquLit (*c.getInnerEQ ());
+	//WE need to grab the inner equality,
+	//negate the literal associated to it (pass that upwards)
+	//and add a biimplication to the disjunction created below.
+	  
+	static size_t i = 0;
+	
+	std::stringstream str;
+	str << "_woorpje_diseq_pref" << i;
+	auto symb_pref = std::make_shared<Symbol> (str.str());
+	ctxt.addVariable (str.str());
+	str.str("");
+	str << "_woorpje_diseq_suf_l" << i;
+	auto symb_sufl = std::make_shared<Symbol> (str.str());
+	ctxt.addVariable (str.str());
+	str.str("");
+	str << "_woorpje_diseq_suf_r" << i;
+	i++;
+	auto symb_sufr = std::make_shared<Symbol> (str.str());
+	ctxt.addVariable (str.str());
+	
 
 	
 		
-		std::vector<ASTNode_ptr> disjuncts;
-		if (ctxt.getTerminalAlphabet ().size () > 2) {
-		  //Greater than 2, because it only makes to distinguish the middle character,
-		  //when we have more than an epsilon and one extra character in the terminals
-		  symb_pref->setSort (Sort::String);
-		  symb_sufl->setSort (Sort::String);
-		  symb_sufr->setSort (Sort::String);
-		  
-		  
-		  ASTNode_ptr Z = std::make_shared<Identifier> (*symb_pref);
-		  ASTNode_ptr X = std::make_shared<Identifier> (*symb_sufl);
-		  ASTNode_ptr Y = std::make_shared<Identifier> (*symb_sufr);
-		  
-		  
-		  for (auto a : ctxt.getTerminalAlphabet ()) {
-			if (a->getRepr () == '_')
-			  continue;
-			std::vector<ASTNode_ptr> innerdisjuncts;
-			ASTNode_ptr strl = std::make_shared<StringLiteral> (std::string(1,a->getRepr ()));
-			auto concat = std::make_shared<StrConcat> (std::initializer_list<ASTNode_ptr> ({Z,strl,X}));
-			ASTNode_ptr outeq = std::make_shared<EQ> (std::initializer_list<ASTNode_ptr> ({lexpr,concat})); 
-			for (auto b : ctxt.getTerminalAlphabet ()) {
-			  if (b == a || b->getRepr () == '_')
-				continue;
-			  ASTNode_ptr strr = std::make_shared<StringLiteral> (std::string(1,b->getRepr ()));
-			  ASTNode_ptr concat_nnner = std::make_shared<StrConcat> (std::initializer_list<ASTNode_ptr> ({Z,strr,Y}));
-			  ASTNode_ptr in_eq = std::make_shared<EQ> ( std::initializer_list<ASTNode_ptr> ({rexpr,concat_nnner}));
-			  innerdisjuncts.push_back (in_eq);
-			}
-			ASTNode_ptr disj = std::make_shared<Disjunction> (std::move(innerdisjuncts));
-			disjuncts.push_back (std::make_shared<Conjunction> (std::initializer_list<ASTNode_ptr> ({outeq,disj})));
-			
-		  }
-		}
+	std::vector<ASTNode_ptr> disjuncts;
+	if (ctxt.getTerminalAlphabet ().size () > 2) {
+	  //Greater than 2, because it only makes to distinguish the middle character,
+	  //when we have more than an epsilon and one extra character in the terminals
+	  symb_pref->setSort (Sort::String);
+	  symb_sufl->setSort (Sort::String);
+	  symb_sufr->setSort (Sort::String);
+	  
+	  
+	  ASTNode_ptr Z = std::make_shared<Identifier> (*symb_pref);
+	  ASTNode_ptr X = std::make_shared<Identifier> (*symb_sufl);
+	  ASTNode_ptr Y = std::make_shared<Identifier> (*symb_sufr);
+	  
+	  
+	  for (auto a : ctxt.getTerminalAlphabet ()) {
+	    if (a->getRepr () == '_')
+	      continue;
+	    std::vector<ASTNode_ptr> innerdisjuncts;
+	    ASTNode_ptr strl = std::make_shared<StringLiteral> (std::string(1,a->getRepr ()));
+	    auto concat = std::make_shared<StrConcat> (std::initializer_list<ASTNode_ptr> ({Z,strl,X}));
+	    ASTNode_ptr outeq = std::make_shared<EQ> (std::initializer_list<ASTNode_ptr> ({lexpr,concat})); 
+	    for (auto b : ctxt.getTerminalAlphabet ()) {
+	      if (b == a || b->getRepr () == '_')
+		continue;
+	      ASTNode_ptr strr = std::make_shared<StringLiteral> (std::string(1,b->getRepr ()));
+	      ASTNode_ptr concat_nnner = std::make_shared<StrConcat> (std::initializer_list<ASTNode_ptr> ({Z,strr,Y}));
+	      ASTNode_ptr in_eq = std::make_shared<EQ> ( std::initializer_list<ASTNode_ptr> ({rexpr,concat_nnner}));
+	      innerdisjuncts.push_back (in_eq);
+	    }
+	    ASTNode_ptr disj = std::make_shared<Disjunction> (std::move(innerdisjuncts));
+	    disjuncts.push_back (std::make_shared<Conjunction> (std::initializer_list<ASTNode_ptr> ({outeq,disj})));
+	    
+	  }
+	}
 		
-		
-		ASTNode_ptr llength = std::make_shared<StrLen> (std::initializer_list<ASTNode_ptr> ({lexpr})); 
-		ASTNode_ptr rlength = std::make_shared<StrLen> (std::initializer_list<ASTNode_ptr> ({rexpr}));
-		ASTNode_ptr gt = std::make_shared<GT> (std::initializer_list<ASTNode_ptr> ({llength,rlength}));
-		ASTNode_ptr lt = std::make_shared<LT> (std::initializer_list<ASTNode_ptr> ({llength,rlength}));
-		
-		disjuncts.push_back (gt);
-		disjuncts.push_back (lt);
-		
-							
-		ASTNode_ptr outdisj = std::make_shared<Disjunction> (std::move(disjuncts));
-		outdisj->accept(*this);
+	
+	ASTNode_ptr llength = std::make_shared<StrLen> (std::initializer_list<ASTNode_ptr> ({lexpr})); 
+	ASTNode_ptr rlength = std::make_shared<StrLen> (std::initializer_list<ASTNode_ptr> ({rexpr}));
+	ASTNode_ptr gt = std::make_shared<GT> (std::initializer_list<ASTNode_ptr> ({llength,rlength}));
+	ASTNode_ptr lt = std::make_shared<LT> (std::initializer_list<ASTNode_ptr> ({llength,rlength}));
+	
+	disjuncts.push_back (gt);
+	disjuncts.push_back (lt);
+	
+	
+	ASTNode_ptr outdisj = std::make_shared<Disjunction> (std::move(disjuncts));
+	outdisj->accept(*this);
+
+	Glucose::vec<Glucose::Lit> clause;
+	clause.push (~eqLit);
+	reify_and_bi (solver,var,clause);
 	
       }
       else {
-		throw Words::UnsupportedFeature ();
+	throw Words::UnsupportedFeature ();
       }
     }
 
     virtual void caseNumericLiteral (NumericLiteral& c) {
 	
       if (!vm) {
-		adder->add (c.getVal ());
+	adder->add (c.getVal ());
       }
       else {
-		vm->number = c.getVal ();
+	vm->number = c.getVal ();
       }
     }
 
-	virtual void caseFunctionApplication (FunctionApplication& c) {
-	  throw UnsupportedFeature ();
+    virtual void caseFunctionApplication (FunctionApplication& c) {
+      throw UnsupportedFeature ();
     }
-
+    
     virtual void caseMultiplication (Multiplication& c)
     {
       Words::Constraints::VarMultiplicity kk (nullptr,1);
@@ -403,7 +413,7 @@ namespace Words {
 		reify_or_bi (solver,var,vec);
 
 		//AT most one true (minimising systems to explore)
-		at_most_one (solver,vec);
+		//at_most_one (solver,vec);
 		
       }
       else
@@ -443,7 +453,9 @@ namespace Words {
     std::unique_ptr<WordBuilder> wb;
     std::unordered_map<Glucose::Var,Words::Equation>& eqs;
     std::unordered_map<void*,Glucose::Lit> boolvar;
-	
+
+    std::unordered_map<EQ*,Glucose::Lit> equalities;
+    
     bool instrlen = false;
   };
   
