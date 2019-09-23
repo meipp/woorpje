@@ -59,8 +59,18 @@ namespace Words {
     TerminalAdder (Words::Context& opt)  : ctxt(opt) {}
     virtual void caseStringLiteral (StringLiteral& s) {
       for (auto c : s.getVal ()) {
-	ctxt.addTerminal (c);
-      }
+		Words::IEntry* entry;
+		try {
+		  entry = ctxt.findSymbol (c);
+		}
+		catch (Words::WordException& e) {
+		  entry = ctxt.addTerminal (c);
+		}
+		assert(entry);
+		if (entry->isVariable()) {
+		  throw UnsupportedFeature ();
+		} 
+	  }
     }
     virtual void caseAssert (Assert& c)
     {
@@ -320,12 +330,12 @@ namespace Words {
 	
     virtual void caseStringLiteral (StringLiteral& s) {
       if (adder) {
-	adder->add (s.getVal ().size());
+		adder->add (s.getVal ().size());
       }
       else
-	for (auto c : s.getVal ()) {
-	  *wb << c;
-	}
+		for (auto c : s.getVal ()) {
+		  *wb << c;
+		}
     }
     virtual void caseIdentifier (Identifier& c) {
       if (c.getSort () == Sort::String && instrlen  ) {
