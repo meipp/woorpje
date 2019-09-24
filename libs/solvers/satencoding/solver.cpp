@@ -43,16 +43,16 @@ namespace Words {
 		for (auto& eq : opt.equations) {
 		  str.str("");
 		  for (auto e : eq.lhs) {
-			if (!entry && e->isTerminal ())
-			  entry = e;
-			str << e->getRepr ();
+		    if (!entry && e->isTerminal ())
+		      entry = e;
+		    str << e->getRepr ();
 		  }
 		  lhs.push_back (str.str());
 		  str.str("");
 		  for (auto e : eq.rhs) {
-			if (!entry && e->isTerminal ())
-			  entry = e;
-			str << e->getRepr ();
+		    if (!entry && e->isTerminal ())
+		      entry = e;
+		    str << e->getRepr ();
 		  }
 		  rhs.push_back (str.str());
 		}

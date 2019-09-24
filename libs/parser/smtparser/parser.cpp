@@ -41,7 +41,7 @@ namespace Words {
     std::unordered_map<Glucose::Var,Words::Constraints::Constraint_ptr> constraints;
 	std::unordered_map<size_t, Glucose::Lit> hashToLit;
 	SMTParser::Parser parser;
-	std::unordered_map<NEQ*,ASTNode_ptr> neqmap;
+	std::unordered_map<size_t,ASTNode_ptr> neqmap;
   };
   
   
@@ -59,18 +59,18 @@ namespace Words {
     TerminalAdder (Words::Context& opt)  : ctxt(opt) {}
     virtual void caseStringLiteral (StringLiteral& s) {
       for (auto c : s.getVal ()) {
-		Words::IEntry* entry;
-		try {
-		  entry = ctxt.findSymbol (c);
+	Words::IEntry* entry;
+	try {
+	  entry = ctxt.findSymbol (c);
+	}
+	catch (Words::WordException& e) {
+	  entry = ctxt.addTerminal (c);
 		}
-		catch (Words::WordException& e) {
-		  entry = ctxt.addTerminal (c);
-		}
-		assert(entry);
-		if (entry->isVariable()) {
-		  throw UnsupportedFeature ();
-		} 
-	  }
+	assert(entry);
+	if (entry->isVariable()) {
+	  throw UnsupportedFeature ();
+	} 
+      }
     }
     virtual void caseAssert (Assert& c)
     {
@@ -95,7 +95,7 @@ namespace Words {
 			     std::unordered_map<Glucose::Var,Words::Constraints::Constraint_ptr>& c,
 			     std::unordered_map<Glucose::Var,Words::Equation>&eqs,
 				 std::unordered_map<size_t, Glucose::Lit>& hlit,
-				 std::unordered_map<NEQ*,ASTNode_ptr>& neqmap
+				 std::unordered_map<size_t,ASTNode_ptr>& neqmap
 							 )  : ctxt(ctxt),
 								  solver(solver),
 								  constraints(c),eqs(eqs),
@@ -118,7 +118,10 @@ namespace Words {
 	   
 	   auto v = solver.newVar (); 
 	   var = Glucose::mkLit (v);
-	   constraints.insert (std::make_pair(v,builder->makeConstraint ()));
+	   auto cc = builder->makeConstraint ();
+	   if (cc->getLinconstraint()->unsatisfiable())
+	     solver.addClause (~var);
+	   constraints.insert (std::make_pair(v,std::move(cc)));
 	   builder = nullptr;
 	   insert(c,var);
 	 }
@@ -150,7 +153,11 @@ namespace Words {
     {
       visitRedirect<Words::Constraints::Cmp::Gt> (c);
     }
-	
+
+    bool emptyWord (Words::Word& left) {
+      return left.noVariableWord() && left.noTerminalWord ();
+    }
+    
     virtual void caseEQ (EQ& c)
     {
 
@@ -161,30 +168,38 @@ namespace Words {
 	auto lexpr = c.getExpr (0);
 	auto rexpr = c.getExpr (1);
 	if (lexpr->getSort () == Sort::String) {
-	  if (equalities.count (&c)) {
-	    var = equalities.at (&c);
-	  }
-	  else {
-	    Words::Word left;
-	    Words::Word right;
-	    AutoNull<Words::WordBuilder> nuller (wb);
-	    wb = ctxt.makeWordBuilder (left);
-	    lexpr->accept(*this);
-	    wb->flush();
-	    wb = ctxt.makeWordBuilder (right);
-	    rexpr->accept(*this);
-	    wb->flush();
-	    //opt.equations.emplace_back(left,right);
-	    //opt.equations.back().ctxt = opt.context.get();
-	    
-	    Words::Equation eq (left,right);
-	    eq.ctxt = &ctxt;
-	    var = makeEquLit (c);
-	    eqs.insert(std::make_pair (Glucose::var(var),eq));
-	    
-	    
-	  }
+	  var = makeEquLit (c);
+	  
+	  Words::Word left;
+	  Words::Word right;
+	  AutoNull<Words::WordBuilder> nuller (wb);
+	  wb = ctxt.makeWordBuilder (left);
+	  lexpr->accept(*this);
+	  wb->flush();
+	  wb = ctxt.makeWordBuilder (right);
+	  rexpr->accept(*this);
+	  wb->flush();
+	  //opt.equations.emplace_back(left,right);
+	  //opt.equations.back().ctxt = opt.context.get();
+	  
+	  Words::Equation eq (left,right);
+	  eq.ctxt = &ctxt;
+	  var = makeEquLit (c);
+	  eqs.insert(std::make_pair (Glucose::var(var),eq));
+	  
 	  insert(c,var);
+
+	  if (emptyWord (left) &&
+	      !right.noTerminalWord ()) {
+	    solver.addClause(~var);
+	  }
+
+	  if (emptyWord (right) &&
+	      !left.noTerminalWord ()) {
+	    solver.addClause(~var);
+	  }
+	  
+	  
 	}
 	else if (lexpr->getSort () == Sort::Integer)  {
 	  //Throw for now,  as the visitRedirect cannot handle LEQ and GEQ simultaneously
@@ -206,6 +221,7 @@ namespace Words {
       auto v = solver.newVar ();
       auto var = Glucose::mkLit (v);
       equalities.insert(std::make_pair(&c,var));
+      	    
       return var;
     }
     
@@ -295,7 +311,7 @@ namespace Words {
 	  clause.push (~eqLit);
 	  reify_and_bi (solver,var,clause);
 	  insert(c,var);
-	  neqmap.insert(std::make_pair(&c,outdisj));
+	  neqmap.insert(std::make_pair(c.hash(),outdisj));
 	}
 	else {
 	  throw Words::UnsupportedFeature ();
@@ -330,12 +346,12 @@ namespace Words {
 	
     virtual void caseStringLiteral (StringLiteral& s) {
       if (adder) {
-		adder->add (s.getVal ().size());
+	adder->add (s.getVal ().size());
       }
       else
-		for (auto c : s.getVal ()) {
-		  *wb << c;
-		}
+	for (auto c : s.getVal ()) {
+	  *wb << c;
+	}
     }
     virtual void caseIdentifier (Identifier& c) {
       if (c.getSort () == Sort::String && instrlen  ) {
@@ -370,6 +386,7 @@ namespace Words {
     }
 	
     virtual void caseNegLiteral (NegLiteral& c) override {
+      
       if (!checkAlreadyIn (c,var)) { 
 	c.inner()->accept(*this);
 	var = ~var;
@@ -485,7 +502,7 @@ namespace Words {
     
     bool instrlen = false;
     std::unordered_map<size_t, Glucose::Lit>& alreadyCreated;
-	std::unordered_map<NEQ*,ASTNode_ptr>& neqmap;
+	std::unordered_map<size_t,ASTNode_ptr>& neqmap;
   };
   
     
@@ -529,8 +546,8 @@ namespace Words {
 	  
       LengthConstraintBuilder lbuilder(*jg->context,jg->solver,jg->constraints,jg->eqs,jg->hashToLit,jg->neqmap);
       for (auto& t : jg->parser.getAssert ()) {
-		t->accept (tadder);
-		lbuilder.Run (*t);	
+	t->accept (tadder);
+	lbuilder.Run (*t);	
       }
       return jg;
     }

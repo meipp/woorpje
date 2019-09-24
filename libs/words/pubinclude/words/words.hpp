@@ -333,7 +333,7 @@ namespace Words {
 	size_t characters () const {
 	  std::size_t l = 0;
 	  for (auto e : word)
-		l+=e->length();
+	    l+=e->length();
 	  return l;
 	  //return word.size();
 	}
@@ -407,7 +407,7 @@ namespace Words {
 
 
     bool noVariableWord() const {
-      return word.size() == 1 &&  word.at(0)->isSequence ();
+      return (word.size() == 1 &&  word.at(0)->isSequence ()) || word.size() == 0;
     }
 
     bool noTerminalWord() {
@@ -554,7 +554,7 @@ namespace Words {
 					  Eq,
 					  NEq
 	};
-	Equation () {}
+    Equation () : type(EqType::Eq) {}
 	Equation (const Word& lhs, Word& rhs,EqType type = EqType::Eq) : lhs(lhs),rhs(rhs),type(type) {}
 	Equation (const Equation& eq) : lhs(eq.lhs),
 					rhs(eq.rhs),

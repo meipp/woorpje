@@ -65,7 +65,7 @@ namespace Words {
 	  
 	  virtual void addVariable (Words::Variable* v){
 		std::stringstream str;
-		str << v->getRepr ();
+		v->output (str);
 		auto symb = Z3_mk_string_symbol (context,str.str().c_str());
 		auto ast = Z3_mk_const (context,symb,strsort);
 		asts.insert (std::make_pair (v,ast));

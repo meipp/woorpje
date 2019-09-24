@@ -51,7 +51,8 @@ namespace Words {
 	  
       virtual void addVariable (Words::Variable* v){
 	std::stringstream str;
-	str << v->getRepr ();
+	//str << v->getRepr ();
+	v->output(str);
 	exprs.insert (std::make_pair (v,em.mkVar (str.str(),em.stringType())));
       }
 	  

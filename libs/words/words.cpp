@@ -77,19 +77,17 @@ namespace Words {
   }
   
   bool Context::conformsToConventions () const {
-	for (auto v : _internal->vars) {
-	  if (!std::isupper (v->getRepr ())) {
-		std::cerr << v->getRepr ()<< std::endl;
-		return false;
-	  }
-	}
-	for (auto v : _internal->terminals) {
-	  if (std::isupper (v->getRepr ())) {
-		std::cerr << v->getRepr ()<< std::endl;
-		return false;
-	  }
-	}
-	return true;
+    for (auto v : _internal->vars) {
+      if (!std::isupper (v->getRepr ())) {
+	return false;
+      }
+    }
+    for (auto v : _internal->terminals) {
+      if (std::isupper (v->getRepr ())) {
+	return false;
+      }
+    }
+    return true;
   }
 
   size_t Context::nbVars () const {
@@ -132,31 +130,31 @@ namespace Words {
   }
   
   WordBuilder& WordBuilder::operator<< (char c) {
-	return operator<< (std::string(1,c));
+    return operator<< (std::string(1,c));
   }
 
   WordBuilder& WordBuilder::operator<< (const std::string& c) {
-	auto entry = ctxt.findSymbol (c);
-	if (entry->isTerminal ()) {
-	  input.push_back (entry);
-	}
-	if (entry->isVariable ()) {
-	  if (input.size()) {
-		auto seq = ctxt.addSequence (input);
-		word.append (seq);
-	  }
-	  word.append (entry);
-	  input.clear ();
-	}
-	return *this;
+    auto entry = ctxt.findSymbol (c);
+    if (entry->isTerminal ()) {
+      input.push_back (entry);
+    }
+    if (entry->isVariable ()) {
+      if (input.size()) {
+	auto seq = ctxt.addSequence (input);
+	word.append (seq);
+      }
+      word.append (entry);
+      input.clear ();
+    }
+    return *this;
   }
   
   void WordBuilder::flush  ()  {
-	if (input.size ()) {
-	  auto seq = ctxt.addSequence (input);
-	  word.append (seq);
-	}
-	input.clear ();
+    if (input.size ()) {
+      auto seq = ctxt.addSequence (input);
+      word.append (seq);
+    }
+    input.clear ();
   }
   
   std::ostream& operator<< (std::ostream& os, const Word& w) {
