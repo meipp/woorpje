@@ -107,12 +107,14 @@ namespace Words {
 			std::unordered_map<Glucose::Var,Words::Constraints::Constraint_ptr>& c,
 			std::unordered_map<Glucose::Var,Words::Equation>& e,
 			Glucose::Solver& s,
-			std::unordered_map<size_t,ASTNode_ptr>& neqmap
-			)  : alreadyCreated (hlit),
-			     constraints(c),
-			     eqs(e),
-			     solver(s),
-			     neqmap(neqmap)
+			std::unordered_map<size_t,ASTNode_ptr>& neqmap,
+			Glucose::vec<Glucose::Lit>& assumptions
+						)  : alreadyCreated (hlit),
+							 constraints(c),
+							 eqs(e),
+							 solver(s),
+							 neqmap(neqmap),
+							 assumptions(assumptions)
 								  
     {}
 	
@@ -122,20 +124,20 @@ namespace Words {
       auto l = Glucose::var(alreadyCreated.at(c.hash()));
       auto res = solver.modelValue(l);
       if (res == l_True) {
-	if (constraints.count(l)) {
-	  job->options.constraints.push_back(constraints.at(l));
-	}
+		if (constraints.count(l)) {
+		  job->options.constraints.push_back(constraints.at(l));
+		}
 		
-	if (eqs.count(l)) {
-	  job->options.equations.push_back(eqs.at(l));
-	}
+		if (eqs.count(l)) {
+		  job->options.equations.push_back(eqs.at(l));
+		}
 
-	clause.push(~Glucose::mkLit(l));
+		clause.push(~Glucose::mkLit(l));
 		
 	  
       }
       else if (res == l_False) {
-	clause.push(Glucose::mkLit(l));
+		clause.push(Glucose::mkLit(l));
       }
     }
 	
@@ -145,7 +147,13 @@ namespace Words {
     }
 
     auto finalise () {
-      solver.addClause (clause);
+	  auto var = solver.newVar ();
+	  auto lit = Glucose::mkLit (var);
+	  assumptions.push(lit);
+	  solver.addClause (clause);
+	  reify_or_bi (solver,lit,clause);
+	  
+	  
       return std::move(job);
     }
     
@@ -195,7 +203,6 @@ namespace Words {
 	
     virtual void caseAssert (Assert& c) {
       auto l = Glucose::var(alreadyCreated.at(c.getExpr()->hash()));
-      assert (solver.modelValue(l) == l_True);
       c.getExpr()->accept(*this);
     }
 	 
@@ -249,6 +256,7 @@ namespace Words {
     Glucose::Solver& solver;
     Glucose::vec<Glucose::Lit> clause;
     std::unordered_map<size_t,ASTNode_ptr>& neqmap;
+	Glucose::vec<Glucose::Lit>& assumptions;
   };
   
 }

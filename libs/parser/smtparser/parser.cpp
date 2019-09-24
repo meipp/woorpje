@@ -21,8 +21,8 @@ namespace Words {
       std::stringstream str;
       static int i = 0;
 	  
-      if (solver.solve ()) {
-		UpdateSolverBuilder builder (hashToLit,constraints,eqs,solver,neqmap);
+      if (solver.solve (assumptions)) {
+		UpdateSolverBuilder builder (hashToLit,constraints,eqs,solver,neqmap,assumptions);
 		for (auto& t : parser.getAssert ()) {
 		  builder.Run(*t);
 		}
@@ -79,7 +79,8 @@ namespace Words {
     }
 
     virtual void caseFunctionApplication ( FunctionApplication& c) {
-      throw UnsupportedFeature();
+	  std::cerr << c << std::endl;
+	  throw UnsupportedFeature();
     }
     
   private:

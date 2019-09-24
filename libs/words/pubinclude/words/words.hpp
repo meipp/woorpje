@@ -625,7 +625,7 @@ namespace Words {
 	return os;
   }
 
-  
+  void outputSMT (std::ostream&, const Options&opt);
   
 }
 

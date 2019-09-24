@@ -30,7 +30,7 @@ struct LevisHeuristics {
   
 class CoutResultGatherer : public Words::Solvers::DummyResultGatherer {
 public:
-  CoutResultGatherer (const Words::Options& opt) : opt(opt) {}
+  CoutResultGatherer (const Words::Options& opt,std::string& out) : opt(opt),outputfile(out) {}
   void setSubstitution (Words::Substitution& w) {
 	std::cout << "Substitution: " << std::endl;
 	for (size_t var = 0; var < opt.context->nbVars(); var++) {
@@ -51,6 +51,15 @@ public:
 	  std::cout <<std::endl;
 	}
 	std::cout << std::endl;
+
+	std::cout << "Output to" << outputfile << std::endl;
+	if (outputfile != "") {
+	  std::fstream str;
+	  str.open (outputfile,std::ios::out);
+	  Words::outputSMT (str,opt);
+	  str.close();
+	}
+	
   }
 
   void diagnosticString (const std::string& s) override {
@@ -81,6 +90,7 @@ private:
   }
   
   const Words::Options& opt;
+  std::string& outputfile;
 };
 
 void printContactDetails (std::ostream& os) {
@@ -166,6 +176,7 @@ int main (int argc, char** argv) {
   size_t vmlim = 0;
   size_t solverr  = 0;
   std::string conffile;
+  std::string outputfile = "";
   po::options_description desc("General Options");
   LevisHeuristics lheu;
   desc.add_options ()
@@ -176,6 +187,7 @@ int main (int argc, char** argv) {
 	("cpulim,C",po::value<size_t>(&cpulim), "CPU Limit in seconds")
 	("simplify",po::bool_switch(&simplifier), "Enable simplifications")
 	("vmlim,V",po::value<size_t>(&vmlim), "VM Limit in MBytes")
+	("outputfile",po::value<std::string> (&outputfile), "Output Satisfiable Equation to file")
 	("solver",po::value<size_t>(&solverr), "Solver Strategy\n"
 								"\t  0 Defined in input file\n"
 								"\t  1 Sat Encoding via Glucose\n"
@@ -280,7 +292,7 @@ int main (int argc, char** argv) {
 		Words::Options foroutput = job->options;
 		inp.close ();
 		
-		CoutResultGatherer gatherer (foroutput);
+		CoutResultGatherer gatherer (foroutput,outputfile);
 		if (solver) {
 		  std::cout << "Solving Equation System" << std::endl << job->options << std::endl;;
 		  
