@@ -6,7 +6,8 @@
 
 namespace Words {
   void encodeVariable (std::ostream& os, const Words::IEntry* v) {
-  os << "(declare-fun " << v->getRepr () << "() String" << ")" << std::endl;
+    os << "(declare-fun ";
+    v->output(os) << "() String" << ")" << std::endl;
 }
 
 void encodePreamble (std::ostream& os, Words::Context& c) {
@@ -25,16 +26,16 @@ void encodeWord (std::ostream& os, const Words::Word& w) {
   std::stringstream str;
   os << "(str.++ ";
   for (auto c : w) {
-	if (c->isVariable ()) {
-	  if (str.str() != "") {
-		os << " \"" << str.str() << "\" ";
-		str.str("");
-	  }
-	  c->output (os)<< " ";
-	}
-	else {
-	  c->output(os);
-	}
+    if (c->isVariable ()) {
+      if (str.str() != "") {
+	os << " \"" << str.str() << "\" ";
+	str.str("");
+      }
+      c->output (os)<< " ";
+    }
+    else {
+      c->output(str);
+    }
   }
   if (str.str() != "")
 	os << " \"" << str.str() <<  "\"";

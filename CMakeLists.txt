@@ -64,6 +64,12 @@ add_executable (${ToolName} main.cpp)
 target_link_libraries (${ToolName}  libs ${Boost_LIBRARIES} )
 target_include_directories(${ToolName} PRIVATE ${PROJECT_BINARY_DIR})
 
+add_executable (${ToolName}SMT main.cpp)
+target_link_libraries (${ToolName}SMT  slibs ${Boost_LIBRARIES} )
+target_include_directories(${ToolName}SMT PRIVATE ${PROJECT_BINARY_DIR})
+
+
+
 add_executable (${Translator} woorpje2smt.cpp)
 target_link_libraries (${Translator}  libs ${Boost_LIBRARIES} )
 target_include_directories(${Translator} PRIVATE ${PROJECT_BINARY_DIR})
@@ -71,6 +77,7 @@ target_include_directories(${Translator} PRIVATE ${PROJECT_BINARY_DIR})
 SET(CPACK_GENERATOR "ZIP")									   
 SET(CPACK_PACKAGE_FILE_NAME ${ToolName}-${VERSION_MAJOR}_${VERSION_MINOR})
 INSTALL (TARGETS ${ToolName} DESTINATION bin)
+INSTALL (TARGETS ${ToolName}SMT DESTINATION bin)
 INSTALL (TARGETS ${Translator} DESTINATION bin)
 INSTALL (FILES LICENSE DESTINATION license)
 

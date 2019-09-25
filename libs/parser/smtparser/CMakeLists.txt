@@ -17,4 +17,4 @@ target_include_directories(sparser
 									 PRIVATE $<TARGET_PROPERTY:solvers,INTERFACE_INCLUDE_DIRECTORIES>
 							)
 target_link_libraries (sparser ${SMTPARSER_LIBRARIES})
-target_compile_options (sparser PRIVATE -Wall -Wpedantic -Wextra)
+target_compile_options (sparser PRIVATE -Wall -Wpedantic -Wextra -fPIC)

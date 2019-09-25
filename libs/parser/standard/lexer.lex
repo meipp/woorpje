@@ -3,23 +3,18 @@
 #include <memory>
 #include <istream>
 #include "tokens.hpp"
-  int mylineno = 1;
-  int column = 1;
-  using namespace std;
-  KeywordChecker kw;
-  int getLineNumber () {
-	return mylineno;
-  }
+#include "lexer.hpp"
+
   
-  int getColumn () {
-	return column;
-  }
+  using namespace std;
   
 #define YY_USER_ACTION							\
   column += yyleng;
 %}
 
 %option noyywrap
+%option yyclass="STDLexer"
+
 
 ws      [ \t]+
 alpha   [A-Za-z]
@@ -29,7 +24,6 @@ num1    {dig}+
 %%
 
 {ws}    /* skip blanks and tabs */
-
 "{" return LBRACE;
 "}" return RBRACE;
 "(" return LPARAN;
@@ -46,19 +40,14 @@ num1    {dig}+
 "<" return LT;
 ">=" return GEQ;
 ">" return GT;
-
-
 {num1}  return NUMBER;
-
 \n        { mylineno++;column = 0;}
-
 {string}   { return kw.isKeyword (yytext) ? KEYWORD : STRING;}
 
 
-
 %%
-std::unique_ptr<FlexLexer>  makeFlexer (std::istream& i) {
-  auto a= std::make_unique<yyFlexLexer> ();
+std::unique_ptr<STDLexer>  makeSTDFlexer (std::istream& i) {
+  auto a= std::make_unique<STDLexer> ();
   a->yyrestart (i);
   return a; 
 }

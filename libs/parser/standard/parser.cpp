@@ -120,22 +120,22 @@ int64_t Words::Parser::parsePMNumber () {
 
 Words::IEntry* Words::Parser::parseVarLength () {
   if (tryaccept (Tokens::BAR)) {
-	std::string text;
-	accept (Tokens::STRING,text);
-	accept (Tokens::BAR);
-	if (text.length () == 1) {
-	  auto var = options->context->findSymbol (text[0]);
-	  if (var->isVariable())
-		return var;
-	  else {
-		*err << " Entity " <<  text << "is not a variable" << std::endl;
-		return nullptr;
-	  }
-	}
-	else {
-	  *err << " ERROR for variable " <<  text<< std::endl;
-	  return nullptr;
-	}
+    std::string text;
+    accept (Tokens::STRING,text);
+    accept (Tokens::BAR);
+    if (text.length () == 1) {
+      auto var = options->context->findSymbol (text[0]);
+      if (var->isVariable())
+	return var;
+      else {
+	*err << " Entity " <<  text << "is not a variable" << std::endl;
+	return nullptr;
+      }
+    }
+    else {
+      *err << " ERROR for variable " <<  text<< std::endl;
+      return nullptr;
+    }
   }
   return nullptr;
 }
@@ -162,8 +162,8 @@ bool Words::Parser::tryaccept (Tokens t, std::string& text) {
 	lexobject.token = static_cast<Tokens> (lexer->yylex());
 	text = lexobject.text;
 	lexobject.text = lexer->YYText ();
-	lexobject.lineno = getLineNumber ();
-	lexobject.colStart = getColumn ();
+	lexobject.lineno = lexer->getLineNumber ();
+	lexobject.colStart = lexer->getColumn ();
 	
 	return true;
   }
@@ -182,8 +182,8 @@ bool Words::Parser::tryacceptKeyword (Keywords k) {
   if (lexobject.token == KEYWORD  && k == kw.getKeyword (lexobject.text)) {
 	lexobject.token = static_cast<Tokens> (lexer->yylex());
 	lexobject.text  = lexer->YYText ();
-	lexobject.lineno = getLineNumber ();
-	lexobject.colStart = getColumn ();
+	lexobject.lineno = lexer->getLineNumber ();
+	lexobject.colStart = lexer->getColumn ();
 	return true; 
   }
   return false;

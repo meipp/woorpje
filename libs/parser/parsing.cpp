@@ -7,10 +7,9 @@ namespace Words {
   
 
   Parser_ptr makeParser (ParserType t,std::istream& is) {
-#if defined(SMTPARSER)
-	return makeSMTParser (is);
-#else
-	return makeStdParser (is);
+#ifdef SMTPARSER
+    return makeSMTParser (is);
 #endif
+    return makeStdParser (is);
   }
 }

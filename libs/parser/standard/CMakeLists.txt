@@ -37,9 +37,9 @@ lex_generate_new(${CMAKE_CURRENT_SOURCE_DIR}/lexer.lex ${CMAKE_CURRENT_BINARY_DI
 
 add_library (stdparser parser.cpp ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.cc ${CMAKE_CURRENT_BINARY_DIR}/key.cpp)
 target_include_directories(stdparser PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../pubinclude
-									 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-									 PRIVATE $<TARGET_PROPERTY:words,INTERFACE_INCLUDE_DIRECTORIES>
-											  PRIVATE $<TARGET_PROPERTY:solvers,INTERFACE_INCLUDE_DIRECTORIES>
+				     						 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+										PRIVATE $<TARGET_PROPERTY:words,INTERFACE_INCLUDE_DIRECTORIES>		
+															 							  PRIVATE $<TARGET_PROPERTY:solvers,INTERFACE_INCLUDE_DIRECTORIES>
 								  		  )
 
-target_compile_options (stdparser PRIVATE -Wall -Wpedantic -Wextra)
+target_compile_options (stdparser PRIVATE -Wall -Wpedantic -Wextra -fPIC)

@@ -52,7 +52,7 @@ public:
 	}
 	std::cout << std::endl;
 
-	std::cout << "Output to" << outputfile << std::endl;
+	std::cout << "Output to: " << outputfile << std::endl;
 	if (outputfile != "") {
 	  std::fstream str;
 	  str.open (outputfile,std::ios::out);
@@ -175,6 +175,7 @@ int main (int argc, char** argv) {
   size_t cpulim = 0;
   size_t vmlim = 0;
   size_t solverr  = 0;
+  size_t parserconf = 0;
   std::string conffile;
   std::string outputfile = "";
   po::options_description desc("General Options");
@@ -187,6 +188,10 @@ int main (int argc, char** argv) {
 	("cpulim,C",po::value<size_t>(&cpulim), "CPU Limit in seconds")
 	("simplify",po::bool_switch(&simplifier), "Enable simplifications")
 	("vmlim,V",po::value<size_t>(&vmlim), "VM Limit in MBytes")
+    ("parser",po::value<size_t> (&parserconf), "Parser to use"
+                                              "\t  0 Woorpje\n"
+     "\t  1 SMT\n"
+     )
 	("outputfile",po::value<std::string> (&outputfile), "Output Satisfiable Equation to file")
 	("solver",po::value<size_t>(&solverr), "Solver Strategy\n"
 								"\t  0 Defined in input file\n"
@@ -267,7 +272,9 @@ int main (int argc, char** argv) {
 	
 	std::fstream inp;
 	inp.open (conffile);
-	auto parser = Words::makeParser (Words::ParserType::Standard,inp);//Words::Parser::Create (inp);
+	auto parser = (parserconf == 0) ?
+	  Words::makeParser (Words::ParserType::Standard,inp) :
+	  Words::makeParser (Words::ParserType::SMTParser,inp);//Words::Parser::Create (inp);
 	auto jg = parser->Parse (std::cout);
 	auto job = jg->newJob ();
 	size_t noSolutionCount = 0;

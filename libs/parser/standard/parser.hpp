@@ -9,9 +9,10 @@
 #include "words/exceptions.hpp"
 #include "solvers/solvers.hpp"
 #include "tokens.hpp"
+#include "lexer.hpp"
 
 
-std::unique_ptr<FlexLexer> makeFlexer (std::istream& is);
+std::unique_ptr<STDLexer> makeSTDFlexer (std::istream& is);
 
 int getLineNumber ();
 int getColumn ();
@@ -36,7 +37,7 @@ namespace Words {
   class Parser : public ParserInterface {
   public:
 	static std::unique_ptr<Parser> Create (std::istream& is)  {
-	  return std::unique_ptr<Parser> (new Parser (makeFlexer (is)));
+	  return std::unique_ptr<Parser> (new Parser (makeSTDFlexer (is)));
 	}
 	
 	std::unique_ptr<JobGenerator> Parse (std::ostream& err) {
@@ -94,11 +95,11 @@ namespace Words {
 	}
 	
   private:
-	Parser (std::unique_ptr<FlexLexer>&& lex ) :lexer(std::move(lex)) {
+	Parser (std::unique_ptr<STDLexer>&& lex ) :lexer(std::move(lex)) {
 	  lexobject.token = static_cast<Tokens>(lexer->yylex());
 	  lexobject.text = lexer->YYText ();
-	  lexobject.lineno = getLineNumber();
-	  lexobject.colStart = getColumn ();
+	  lexobject.lineno = lexer->getLineNumber();
+	  lexobject.colStart = lexer->getColumn ();
 	  
 	}
 
@@ -120,7 +121,7 @@ namespace Words {
 	void unexpected ();
 	KeywordChecker kw;
 	LexObject lexobject;
-	std::unique_ptr<FlexLexer> lexer;
+    std::unique_ptr<STDLexer> lexer;
 	Words::Options* options = nullptr;
 	std::ostream* err;
   };
