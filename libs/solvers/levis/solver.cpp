@@ -40,7 +40,7 @@ namespace Words {
 	return true;
       }
 
-      bool solveDummy (const Words::Options& opt, Words::Substitution& s) {
+      Words::SMT::SolverResult solveDummy (const Words::Options& opt, Words::Substitution& s) {
 	std::set<const Words::IEntry*> unrestricted;
 	auto intsolver = Words::SMT::makeIntSolver ();
 	for (auto& t : opt.constraints) {
@@ -55,14 +55,15 @@ namespace Words {
 	    auto lconstraint = lin;
 	    if (lconstraint->lhsEmpty ()) {
 	      if (lconstraint->getRHS () < 0) {
-		return false;
+		return Words::SMT::SolverResult::NSatis;
 	      }
 	    }
 	    else 
 	      intsolver->addConstraint (*lconstraint);
 	  }
 	}
-	if (intsolver->solve () == Words::SMT::SolverResult::Satis) {
+	auto res = intsolver->solve ();
+	if (res == Words::SMT::SolverResult::Satis) {
 	  for (auto var : unrestricted) {
 	    Words::Word w;
 	    auto wb = const_cast<Words::Context&> (*opt.context).makeWordBuilder (w);
@@ -73,9 +74,8 @@ namespace Words {
 	    s[const_cast<IEntry*> (var)] = w;
 	  }
 		  
-	  return true;
 	}
-	return false;
+	return res;
       }
 	  
       class Handler {
@@ -246,7 +246,7 @@ namespace Words {
 	      waiting.clear();
 	      return true;
 	    }
-	    else if (solveDummy (*to,solution)) {
+	    else if (solveDummy (*to,solution) == Words::SMT::SolverResult::Satis ) {
 	      auto dnode = graph.makeDummyNode ();
 	      graph.addEdge (nnode,dnode,solution);
 	      result = Words::Solvers::Result::HasSolution;
@@ -334,8 +334,12 @@ namespace Words {
         smtSolverCalls = 0;
 
 	if (opt.equations.size() == 0) {
-	  if (solveDummy (opt,sub)) {
+	  auto res = solveDummy (opt,sub); 
+	  if ( res == Words::SMT::SolverResult::Satis ) {
 	    return Words::Solvers::Result::HasSolution;
+	  }
+	  else if (res == Words::SMT::SolverResult::Unknown) {
+	    return Words::Solvers::Result::NoIdea;
 	  }
 	  else {
 	    return Words::Solvers::Result::DefinitelyNoSolution;
@@ -376,11 +380,15 @@ namespace Words {
 	    Words::Substitution solution;
 	    auto fnode = graph.makeNode (first);
 	    graph.addEdge (fnode,inode,simplSub);
-	    if (solveDummy (*insert,solution)) {
+	    auto res = solveDummy (*insert,solution); 
+	    if ( res == Words::SMT::SolverResult::Satis) {
 	      auto dnode = graph.makeDummyNode ();
 	      graph.addEdge (inode,dnode,solution);
 	      sub = findRootSolution (dnode);
 	      return Words::Solvers::Result::HasSolution;
+	    }
+	    else if (res == Words::SMT::SolverResult::NSatis) {
+	      return Words::Solvers::Result::DefinitelyNoSolution;
 	    }
 			
 	    else
