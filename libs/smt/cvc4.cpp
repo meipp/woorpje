@@ -249,6 +249,9 @@ namespace Words {
 	str << engine.getValue (e);
 	return std::stoi (str.str());
       }
+
+      void setTimeout (size_t t ) {timeout = t;}
+	  
 	  
     private:
       ::CVC4::ExprManager em;
