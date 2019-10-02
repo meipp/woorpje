@@ -10,11 +10,11 @@ SET (VERSION_MINOR "3_1")
 if (HIDEDEVNAMES)
 SET (MAINDEVELOPERNAME "Developers Hidden for  review")
 SET (MAINDEVELOPEREMAIL "Hidden@review.com")
-SET (ORGANISATION "Organisation hidde for review")
+SET (ORGANISATION "Organisation hidden for review")
 else()
 SET (MAINDEVELOPERNAME "Mitja Kulczynski, Danny Boegsted Poulsen and Thorsten Ehlers")
-SET (MAINDEVELOPEREMAIL "{mku,dbp,the}@informatik.uni-kiel.de")
-SET (ORGANISATION "Dependable Systems Group, Kiel Univeristy")
+SET (MAINDEVELOPEREMAIL "mku@informatik.uni-kiel.de, dannybpoulsen@cs.aau.dk and thorsten.ehlers@dlr.de")
+SET (ORGANISATION "Dependable Systems Group, Kiel University and Technical Faculty of IT and Design Distributed, Embedded and Intelligent Systems, Aalborg University")
 endif(HIDEDEVNAMES)
 
 SET (DEPSACK "${ToolName} is a word equation solver based on Glucose.")
@@ -31,7 +31,7 @@ endif(ENABLE_TRACE)
 if (NOT ENABLE_STATIC)
 # when building, don't use the install RPATH already
 # (but later on when installing)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 #SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 SET(CMAKE_INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/")
 
@@ -45,7 +45,7 @@ execute_process(COMMAND
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
   OUTPUT_VARIABLE GIT_HASH
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-	
+
 
 configure_file (
  "${PROJECT_SOURCE_DIR}/config.h.in"
@@ -74,7 +74,7 @@ add_executable (${Translator} woorpje2smt.cpp)
 target_link_libraries (${Translator}  libs ${Boost_LIBRARIES} )
 target_include_directories(${Translator} PRIVATE ${PROJECT_BINARY_DIR})
 
-SET(CPACK_GENERATOR "ZIP")									   
+SET(CPACK_GENERATOR "ZIP")
 SET(CPACK_PACKAGE_FILE_NAME ${ToolName}-${VERSION_MAJOR}_${VERSION_MINOR})
 INSTALL (TARGETS ${ToolName} DESTINATION bin)
 INSTALL (TARGETS ${ToolName}SMT DESTINATION bin)
