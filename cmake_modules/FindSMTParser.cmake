@@ -1,6 +1,6 @@
 include(ExternalProject)
 ExternalProject_Add(smtparserr
-	GIT_REPOSITORY git@gitlab.com:dannybpoulsen/smtlib-parser.git
+	GIT_REPOSITORY https://gitlab.com/dannybpoulsen/smtlib-parser.git
 	CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/SMTPARSER/install/
 )
 
