@@ -18,6 +18,11 @@ namespace Words {
 	UnsupportedFeature () : WordException ("A feature is unsupported by Woorpje") {}
   };
 
+  class UsingEpsilonAsNonEpsilon : public WordException  {
+  public:
+    UsingEpsilonAsNonEpsilon () : WordException ("You are using epsilons as a non-epsilon character") {}
+  };
+
 }
 
 

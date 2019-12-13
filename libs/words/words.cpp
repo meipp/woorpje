@@ -23,17 +23,47 @@ namespace Words {
 	  for (auto v : sequences)
 		delete v;
 	}
+
+    IEntry* addVariable (const std::string& c,Context* ctxt) {
+      if (reprToEntry.count (c)) {
+	IEntry* e = reprToEntry[c];
+	if (!e->getVariable ()) {
+	  throw WordException ("Adding previously defined terminal as variable");
+	}
+	return reprToEntry[c];
+      }
+      vars.push_back(new Variable (c,vars.size(),ctxt));
+      reprToEntry[c] = vars.back();
+      return vars.back();
+    }
+
+    IEntry* addTerminal (char c,Context* ctxt, bool epsilon) {
+      if (reprToEntry.count (std::string(1,c))) {
+	IEntry* e = reprToEntry[std::string(1,c)];
+	if (!e->getTerminal ()) {
+	  throw WordException ("Adding previously defined variable as terminal");
+	}
+	if (!epsilon && reprToEntry[std::string(1,c)]->getTerminal()->isEpsilon ()) {
+	  throw UsingEpsilonAsNonEpsilon ();
+	}
+	return reprToEntry[std::string(1,c)];
+      }
+      terminals.push_back(new Terminal(c,terminals.size(),ctxt,epsilon));
+      reprToEntry[std::string(1,c)] = terminals.back();
+      return terminals.back();
 	
-	std::unordered_map<std::string,IEntry*> reprToEntry;
-	std::unordered_map<size_t,Sequence*> hashToSequence;
-	std::vector<Variable*> vars;
-	std::vector<Terminal*> terminals;
-	std::vector<Sequence*> sequences;
+    }
+    
+    std::unordered_map<std::string,IEntry*> reprToEntry;
+    std::unordered_map<size_t,Sequence*> hashToSequence;
+    std::vector<Variable*> vars;
+    std::vector<Terminal*> terminals;
+    std::vector<Sequence*> sequences;
   };
   
   Context::Context () {
 	_internal = std::make_shared<Internals> ();
-	addTerminal ('_');
+	_internal->addTerminal ('_',this,true);
   }
 
   Context::~Context () {
@@ -41,22 +71,11 @@ namespace Words {
   }
   
   IEntry* Context::addVariable (const std::string& c) {
-	if (_internal->reprToEntry.count (c)) {
-	  return _internal->reprToEntry[c];
-	}
-	_internal->vars.push_back(new Variable (c,_internal->vars.size(),this));
-	_internal->reprToEntry[c] = _internal->vars.back();
-	return _internal->vars.back();
+    return _internal->addVariable (c,this);
   }
 
   IEntry* Context::addTerminal (char c) {
-	if (_internal->reprToEntry.count (std::string(1,c))) {
-	  return _internal->reprToEntry[std::string(1,c)];
-	}
-	_internal->terminals.push_back(new Terminal(c,_internal->terminals.size(),this));
-	_internal->reprToEntry[std::string(1,c)] = _internal->terminals.back();
-	return _internal->terminals.back();
-	
+    return _internal->addTerminal (c,this,false);
   }
 
   IEntry* Context::addSequence (const Context::SeqInput& s) {

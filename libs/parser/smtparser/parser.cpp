@@ -275,14 +275,14 @@ namespace Words {
 	  
 	  
 	    for (auto a : ctxt.getTerminalAlphabet ()) {
-	      if (a->getRepr () == '_')
+	      if (a->isEpsilon ())
 		continue;
 	      std::vector<ASTNode_ptr> innerdisjuncts;
 	      ASTNode_ptr strl = std::make_shared<StringLiteral> (std::string(1,a->getRepr ()));
 	      auto concat = std::make_shared<StrConcat> (std::initializer_list<ASTNode_ptr> ({Z,strl,X}));
 	      ASTNode_ptr outeq = std::make_shared<EQ> (std::initializer_list<ASTNode_ptr> ({lexpr,concat})); 
 	      for (auto b : ctxt.getTerminalAlphabet ()) {
-		if (b == a || b->getRepr () == '_')
+		if (b == a || b->isEpsilon())
 		  continue;
 		ASTNode_ptr strr = std::make_shared<StringLiteral> (std::string(1,b->getRepr ()));
 		ASTNode_ptr concat_nnner = std::make_shared<StrConcat> (std::initializer_list<ASTNode_ptr> ({Z,strr,Y}));

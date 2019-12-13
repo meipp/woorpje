@@ -57,7 +57,7 @@ namespace Words {
       }
 	  
       virtual void addTerminal (Words::Terminal*t ) {
-	terminals.insert (t->getRepr ());
+	terminals.insert (t->getChar ());
       }
 	  
       virtual void addConstraint (const Constraints::Constraint& l) {
@@ -101,7 +101,10 @@ namespace Words {
 	auto ss = str.str();
 	auto it = ss.begin()+1; //Needed to filter out the 
 	auto end = ss.end()-1; //leading " and ending "
-	PassthroughStream<Words::WordBuilder> stream (wb,terminals);
+	auto context = v->getContext();
+	auto epsilon = context->getEpsilon ();
+	char dummy = epsilon->getTerminal()->getChar ();
+	PassthroughStream<Words::WordBuilder> stream (wb,terminals,dummy);
 	for (; it!=end; ++it ) {
 	  stream << *it;
 	}
@@ -136,7 +139,8 @@ namespace Words {
 	    asts.push_back ( this->exprs.at(i));
 	  }
 	  else {
-	    str << i->getRepr ();
+	    i->output (str);
+	    //str << i->getRepr ();
 	  }
 	}
 		

@@ -196,12 +196,14 @@ namespace Words {
 	bool isTerminal () const override {return true;}
 	virtual Terminal* getTerminal () {return this;}
 	virtual const Terminal* getTerminal () const {return this;}	
-	virtual bool isEpsilon () const {return false;}
+	virtual bool isEpsilon () const {return epsilon;}
         virtual std::ostream& output (std::ostream& os) const  {return os << repr;}
+    virtual char getChar () const {return repr;}
   protected:
-    Terminal (char repr, size_t index,Context* ctxt) : IEntry(repr,index,ctxt),repr(repr) {}
+    Terminal (char repr, size_t index,Context* ctxt,bool eps = false) : IEntry(repr,index,ctxt),repr(repr),epsilon(eps) {}
     char repr;
-   };  
+    bool epsilon;
+  };  
   
   template<class Iter>
   struct SegIter {
