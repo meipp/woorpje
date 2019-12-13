@@ -65,7 +65,7 @@ namespace Words {
 	}
 	catch (Words::WordException& e) {
 	  entry = ctxt.addTerminal (c);
-		}
+	}
 	assert(entry);
 	if (entry->isVariable()) {
 	  throw UnsupportedFeature ();

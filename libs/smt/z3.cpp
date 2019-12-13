@@ -37,7 +37,7 @@ namespace Words {
 		
 	  
 	  virtual Words::SMT::SolverResult solve () {
-		if (timeout) {
+	    if (timeout) {
 		  Z3_params solverParams = Z3_mk_params(context);
 		  Z3_params_inc_ref(context, solverParams);
 		  Z3_symbol timeoutParamStrSymbol = Z3_mk_string_symbol(context, "timeout");
@@ -145,7 +145,7 @@ namespace Words {
 			asts.push_back ( this->asts.at(i));
 		  }
 		  else {
-			str << i->getRepr ();
+		    str << i->getRepr ();
 		  }
 		}
 		
@@ -201,56 +201,60 @@ namespace Words {
 	  virtual void addVariable (const Words::Variable* v) {
 		
 		std::stringstream str;
-		str << v->getRepr ();
+		v->output (str);
 		auto symb = Z3_mk_string_symbol (context,str.str().c_str());
 		auto ast = Z3_mk_const (context,symb,intsort);
-        auto zero = Z3_mk_int (context,0,intsort);
-        auto comp = Z3_mk_ge (context,ast,zero);
-        Z3_solver_assert (context,solver,comp);
+		auto zero = Z3_mk_int (context,0,intsort);
+		auto comp = Z3_mk_ge (context,ast,zero);
+		Z3_solver_assert (context,solver,comp);
 		asts.insert (std::make_pair (v,ast));
 	  }
 	  
 	  virtual void addConstraint (const Constraints::Constraint& l) {
-		if (l.isLinear ()) {
-		  std::vector<Z3_ast> ast;
-		  auto lin = l.getLinconstraint ();
-		  for (auto& mult : *lin) {
-			Z3_ast muls[2];
-			muls[0] = asts.at(mult.entry);
-			muls[1] = Z3_mk_int (context,mult.number,intsort);
-			ast.push_back (Z3_mk_mul (context,2,muls));
-		  }
-		  auto added = Z3_mk_add (context,ast.size(),ast.data ());
-		  auto rhs = Z3_mk_int (context,lin->getRHS (),intsort);
-		  auto comp = Z3_mk_le (context,added,rhs);
-		  Z3_solver_assert (context,solver,comp);
-		}
+	    if (l.isLinear ()) {
+	      std::vector<Z3_ast> ast;
+	      auto lin = l.getLinconstraint ();
+	      for (auto& mult : *lin) {
+		Z3_ast muls[2];
+		muls[0] = asts.at(mult.entry);
+		muls[1] = Z3_mk_int (context,mult.number,intsort);
+		ast.push_back (Z3_mk_mul (context,2,muls));
+	      }
+	      auto added = Z3_mk_add (context,ast.size(),ast.data ());
+	      auto rhs = Z3_mk_int (context,lin->getRHS (),intsort);
+	      auto comp = Z3_mk_le (context,added,rhs);
+	      
+	      
+	      Z3_solver_assert (context,solver,comp);
+	      
+	    }
 	  }
 	  
 	  virtual Words::SMT::SolverResult solve () {
-		if (timeout) {
-		  Z3_params solverParams = Z3_mk_params(context);
-		  Z3_symbol timeoutParamStrSymbol = Z3_mk_string_symbol(context, "timeout");
-		  Z3_params_inc_ref(context, solverParams);
-		  Z3_params_set_uint(context,
-							 solverParams,
-							 timeoutParamStrSymbol,
-							 timeout); 
-		  Z3_solver_set_params(context, solver, solverParams);
-		  Z3_params_dec_ref(context, solverParams);
-		}
-		switch (Z3_solver_check (context,solver)) {
-		case Z3_L_TRUE:
-		  model = Z3_solver_get_model (context,solver);
-		  return Words::SMT::SolverResult::Satis;
-		  break;
-		case Z3_L_FALSE:
-		  return Words::SMT::SolverResult::NSatis;
-		  break;
-		case Z3_L_UNDEF:
-		default:
-		  return Words::SMT::SolverResult::Unknown;
-		}
+	    if (timeout) {
+	      Z3_params solverParams = Z3_mk_params(context);
+	      Z3_symbol timeoutParamStrSymbol = Z3_mk_string_symbol(context, "timeout");
+	      Z3_params_inc_ref(context, solverParams);
+	      Z3_params_set_uint(context,
+				 solverParams,
+				 timeoutParamStrSymbol,
+				 timeout); 
+	      Z3_solver_set_params(context, solver, solverParams);
+	      Z3_params_dec_ref(context, solverParams);
+	    }
+	    
+	    switch (Z3_solver_check (context,solver)) {
+	    case Z3_L_TRUE:
+	      model = Z3_solver_get_model (context,solver);
+	      return Words::SMT::SolverResult::Satis;
+	      break;
+	    case Z3_L_FALSE:	
+	      return Words::SMT::SolverResult::NSatis;
+	      break;
+	    case Z3_L_UNDEF:
+	    default:		    
+	      return Words::SMT::SolverResult::Unknown;
+	    }
 	  }
 	  
 	  virtual size_t evaluate (Words::Variable* v)  {
