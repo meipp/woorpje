@@ -33,8 +33,9 @@ namespace Words {
 	virtual const Terminal* getTerminal () const {return nullptr;}
 	virtual const Sequence* getSequence () const {return nullptr;}
 	Context* getContext () const {return context;}
-	virtual std::ostream& output (std::ostream& os) const  {return  os << getRepr ();}
-	virtual char getRepr () const {return repr;}
+        virtual std::ostream& output (std::ostream& os) const  = 0;
+        [[deprecated]]
+	virtual  char getRepr () const {return repr;}
 	virtual std::size_t length () const {return 1;}
   private:
 	size_t index;
@@ -196,9 +197,11 @@ namespace Words {
 	virtual Terminal* getTerminal () {return this;}
 	virtual const Terminal* getTerminal () const {return this;}	
 	virtual bool isEpsilon () const {return false;}
+        virtual std::ostream& output (std::ostream& os) const  {return os << repr;}
   protected:
-	Terminal (char repr, size_t index,Context* ctxt) : IEntry(repr,index,ctxt) {}
-  };  
+    Terminal (char repr, size_t index,Context* ctxt) : IEntry(repr,index,ctxt),repr(repr) {}
+    char repr;
+   };  
   
   template<class Iter>
   struct SegIter {

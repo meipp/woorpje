@@ -72,7 +72,10 @@ namespace Words {
 	  }
 	  
 	  virtual void addTerminal (Words::Terminal* t) {
-		terminals.insert(t->getRepr ());
+	    std::stringstream str;
+	    t->output (str);
+	    assert(str.str().size() == 1);
+	    terminals.insert(str.str()[0]);
 	  }
 
 	  virtual void addConstraint (const Constraints::Constraint& l) {
@@ -145,7 +148,7 @@ namespace Words {
 			asts.push_back ( this->asts.at(i));
 		  }
 		  else {
-		    str << i->getRepr ();
+		    i->output(str);
 		  }
 		}
 		

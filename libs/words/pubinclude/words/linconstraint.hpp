@@ -61,7 +61,7 @@ namespace Words {
 	  virtual const Unrestricted* getUnrestricted () const override {return this;}
 	  virtual bool isUnrestricted () const override {return true;}
 	  virtual std::shared_ptr<Constraint> copy() const override {return std::make_shared<Unrestricted>(*this);}
-	  virtual std::ostream& output (std::ostream& os) const {return os << "Unrestrict" << unrestricted->getRepr ();}
+	  virtual std::ostream& output (std::ostream& os) const {return os << "Unrestrict";  unrestricted->output (os);}
 	  virtual uint32_t hash (uint32_t seed) const  {return Words::Hash::Hash<const IEntry*> (&unrestricted,1,seed);}
 	  const Words::IEntry* getUnrestrictedVar () const {return unrestricted;}
 	private: 

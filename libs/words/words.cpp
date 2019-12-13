@@ -77,15 +77,22 @@ namespace Words {
   }
   
   bool Context::conformsToConventions () const {
+    
     for (auto v : _internal->vars) {
-      if (!std::isupper (v->getRepr ())) {
+      std::stringstream str;
+      v->output(str);
+      if (str.str().size()==1 &&
+	  !std::isupper(str.str()[0])) { 
 	return false;
-      }
+      } 
     }
     for (auto v : _internal->terminals) {
-      if (std::isupper (v->getRepr ())) {
+      std::stringstream str;
+      v->output(str);
+      if (str.str().size()==1 &&
+	  std::isupper(str.str()[0])) { 
 	return false;
-      }
+      }  
     }
     return true;
   }
