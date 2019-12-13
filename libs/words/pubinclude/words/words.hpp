@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <sstream>
 #include <vector>
 #include <ostream>
 #include <map>
@@ -36,6 +37,7 @@ namespace Words {
         virtual std::ostream& output (std::ostream& os) const  = 0;
         [[deprecated]]
 	virtual  char getRepr () const {return repr;}
+    virtual std::string getName () const  = 0;
 	virtual std::size_t length () const {return 1;}
   private:
 	size_t index;
@@ -50,9 +52,10 @@ namespace Words {
 	virtual Variable* getVariable () {return this;}
 	virtual const Variable* getVariable () const {return this;}
 	virtual char getRepr () const {return str.at(0);}
-	virtual std::ostream& output (std::ostream& os) const  {return  os <<'_' << str <<  '_';}
+    virtual std::ostream& output (std::ostream& os) const  {return  os <<'_' << str <<  '_';}
+    virtual std::string getName () const {return str;}
   protected:
-	Variable (const std::string& s, size_t index,Context* ctxt) : IEntry('@',index,ctxt),str(s) {}
+    Variable (const std::string& s, size_t index,Context* ctxt) : IEntry('@',index,ctxt),str(s) {}
   private:
 	std::string str;
   };
@@ -180,6 +183,11 @@ namespace Words {
 	  return diff;
 	}
 
+        virtual std::string getName () const {
+	  std::stringstream str;
+	  this->output (str);
+	  return str.str();
+	}
 	
   protected:
 	Sequence (size_t index,std::vector<IEntry*> e,Context* ctxt) : IEntry('#',index,ctxt),entries(e) {}
@@ -196,12 +204,15 @@ namespace Words {
 	bool isTerminal () const override {return true;}
 	virtual Terminal* getTerminal () {return this;}
 	virtual const Terminal* getTerminal () const {return this;}	
-	virtual bool isEpsilon () const {return false;}
+	virtual bool isEpsilon () const {return epsilon;}
         virtual std::ostream& output (std::ostream& os) const  {return os << repr;}
-  protected:
-    Terminal (char repr, size_t index,Context* ctxt) : IEntry(repr,index,ctxt),repr(repr) {}
+    virtual char getChar () const {return repr;}
+    virtual std::string getName () const {return std::string (getChar(),1);}
+    protected:
+    Terminal (char repr, size_t index,Context* ctxt,bool eps = false) : IEntry(repr,index,ctxt),repr(repr),epsilon(eps) {}
     char repr;
-   };  
+    bool epsilon;
+  };  
   
   template<class Iter>
   struct SegIter {

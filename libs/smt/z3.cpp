@@ -101,7 +101,10 @@ namespace Words {
 		Z3_ast ast;
 		Z3_model_eval (context,model,asts.at(v),true,&ast);
 		auto str = Z3_get_string (context,ast);
-		PassthroughStream<Words::WordBuilder> stream (wb,terminals);
+		auto context = v->getContext();
+		auto epsilon = context->getEpsilon ();
+		char dummy = epsilon->getTerminal()->getChar ();
+		PassthroughStream<Words::WordBuilder> stream (wb,terminals,dummy);
 		while (*str != '\0') {
 		  stream << *str;
 		  str++;

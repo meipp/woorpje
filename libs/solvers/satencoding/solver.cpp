@@ -31,7 +31,7 @@ namespace Words {
 		  return ::Words::Solvers::Result::NoIdea;
 		}
 
-		Words::IEntry* entry = nullptr;
+		Words::IEntry* entry = opt.context->getEpsilon ();
 	
 		std::stringstream str;
 		std::vector<std::string> lhs;
@@ -43,16 +43,12 @@ namespace Words {
 		for (auto& eq : opt.equations) {
 		  str.str("");
 		  for (auto e : eq.lhs) {
-		    if (!entry && e->isTerminal ())
-		      entry = e;
-		    str << e->getRepr ();
+		    str << e->getName ();
 		  }
 		  lhs.push_back (str.str());
 		  str.str("");
 		  for (auto e : eq.rhs) {
-		    if (!entry && e->isTerminal ())
-		      entry = e;
-		    str << e->getRepr ();
+		    str << e->getName ();
 		  }
 		  rhs.push_back (str.str());
 		}

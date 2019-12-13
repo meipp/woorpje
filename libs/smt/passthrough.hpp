@@ -2,9 +2,9 @@
 
 template<class Stream>
 	struct PassthroughStream {
-	  PassthroughStream (Stream& s, std::set<char>& terminals, char c = '_') : stream(s),
-												   terminals(terminals),
-												   dummy(c) {}
+	  PassthroughStream (Stream& s, std::set<char>& terminals, char c) : stream(s),
+										   terminals(terminals),
+										   dummy(c) {}
 	  void operator<< (char c) {
 		state (c,*this);
 	  }

@@ -37,7 +37,7 @@ public:
 	  auto variable = opt.context->getVariable (var);
 	  std::cout << *variable << ": ";
 	  for (auto c : w[variable]) {
-		std::cout << c->getRepr ();
+	    c->output (std::cout);
 	  }
 	  std::cout << std::endl;
 	}
@@ -79,11 +79,11 @@ private:
   void printWordWithSubstitution (const Words::Word& word, Words::Substitution& w) {
 	for (auto c : word) {
 	  if (c->isTerminal ())
-		std::cout << c->getRepr ();
+	    c->output(std::cout);
 	  else {
 		auto sub = w[c];
 		for (auto s : sub) {
-		  std::cout << s->getRepr ();
+		  s->output(std::cout);
 		}
 	  }
 	}
