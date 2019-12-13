@@ -98,18 +98,14 @@ namespace Words {
   bool Context::conformsToConventions () const {
     
     for (auto v : _internal->vars) {
-      std::stringstream str;
-      v->output(str);
-      if (str.str().size()==1 &&
-	  !std::isupper(str.str()[0])) { 
+      if (v->getName().size()!=1 ||
+	  !std::isupper(v->getName()[0])) { 
 	return false;
       } 
     }
     for (auto v : _internal->terminals) {
-      std::stringstream str;
-      v->output(str);
-      if (str.str().size()==1 &&
-	  std::isupper(str.str()[0])) { 
+      if (v->getName().size()!=1 ||
+	  std::isupper(v->getName()[0])) { 
 	return false;
       }  
     }
