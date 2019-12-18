@@ -30,9 +30,18 @@ namespace Words {
 	namespace Levis {
 	  void selectVariableTerminalRatio (double d);
 	  void selectWaitingListReached (size_t);
-      void selectCalculateTotalEquationSystemSize (double d);
-      void selectEquationLengthExceeded (size_t);
-      void selectNone();
+	  void selectCalculateTotalEquationSystemSize (double d);
+	  void selectEquationLengthExceeded (size_t);
+	  void selectNone();
+
+	  enum class SearchOrder{
+				 DepthFirst,
+				 BreadthFirst
+	  };
+	  
+	  template<SearchOrder,class ...Args>
+	  void setSearchOrder (Args...);
+	  
 	}
 	
 	class Formatter {

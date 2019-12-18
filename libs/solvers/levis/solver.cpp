@@ -85,7 +85,7 @@ namespace Words {
         }
         // criteria for external solver calls
         //
-
+	
         // trigger the solver with a timeout given via parameter every time the
         // waiting list exceeds a bound
         /*bool waitingListLimitExceeded(std::size_t wSize, std::size_t bound=35){
@@ -226,7 +226,7 @@ namespace Words {
 		  
           if (waiting.contains(to))
 	    return false;
-
+	  
 	  auto node = graph.getNode (from);			
 	  auto simpnode = graph.makeNode (beforeSimp);
 	  auto nnode = graph.makeNode (to);
@@ -326,9 +326,12 @@ namespace Words {
       ::Words::Solvers::Result Solver::Solve (Words::Options& opt,::Words::Solvers::MessageRelay& relay)   {
 	relay.pushMessage ("Levis Algorithm");
 	relay.pushMessage ((Formatter ("Using Heuristic: %1%") % getSMTHeuristic().getDescription ()).str());
+	relay.pushMessage ((Formatter ("Using SearchStrategy: %1%") % getQueue().getName ()).str());
 	if (opt.hasIneqquality ())
 	  return ::Words::Solvers::Result::NoIdea;
-	PassedWaiting waiting;
+	if (opt.hasIneqquality ())
+	  return ::Words::Solvers::Result::NoIdea;
+	PassedWaiting waiting (getQueue());
 	Graph graph;
         Handler handler (waiting,graph,sub);
         smtSolverCalls = 0;

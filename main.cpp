@@ -22,11 +22,14 @@ namespace po = boost::program_options;
 
 struct LevisHeuristics {
   size_t which = 0;
+  size_t searchorder = 0;
   double varTerminalRatio = 1.1;
   size_t wlistLimit = 2;
   double growthFactor = 1.1;
   size_t eqLength = 100;
 };
+
+
   
 class CoutResultGatherer : public Words::Solvers::DummyResultGatherer {
 public:
@@ -127,6 +130,20 @@ void setupLevis (LevisHeuristics& l) {
     selectNone();
     break;
   }
+
+  switch(l.searchorder) {
+  
+  case 1:
+    setSearchOrder<SearchOrder::DepthFirst> ();
+    break;
+  case 0:
+  default:
+    setSearchOrder<SearchOrder::BreadthFirst> ();
+    break;
+    
+  }
+  
+  
 }
 
 void printHelp (std::ostream& os,po::options_description& desc) {
@@ -210,18 +227,21 @@ int main (int argc, char** argv) {
   po::options_description levdesc("LevisSMT Options");
   levdesc.add_options()
     ("levisheuristics",po::value<size_t> (&lheu.which), "Levi Heuristics\n"
-	"\t 0 VariableTerminalRatio\n"
-    "\t 1 WaitingListLimitReached\n"
-    "\t 2 EquationGrowth\n"
+     "\t 0 VariableTerminalRatio\n"
+     "\t 1 WaitingListLimitReached\n"
+     "\t 2 EquationGrowth\n"
     "\t 3 EquationLengthExceeded\n"
-    "\t 4 None\n"
-	 )
-	("VarTerminalRation",po::value<double> (&lheu.varTerminalRatio), "Variable Terminal Ratio")
+     "\t 4 None\n"
+     )
+    ("VarTerminalRation",po::value<double> (&lheu.varTerminalRatio), "Variable Terminal Ratio")
     ("WaitingLimit",po::value<size_t> (&lheu.wlistLimit), "WaitingListLimit")
     ("growth",po::value<double> (&lheu.growthFactor), "Equation Growth Ratio")
-    ("eqLength",po::value<size_t> (&lheu.eqLength), "Equation Length");
-	
-  
+    ("eqLength",po::value<size_t> (&lheu.eqLength), "Equation Length")
+    ("SearchOrder",po::value<size_t> (&lheu.searchorder),"Search Order\n"
+     "\t 0 BFS\n"
+     "\t 1 DFS")
+    ;
+    
   desc.add (smdesc);
   desc.add (levdesc);
   po::positional_options_description positionalOptions; 
