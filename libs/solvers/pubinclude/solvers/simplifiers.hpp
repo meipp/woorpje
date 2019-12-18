@@ -231,32 +231,43 @@ namespace Words {
 	class ConstSequenceMismatch : public EquationSimplifier{
 	public:
 	  static Simplified solverReduce  (Words::Equation& eq,Substitution& s, std::vector<Constraints::Constraint_ptr>&) {
-		Words::Word* constSide;
-		Words::Word* variableSide;
-		if(eq.lhs.noVariableWord() && !eq.rhs.noVariableWord()){
-		  constSide = &eq.lhs;
-		  variableSide = &eq.rhs;
-		} else if(eq.rhs.noVariableWord() && !eq.lhs.noVariableWord()){
-		  constSide = &eq.rhs;
-		  variableSide = &eq.lhs;
-		} else
-		  return Simplified::JustReduced;
-
-		std::vector<Words::Sequence*> consts;
-		variableSide->getSequences (consts);
-		assert ((*constSide->ebegin())->isSequence ());
-		Words::Sequence* constSeq = (*constSide->ebegin())->getSequence (); 
-		for (auto seq : consts) {
-		  if (!seq->isFactorOf (*constSeq)) {
-			return Simplified::ReducedNsatis;
-		  }
-		}
-		return Simplified::JustReduced;
+	    Words::Word* constSide;
+	    Words::Word* variableSide;
+	    if(eq.lhs.noVariableWord() && !eq.rhs.noVariableWord()){
+	      constSide = &eq.lhs;
+	      variableSide = &eq.rhs;
+	    } else if(eq.rhs.noVariableWord() && !eq.lhs.noVariableWord()){
+	      constSide = &eq.rhs;
+	      variableSide = &eq.lhs;
+	    } else
+	      return Simplified::JustReduced;
+	    
+	    std::vector<Words::Sequence*> consts;
+	    variableSide->getSequences (consts);
+	    if (constSide->ebegin () == constSide->eend()) {
+	      //COnst side is actually the empty word. 
+	      if (consts.size ()) {
+		//If the non-const side has constants itself, then it cannot be satisfied
+		return Simplified::ReducedNsatis;
+	      }
+	      else {
+		//Otherwise we have a solution, by setting all setting all remaining variables to nothing
+		return Simplified::ReducedSatis;
+	      }
+	    }
+	    assert ((*constSide->ebegin())->isSequence ());
+	    Words::Sequence* constSeq = (*constSide->ebegin())->getSequence (); 
+	    for (auto seq : consts) {
+	      if (!seq->isFactorOf (*constSeq)) {
+		return Simplified::ReducedNsatis;
+	      }
+	    }
+	    return Simplified::JustReduced;
 	  }
 	};
-
-	class ConstSequenceFolding {
-	public:
+    
+    class ConstSequenceFolding {
+    public:
 	  static Simplified solverReduce  (Words::Equation& eq,Substitution& s, std::vector<Constraints::Constraint_ptr>&) {
 		foldWord (eq.lhs,eq);
 		foldWord (eq.rhs,eq);
@@ -264,36 +275,36 @@ namespace Words {
 	  };
 
 	  static void foldWord (Words::Word& lhs,Words::Equation& eq) {
-		std::vector<Words::IEntry*> nword;
-		Words::Context::SeqInput nseq;
-		
-		Words::Word::entry_iterator begin = lhs.ebegin();
-		Words::Word::entry_iterator end = lhs.eend();
-		for (auto it = begin; it != end ; ++it) {
-          if ((*it)->isVariable()) {
-			if (nseq.size()) {
-			  nword.push_back (eq.ctxt->addSequence (nseq));
-			  nseq.clear ();
-			}
-			nword.push_back (*it);
-			  
-          }
-          else if ((*it)->isTerminal()) {
-              nseq.push_back( (*it));
-          }
-		  else {
-			auto seq = (*it)->getSequence();
-			std::copy (seq->begin (),seq->end (),std::back_inserter (nseq));
-		  }
-		}
-		
-		if (nseq.size ()) {
+	    std::vector<Words::IEntry*> nword;
+	    Words::Context::SeqInput nseq;
+	    
+	    Words::Word::entry_iterator begin = lhs.ebegin();
+	    Words::Word::entry_iterator end = lhs.eend();
+	    for (auto it = begin; it != end ; ++it) {
+	      if ((*it)->isVariable()) {
+		if (nseq.size()) {
 		  nword.push_back (eq.ctxt->addSequence (nseq));
+		  nseq.clear ();
 		}
-		lhs = std::move(nword);
+		nword.push_back (*it);
+		
+	      }
+	      else if ((*it)->isTerminal()) {
+		nseq.push_back( (*it));
+	      }
+	      else {
+		auto seq = (*it)->getSequence();
+		std::copy (seq->begin (),seq->end (),std::back_inserter (nseq));
+	      }
+	    }
+	    
+	    if (nseq.size ()) {
+	      nword.push_back (eq.ctxt->addSequence (nseq));
+		}
+	    lhs = std::move(nword);
 	  }
-	};
-	
+    };
+    
 
 	template<class Inner>
 	class SubstitutionReasoningNew {
