@@ -245,14 +245,14 @@ namespace Words {
 	    std::vector<Words::Sequence*> consts;
 	    variableSide->getSequences (consts);
 	    if (constSide->ebegin () == constSide->eend()) {
-	      //COnst side is actually the empty word. 
+	      //Const side is actually the empty word. 
 	      if (consts.size ()) {
-		//If the non-const side has constants itself, then it cannot be satisfied
-		return Simplified::ReducedNsatis;
+					//If the non-const side has constants itself, then it cannot be satisfied
+					return Simplified::ReducedNsatis;
 	      }
 	      else {
-		//Otherwise we have a solution, by setting all setting all remaining variables to nothing
-		return Simplified::ReducedSatis;
+					//Otherwise we have a solution, by setting all setting all remaining variables to nothing
+					return Simplified::ReducedSatis;
 	      }
 	    }
 	    assert ((*constSide->ebegin())->isSequence ());
