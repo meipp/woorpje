@@ -8,9 +8,10 @@ bool Words::Parser::parseVariablesDecl (){
 
   if (acceptKeyword (Keywords::Variables) && accept (LBRACE)) {
 	if (tryaccept(STRING,t)) {
-	  for (auto c : t) 
-		options->context->addVariable (c);
-	  accept(RBRACE);
+	  for (auto c : t) {
+		options->context->addVariable (std::string(1,c));
+
+	  }accept(RBRACE);
 	  return true;
 	}
   }
@@ -25,7 +26,6 @@ bool Words::Parser::parseTerminalsDecl (){
 	if (tryaccept (STRING,t)) {
 	  for (auto c : t) 
 		options->context->addTerminal (c);
-	  
 	}
 	accept(RBRACE);
 	return true;

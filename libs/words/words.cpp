@@ -26,11 +26,11 @@ namespace Words {
 
     IEntry* addVariable (const std::string& c,Context* ctxt) {
       if (reprToEntry.count (c)) {
-	IEntry* e = reprToEntry[c];
-	if (!e->getVariable ()) {
-	  throw WordException ("Adding previously defined terminal as variable");
-	}
-	return reprToEntry[c];
+		IEntry* e = reprToEntry[c];
+		if (!e->getVariable ()) {
+		  throw WordException ("Adding previously defined terminal as variable");
+		}
+		return reprToEntry[c];
       }
       vars.push_back(new Variable (c,vars.size(),ctxt));
       reprToEntry[c] = vars.back();
@@ -39,19 +39,19 @@ namespace Words {
 
     IEntry* addTerminal (char c,Context* ctxt, bool epsilon) {
       if (reprToEntry.count (std::string(1,c))) {
-	IEntry* e = reprToEntry[std::string(1,c)];
-	if (!e->getTerminal ()) {
-	  throw WordException ("Adding previously defined variable as terminal");
-	}
-	if (!epsilon && reprToEntry[std::string(1,c)]->getTerminal()->isEpsilon ()) {
-	  throw UsingEpsilonAsNonEpsilon ();
-	}
-	return reprToEntry[std::string(1,c)];
+		IEntry* e = reprToEntry[std::string(1,c)];
+		if (!e->getTerminal ()) {
+		  throw WordException ("Adding previously defined variable as terminal");
+		}
+		if (!epsilon && reprToEntry[std::string(1,c)]->getTerminal()->isEpsilon ()) {
+		  throw UsingEpsilonAsNonEpsilon ();
+		}
+		return reprToEntry[std::string(1,c)];
       }
       terminals.push_back(new Terminal(c,terminals.size(),ctxt,epsilon));
       reprToEntry[std::string(1,c)] = terminals.back();
       return terminals.back();
-	
+	  
     }
     
     std::unordered_map<std::string,IEntry*> reprToEntry;
@@ -98,15 +98,18 @@ namespace Words {
   bool Context::conformsToConventions () const {
     
     for (auto v : _internal->vars) {
-      if (v->getName().size()!=1 ||
-	  !std::isupper(v->getName()[0])) { 
-	return false;
+	  
+	  if (v->getName().size()!=1 ||
+		  !std::isupper(v->getName()[0])) { 
+		return false;
       } 
     }
     for (auto v : _internal->terminals) {
-      if (v->getName().size()!=1 ||
-	  std::isupper(v->getName()[0])) { 
-	return false;
+	  if (v->isEpsilon ())
+		continue;
+	  if (v->getName().size()!=1 ||
+		  std::isupper(v->getName()[0])) {
+		return false;
       }  
     }
     return true;

@@ -33,7 +33,7 @@ struct LevisHeuristics {
   
 class CoutResultGatherer : public Words::Solvers::DummyResultGatherer {
 public:
-  CoutResultGatherer (const Words::Options& opt,std::string& out) : opt(opt),outputfile(out) {}
+  CoutResultGatherer (const Words::Options& opt,std::string& out,std::string& smtmodelfile) : opt(opt),outputfile(out),smtmodelfile(smtmodelfile) {}
   void setSubstitution (Words::Substitution& w) {
 	std::cout << "Substitution: " << std::endl;
 	for (size_t var = 0; var < opt.context->nbVars(); var++) {
@@ -55,6 +55,25 @@ public:
 	}
 	std::cout << std::endl;
 
+	if (smtmodelfile != "") {
+	  std::fstream str;
+	  str.open (smtmodelfile,std::ios::out);
+	  str << "(model\n";
+	  
+	  for (size_t var = 0; var < opt.context->nbVars(); var++) {
+		auto variable = opt.context->getVariable (var);
+		str << "(define-fun " << *variable << "() String \"";
+		for (auto c : w[variable]) {
+		  c->output (str);
+		}
+		str << "\")\n";
+	  }
+	  
+	  str <<")";
+		
+	  str.close();
+	}
+	
 	std::cout << "Output to: " << outputfile << std::endl;
 	if (outputfile != "") {
 	  std::fstream str;
@@ -94,6 +113,7 @@ private:
   
   const Words::Options& opt;
   std::string& outputfile;
+  std::string& smtmodelfile;
 };
 
 void printContactDetails (std::ostream& os) {
@@ -194,6 +214,8 @@ int main (int argc, char** argv) {
   size_t solverr  = 0;
   std::string conffile;
   std::string outputfile = "";
+  std::string smtmodelfile = "";
+  
   po::options_description desc("General Options");
   LevisHeuristics lheu;
   desc.add_options ()
@@ -206,12 +228,14 @@ int main (int argc, char** argv) {
 	("vmlim,V",po::value<size_t>(&vmlim), "VM Limit in MBytes")
     
 	("outputfile",po::value<std::string> (&outputfile), "Output Satisfiable Equation to file")
+	("smtmodel",po::value<std::string> (&smtmodelfile), "Output model in SMTLib-format")
+	
 	("solver",po::value<size_t>(&solverr), "Solver Strategy\n"
 								"\t  0 Defined in input file\n"
 								"\t  1 Sat Encoding via Glucose\n"
 								"\t  2 Old Sat Encoding via Glucose\n"
 								"\t  3 SMT\n"
-								"\t  4 Levis Lemmas\n"
+	 "\t  4 Levis Lemmas\n"
 	 );
   size_t smtsolver = 0;
   size_t smttimeout = 0;
@@ -313,7 +337,7 @@ int main (int argc, char** argv) {
 		Words::Options foroutput = job->options;
 		inp.close ();
 		
-		CoutResultGatherer gatherer (foroutput,outputfile);
+		CoutResultGatherer gatherer (foroutput,outputfile,smtmodelfile);
 		if (solver) {
 		  std::cout << "Solving Equation System" << std::endl << job->options << std::endl;;
 		  
