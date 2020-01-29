@@ -1,5 +1,4 @@
 cmake_minimum_required (VERSION 3.1)
-find_package(SMTParser REQUIRED)
 
 
 
@@ -16,5 +15,5 @@ target_include_directories(sparser
 									 PRIVATE $<TARGET_PROPERTY:words,INTERFACE_INCLUDE_DIRECTORIES>
 									 PRIVATE $<TARGET_PROPERTY:solvers,INTERFACE_INCLUDE_DIRECTORIES>
 							)
-target_link_libraries (sparser ${SMTPARSER_LIBRARIES})
+target_link_libraries (sparser smtparser)
 target_compile_options (sparser PRIVATE -Wall -Wpedantic -Wextra -fPIC)

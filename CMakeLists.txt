@@ -51,6 +51,7 @@ configure_file (
  "${PROJECT_SOURCE_DIR}/config.h.in"
  "${PROJECT_BINARY_DIR}/config.h"
 )
+add_subdirectory(external)
 add_subdirectory(libs)
 
 SET(Boost_USE_STATIC_LIBS ON)
