@@ -3,6 +3,12 @@ cmake_minimum_required(VERSION 3.10)
 
 option(HIDEDEVNAMES "Hide developers names for review")
 
+if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+include_directories(/usr/local/include)
+include_directories(/usr/local/Cellar/flex/2.6.4_1/include)
+endif(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+
+
 SET (ToolName woorpje)
 SET (Translator ${ToolName}2SMT)
 SET (VERSION_MAJOR 0)
