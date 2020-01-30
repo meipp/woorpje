@@ -1,0 +1,6 @@
+[submodule "external/murmur"]
+	path = external/murmur
+	url = https://github.com/kloetzl/libmurmurhash
+[submodule "external/smtparser"]
+	path = external/smtparser
+	url = https://gitlab.com/dannybpoulsen/smtlib-parser.git
