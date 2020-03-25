@@ -61,6 +61,8 @@ namespace Words {
 		std::vector<Equation> eqs;
 		std::vector<Constraints::Constraint_ptr> cstr2;
 		std::vector<Constraints::Constraint_ptr> tmp;
+		auto it = opt.equations.begin();
+		auto end = opt.equations.end(); 
 		for (auto& eq :  opt.equations) {
 		  s.clear();
 		  cstr2.clear();
@@ -247,13 +249,14 @@ namespace Words {
 	    if (constSide->ebegin () == constSide->eend()) {
 	      //Const side is actually the empty word. 
 	      if (consts.size ()) {
-					//If the non-const side has constants itself, then it cannot be satisfied
-					return Simplified::ReducedNsatis;
+			//If the non-const side has constants itself, then it cannot be satisfied
+			return Simplified::ReducedNsatis;
 	      }
 	      else {
-					//Otherwise we have a solution, by setting all setting all remaining variables to nothing
-					return Simplified::ReducedSatis;
-	      }
+			//Otherwise we have a solution, by setting all setting all remaining variables to nothing
+			//return Simplified::ReducedSatis;
+			return Simplified::JustReduced;
+		  }
 	    }
 	    assert ((*constSide->ebegin())->isSequence ());
 	    Words::Sequence* constSeq = (*constSide->ebegin())->getSequence (); 
@@ -282,19 +285,19 @@ namespace Words {
 	    Words::Word::entry_iterator end = lhs.eend();
 	    for (auto it = begin; it != end ; ++it) {
 	      if ((*it)->isVariable()) {
-		if (nseq.size()) {
-		  nword.push_back (eq.ctxt->addSequence (nseq));
-		  nseq.clear ();
-		}
-		nword.push_back (*it);
-		
+			if (nseq.size()) {
+			  nword.push_back (eq.ctxt->addSequence (nseq));
+			  nseq.clear ();
+			}
+			nword.push_back (*it);
+			
 	      }
 	      else if ((*it)->isTerminal()) {
-		nseq.push_back( (*it));
+			nseq.push_back( (*it));
 	      }
 	      else {
-		auto seq = (*it)->getSequence();
-		std::copy (seq->begin (),seq->end (),std::back_inserter (nseq));
+			auto seq = (*it)->getSequence();
+			std::copy (seq->begin (),seq->end (),std::back_inserter (nseq));
 	      }
 	    }
 	    

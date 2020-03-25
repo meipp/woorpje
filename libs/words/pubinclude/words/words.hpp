@@ -438,23 +438,24 @@ namespace Words {
       auto it = word.begin();
       auto end = word.end();
       for(;it!=end;++it){
-	if(*it == variable){
-	  if(ranOnce){
-	    newWord.insert(last_pos, it);
-	  }
-	  newWord.insert(to.ebegin(),to.eend());
-	  last_pos = it+1;
-	  replaced = true;
-	}
-	ranOnce = true;
+		if(*it == variable){
+		  if(ranOnce){
+			newWord.insert(last_pos, it);
+		  }
+		  newWord.insert(to.ebegin(),to.eend());
+		  last_pos = it+1;
+		  replaced = true;
+		  }
+		
+		ranOnce = true;
       }
 	  
       if (replaced) {
-	if (last_pos != word.begin() && last_pos != word.end()){
-	  newWord.insert(last_pos, it);
-	}
-	word = newWord.word;
-      }
+		if (last_pos != word.begin() && last_pos != word.end()){
+		  newWord.insert(last_pos, it);
+		}
+		word = newWord.word;
+		}
       return replaced;
     }
 
@@ -512,7 +513,7 @@ namespace Words {
     template <class iter>
     void insert( iter b, iter e) {
       for (;b != e; ++b) {
-	word.push_back(*b);
+		word.push_back(*b);
       }
     }
 	
