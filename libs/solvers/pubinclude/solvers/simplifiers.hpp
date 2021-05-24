@@ -61,8 +61,6 @@ namespace Words {
 		std::vector<Equation> eqs;
 		std::vector<Constraints::Constraint_ptr> cstr2;
 		std::vector<Constraints::Constraint_ptr> tmp;
-		auto it = opt.equations.begin();
-		auto end = opt.equations.end(); 
 		for (auto& eq :  opt.equations) {
 		  s.clear();
 		  cstr2.clear();
@@ -233,44 +231,32 @@ namespace Words {
 	class ConstSequenceMismatch : public EquationSimplifier{
 	public:
 	  static Simplified solverReduce  (Words::Equation& eq,Substitution& s, std::vector<Constraints::Constraint_ptr>&) {
-	    Words::Word* constSide;
-	    Words::Word* variableSide;
-	    if(eq.lhs.noVariableWord() && !eq.rhs.noVariableWord()){
-	      constSide = &eq.lhs;
-	      variableSide = &eq.rhs;
-	    } else if(eq.rhs.noVariableWord() && !eq.lhs.noVariableWord()){
-	      constSide = &eq.rhs;
-	      variableSide = &eq.lhs;
-	    } else
-	      return Simplified::JustReduced;
-	    
-	    std::vector<Words::Sequence*> consts;
-	    variableSide->getSequences (consts);
-	    if (constSide->ebegin () == constSide->eend()) {
-	      //Const side is actually the empty word. 
-	      if (consts.size ()) {
-			//If the non-const side has constants itself, then it cannot be satisfied
+		Words::Word* constSide;
+		Words::Word* variableSide;
+		if(eq.lhs.noVariableWord() && !eq.rhs.noVariableWord()){
+		  constSide = &eq.lhs;
+		  variableSide = &eq.rhs;
+		} else if(eq.rhs.noVariableWord() && !eq.lhs.noVariableWord()){
+		  constSide = &eq.rhs;
+		  variableSide = &eq.lhs;
+		} else
+		  return Simplified::JustReduced;
+
+		std::vector<Words::Sequence*> consts;
+		variableSide->getSequences (consts);
+		assert ((*constSide->ebegin())->isSequence ());
+		Words::Sequence* constSeq = (*constSide->ebegin())->getSequence (); 
+		for (auto seq : consts) {
+		  if (!seq->isFactorOf (*constSeq)) {
 			return Simplified::ReducedNsatis;
-	      }
-	      else {
-			//Otherwise we have a solution, by setting all setting all remaining variables to nothing
-			//return Simplified::ReducedSatis;
-			return Simplified::JustReduced;
 		  }
-	    }
-	    assert ((*constSide->ebegin())->isSequence ());
-	    Words::Sequence* constSeq = (*constSide->ebegin())->getSequence (); 
-	    for (auto seq : consts) {
-	      if (!seq->isFactorOf (*constSeq)) {
-		return Simplified::ReducedNsatis;
-	      }
-	    }
-	    return Simplified::JustReduced;
+		}
+		return Simplified::JustReduced;
 	  }
 	};
-    
-    class ConstSequenceFolding {
-    public:
+
+	class ConstSequenceFolding {
+	public:
 	  static Simplified solverReduce  (Words::Equation& eq,Substitution& s, std::vector<Constraints::Constraint_ptr>&) {
 		foldWord (eq.lhs,eq);
 		foldWord (eq.rhs,eq);
@@ -278,36 +264,36 @@ namespace Words {
 	  };
 
 	  static void foldWord (Words::Word& lhs,Words::Equation& eq) {
-	    std::vector<Words::IEntry*> nword;
-	    Words::Context::SeqInput nseq;
-	    
-	    Words::Word::entry_iterator begin = lhs.ebegin();
-	    Words::Word::entry_iterator end = lhs.eend();
-	    for (auto it = begin; it != end ; ++it) {
-	      if ((*it)->isVariable()) {
+		std::vector<Words::IEntry*> nword;
+		Words::Context::SeqInput nseq;
+		
+		Words::Word::entry_iterator begin = lhs.ebegin();
+		Words::Word::entry_iterator end = lhs.eend();
+		for (auto it = begin; it != end ; ++it) {
+          if ((*it)->isVariable()) {
 			if (nseq.size()) {
 			  nword.push_back (eq.ctxt->addSequence (nseq));
 			  nseq.clear ();
 			}
 			nword.push_back (*it);
-			
-	      }
-	      else if ((*it)->isTerminal()) {
-			nseq.push_back( (*it));
-	      }
-	      else {
+			  
+          }
+          else if ((*it)->isTerminal()) {
+              nseq.push_back( (*it));
+          }
+		  else {
 			auto seq = (*it)->getSequence();
 			std::copy (seq->begin (),seq->end (),std::back_inserter (nseq));
-	      }
-	    }
-	    
-	    if (nseq.size ()) {
-	      nword.push_back (eq.ctxt->addSequence (nseq));
+		  }
 		}
-	    lhs = std::move(nword);
+		
+		if (nseq.size ()) {
+		  nword.push_back (eq.ctxt->addSequence (nseq));
+		}
+		lhs = std::move(nword);
 	  }
-    };
-    
+	};
+	
 
 	template<class Inner>
 	class SubstitutionReasoningNew {
@@ -327,17 +313,16 @@ namespace Words {
 		  IEntry* variable = nullptr;
 		  Word* subsWord = nullptr;
 
-          // Select a variable and a proper substitution
-          if (it->lhs.entries () == 1 && (*it->lhs.begin ())->isVariable() && !it->rhs.containsVariable((*it->lhs.begin ()))) {
+          	  // Select a variable and a proper substitution
+          	  if (it->lhs.entries () == 1 && (*it->lhs.begin ())->isVariable() && !it->rhs.containsVariable((*it->lhs.begin ()))) {
 			variable = (*it->lhs.begin ());
 			subsWord = &it->rhs;
 		  }
 
-          if (it->rhs.entries () == 1 && (*it->rhs.begin ())->isVariable() && !it->lhs.containsVariable((*it->rhs.begin ()))) {
+          	  if (it->rhs.entries () == 1 && (*it->rhs.begin ())->isVariable() && !it->lhs.containsVariable((*it->rhs.begin ()))) {
 			variable = (*it->rhs.begin ());
 			subsWord = &it->lhs;
 		  }
-
 
 		  if (variable) {
 			std::vector<Words::Equation> eqs;
@@ -352,36 +337,40 @@ namespace Words {
 			for (auto iit = opt.equations.begin(); iit != opt.equations.end();++iit) {
 			  if (it == iit){
 				continue;
-              }
+              		  }
 
 			  std::vector<Constraints::Constraint_ptr> cstr;
 			  auto res = replaceVarInEquation (*iit,variable,*subsWord,cstr); 
-              if ( res == Simplified::ReducedNsatis)  {
+              		  if ( res == Simplified::ReducedNsatis)  {
 				return Simplified::ReducedNsatis;
-			  }
-              else if ( res == Simplified::JustReduced) {
+			  } else if ( res == Simplified::JustReduced) {
 				std::copy (cstr.begin(),cstr.end(),std::back_inserter(opt.constraints));
-                eqs.push_back (*iit);
+                		eqs.push_back (*iit);
 			  }
-
 			}
 			if (eqs.size() == 0) {
-			  for (auto et = subsWord->ebegin(); et != subsWord->eend(); ++et) {
+			   auto thisVar = substitution.find(variable);
+			   substitution.erase(thisVar);	
+				
+			   for (auto et = subsWord->ebegin(); et != subsWord->eend(); ++et) {
 				if ((*et)->isVariable () ){
-				  Constraints::Constraint_ptr  constr (new Words::Constraints::Unrestricted (*et)); 
+				subsWord->substitudeVariable((*et),Word());  
+				Constraints::Constraint_ptr  constr (new Words::Constraints::Unrestricted (*et)); 
 				  cstr.push_back (constr);
 				}
 			  }
+			  substitution.insert(std::make_pair (variable,*subsWord));
 			}
 			opt.equations = eqs;
 			it = opt.equations.begin();
-            end = opt.equations.end();
+            		end = opt.equations.end();
 			
-		  }
-		  else 
+		  }else 
 			++it;
 		  i++;
 		}
+
+
 		
 		if (opt.equations.size ()){
 		  for (auto x : substitution){
