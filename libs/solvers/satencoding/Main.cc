@@ -1755,12 +1755,12 @@ for (auto& eq: input_options.equations){
   
   int stateVarsSeen = 0;
   int stateVarsOverall = 0;
-  if(wrap){
+  if(1){
 	for(int t = 0 ; t < stateTables.size();t++){
 	  vector<Var> & v = stateTables[t];
 	  int nCols = stateTableColumns[t];
 	  int nRows = stateTableRows[t];
-	  (wrap << "print a " << nRows << " x " << nCols << " matrix..."). endl ();
+	  std::cout << "print a " << nRows << " x " << nCols << " matrix..." << std::endl;//). endl ();
 	  int index = 0;
 	  for(int i = 0 ; i < nRows ; i++){
 		for(int j = 0 ; j < nCols ; j++){
@@ -1768,24 +1768,26 @@ for (auto& eq: input_options.equations){
 		  assert(index == getIndex(nCols, i, j));
 		  if(S.varSeen[v[getIndex(nCols, i, j)]]){
 			stateVarsSeen++;
-			wrap << "*";
+			std::cout << "*";
 		  }
 		  else {
-			wrap << " ";
+			std::cout << " ";
 		  }
 		  index++;
 		}
-		(wrap << "|" << i).endl ();
+		std::cout << "|" << i  << std::endl; //).endl ();
 	  }
 	  assert(index == v.size());
 	  //wrap << endl;
 	}
   }
-  if (wrap){
-	Words::Solvers::Formatter ff ("saw %1% out of %2% state variables! ");
-	(wrap << (ff % stateVarsSeen % stateVarsOverall).str ()).endl(); //<< std::endl;
+  if (1){
+	//Words::Solvers::Formatter ff ("saw %1% out of %2% state variables! ");
+	//(wrap << (ff % stateVarsSeen % stateVarsOverall).str ()).endl(); //<< std::endl;
 	//printf("c saw %d out of %d state variables! \n", stateVarsSeen, stateVarsOverall);
-  
+  	std::cout << "c Saw " << stateVarsSeen << " out of " << stateVarsOverall << " variables!" << std::endl;
+
+
   //-------------- Result is put in a external file
 
 	//printf(ret == l_True ? "s SATISFIABLE\n" : ret == l_False ? "s UNSATISFIABLE\n" : "s INDETERMINATE\n");
