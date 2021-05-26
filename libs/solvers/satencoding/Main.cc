@@ -107,7 +107,7 @@ map<int, Words::Variable*> index2v;
 Words::Options input_options;
 
 vector<string> input_equations_lhs, input_equations_rhs;
-vector<map<pair<int, int>, Var> > equations_lhs, equations_rhs;
+vector<map<pair<int, int>, Var> > equations_lhs, equations_rhs; // SAT encoding
 map<pair<int, int>, Var> constantsVars;
 map<int, int> maxPadding;
 int globalMaxPadding;
@@ -751,11 +751,34 @@ void newEncoding (Solver& S, int szLHS, int szRHS,vector<Var>& stateVars,map<pai
 
 // localOptimisation: add clauses s(i,j) -> (s(i+1, j) \/ s(i+1, j+1) \/ s(i,j+1))
 template<bool newEncode = true>
-void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool localOptimisation, bool fillUntilSquare,StreamWrapper& out){
+void encodeEquation(Solver & S, Words::Equation & eq, bool localOptimisation, bool fillUntilSquare,StreamWrapper& out){
   map<pair<int, int>, Var> w1, w2;
   int szLHS = 0;
   int szRHS = 0;
   int column = 0;
+
+  // w1 resp. lhs
+  for (auto e : eq.lhs){
+  	if (e->isTerminal()){
+  		for(int j = 0 ; j <= sigmaSize ; j++){
+			w1[make_pair(column, j)] = constantsVars[make_pair(tIndices.at(e->getTerminal()), j)];
+	  	}
+	  	column++;
+  	} else if (e->isVariable()){
+		//cout << "c Looking for variable " << input_w1[i] << endl;
+		assert(maxPadding.count(vIndices[e->getVariable()]));
+		for(int j = 0 ; j < maxPadding[vIndices[e->getVariable()]] ; j++){
+			for(int k = 0 ; k <= sigmaSize ; k++){
+				assert(variableVars.count(make_pair(make_pair(vIndices[e->getVariable()], j), k)));
+				w1[make_pair(column, k)] = variableVars[make_pair(make_pair(vIndices[e->getVariable()], j), k)];
+			}
+			column++;
+		}
+  	}
+  }
+
+
+  /*
   for(int i = 0 ; i < input_w1.size() ; i++){
 	if(terminal(input_w1[i])){
 	  for(int j = 0 ; j <= sigmaSize ; j++){
@@ -775,13 +798,38 @@ void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool local
 		column++;
 	  }
 	}
-  }
+  }*/
+
+
+
   szLHS = column;
-  if (out) {
-	Words::Solvers::Formatter formatter ("Done with first part, have %1% many columns")  ; 
-	(out << (formatter % column). str()).endl();
+  if (1) {
+	std::cout << "c LHS done. We have " << szLHS << " many colums." << std::endl;
   }
+
   column = 0;
+  // w2 resp. rhs
+  for (auto e : eq.rhs){
+  	if (e->isTerminal()){
+  		for(int j = 0 ; j <= sigmaSize ; j++){
+			w2[make_pair(column, j)] = constantsVars[make_pair(tIndices.at(e->getTerminal()), j)];
+	  	}
+	  	column++;
+  	} else if (e->isVariable()){
+		//cout << "c Looking for variable " << input_w1[i] << endl;
+		assert(maxPadding.count(vIndices[e->getVariable()]));
+		for(int j = 0 ; j < maxPadding[vIndices[e->getVariable()]] ; j++){
+			for(int k = 0 ; k <= sigmaSize ; k++){
+				assert(variableVars.count(make_pair(make_pair(vIndices[e->getVariable()], j), k)));
+				w2[make_pair(column, k)] = variableVars[make_pair(make_pair(vIndices[e->getVariable()], j), k)];
+			}
+			column++;
+		}
+  	}
+  }
+
+
+  /*
   for(int i = 0 ; i < input_w2.size() ; i++){
 	if(terminal(input_w2[i])){
 	  for(int j = 0 ; j <= sigmaSize ; j++){
@@ -802,7 +850,14 @@ void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool local
 	  }
 	}
   }
+  */
+
+
   szRHS = column;
+  if (1) {
+	std::cout << "c RHS done. We have " << szRHS << " many colums." << std::endl;
+  }
+
   bool ignorePadding = false;
   //bool fillUntilSquare = false;
   if(ignorePadding){
@@ -813,8 +868,8 @@ void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool local
   }
   if(fillUntilSquare){
 	if(szLHS < szRHS){
-	  if (out)
-		(out << "c Padding left-hand side: ").endl();
+	  if (1)
+		std::cout << "c Padding left-hand side: " << std::endl; //).endl();
 	  for( ; szLHS < szRHS ; szLHS++){
 		for(int j = 0 ; j <= sigmaSize ; j++){
 		  assert(w1.count(make_pair(szLHS, j)) == false);
@@ -823,8 +878,8 @@ void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool local
 	  }
 	}
 	if(szLHS > szRHS){
-	  if (out)
-		(out << "c Padding right-hand side: ").endl ();
+	  if (1)
+		std::cout << "c Padding right-hand side: " << std::endl; //).endl ();
 	  for( ; szRHS < szLHS ; szRHS++){
 		for(int j = 0 ; j <= sigmaSize ; j++){
 		  w2[make_pair(szRHS, j)] = constantsVars[make_pair(sigmaSize, j)];
@@ -833,8 +888,10 @@ void encodeEquation(Solver & S, string & input_w1, string & input_w2, bool local
 	}
 	assert(szRHS == szLHS);
   }
-  if (out) {
-	(out << (Words::Solvers::Formatter ("creating table of size %1% x %2%") % szLHS % szRHS).str ()).endl (); 
+  if (1) {
+	//(out << (Words::Solvers::Formatter ("creating table of size %1% x %2%") % szLHS % szRHS).str ()).endl (); 
+	std::cout << "c Creating table of size " << szLHS << "x" << szRHS << std::endl;
+
   }
   
   //map<pair<int, int>, Var> stateVars;
@@ -1657,17 +1714,20 @@ for (auto& eq: input_options.equations){
 	}
 	
 	
-	
+	/*
 	for(int i = 0 ; i < input_equations_lhs.size();i++){
 	  encodeEquation<newencode>(S, input_equations_lhs[i], input_equations_rhs[i], true, squareAuto,wrap);
 	}
+	*/
 
-	/*for (auto& eq : input_options.equations){
+	for (auto& eq : input_options.equations){
 	  encodeEquation<newencode>(S, eq, true, squareAuto, wrap);
-	}*/
+	}
 
 
   }
+
+  // HIER
 
 
   
