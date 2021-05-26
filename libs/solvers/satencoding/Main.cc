@@ -1805,12 +1805,12 @@ for (auto& eq: input_options.equations){
 	  for(int j = 0 ; j < maxPadding[i] ; j++){
 		for(int k = 0 ; k < sigmaSize ; k++){
 		  if(S.modelValue(variableVars[make_pair(make_pair(i, j), k)]) == l_True){
-			sub.push_back (context.findSymbol (index2t[k]));
+			sub.push_back (index2t[k]);
 		
 		  }
 		}
 	  }
-	  substitution[context.findSymbol (index2v[i])] = std::move(sub);
+	  substitution[index2v[i]] = std::move(sub);
 	}
 
 	//To be handled by external solver
