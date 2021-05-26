@@ -364,7 +364,6 @@ int main (int argc, char** argv) {
 		  }
 		  
 		  if (diagnostic)
-			std::cout << "XXX" << std::endl;
 			solver->enableDiagnosticOutput ();	
 		  try {
 			Words::Solvers::StreamRelay relay (std::cout);

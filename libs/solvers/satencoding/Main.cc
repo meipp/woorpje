@@ -804,7 +804,7 @@ void encodeEquation(Solver & S, Words::Equation & eq, bool localOptimisation, bo
 
   szLHS = column;
   if (out) {
-	std::cout << "c LHS done. We have " << szLHS << " many colums." << std::endl;
+	(out << "c LHS done. We have " << szLHS << " many colums.").endl();
   }
 
   column = 0;
@@ -855,7 +855,7 @@ void encodeEquation(Solver & S, Words::Equation & eq, bool localOptimisation, bo
 
   szRHS = column;
   if (out) {
-	std::cout << "c RHS done. We have " << szRHS << " many colums." << std::endl;
+	(out << "c RHS done. We have " << szRHS << " many colums.").endl(); 
   }
 
   bool ignorePadding = false;
@@ -869,7 +869,7 @@ void encodeEquation(Solver & S, Words::Equation & eq, bool localOptimisation, bo
   if(fillUntilSquare){
 	if(szLHS < szRHS){
 	  if (out)
-		std::cout << "c Padding left-hand side: " << std::endl; //).endl();
+		(out << "c Padding left-hand side: ").endl();
 	  for( ; szLHS < szRHS ; szLHS++){
 		for(int j = 0 ; j <= sigmaSize ; j++){
 		  assert(w1.count(make_pair(szLHS, j)) == false);
@@ -879,7 +879,7 @@ void encodeEquation(Solver & S, Words::Equation & eq, bool localOptimisation, bo
 	}
 	if(szLHS > szRHS){
 	  if (out)
-		std::cout << "c Padding right-hand side: " << std::endl; //).endl ();
+		(out << "c Padding right-hand side: ").endl ();
 	  for( ; szRHS < szLHS ; szRHS++){
 		for(int j = 0 ; j <= sigmaSize ; j++){
 		  w2[make_pair(szRHS, j)] = constantsVars[make_pair(sigmaSize, j)];
@@ -889,9 +889,7 @@ void encodeEquation(Solver & S, Words::Equation & eq, bool localOptimisation, bo
 	assert(szRHS == szLHS);
   }
   if (out) {
-	//(out << (Words::Solvers::Formatter ("creating table of size %1% x %2%") % szLHS % szRHS).str ()).endl (); 
-	std::cout << "c Creating table of size " << szLHS << "x" << szRHS << std::endl;
-
+	(out << (Words::Solvers::Formatter ("creating table of size %1% x %2%") % szLHS % szRHS).str ()).endl (); 
   }
   
   //map<pair<int, int>, Var> stateVars;
@@ -976,11 +974,11 @@ void sharpenBounds(Solver & s, Words::Equation& eq,StreamWrapper& out){
    int c = 0;
     getCoefficients(eq, coefficients, c,letter_coefficients);
 	if (out) {
-	  std::cout << "Got equation " << std::endl; //).endl();
+	  (out << "Got equation ").endl();
 	  for(map<int, int>::iterator it = coefficients.begin() ; it != coefficients.end();it++){
-		  std::cout << it->second << " * " << index2v[it->first]->getRepr() << " ";
+		  out << it->second << " * " << index2v[it->first]->getRepr() << " ";
 	  }
-	  std::cout << "= " << c << std::endl;//).endl ();
+	  (out << "= " << c).endl ();
 	}
 	for(map<int, int>::iterator it = coefficients.begin() ; it != coefficients.end();it++){
         if(it->second != 0){ // only consider unbalanced variables!
@@ -992,7 +990,7 @@ void sharpenBounds(Solver & s, Words::Equation& eq,StreamWrapper& out){
                 }
             }
 			if (out)
-			  std::cout << "c Can infer bound " << index2v[it->first]->getRepr() << " <= " << rhs << "/" << it->second << " = " << (rhs / it->second) << std::endl; //).endl ();
+			  (out << "c Can infer bound " << index2v[it->first]->getRepr() << " <= " << rhs << "/" << it->second << " = " << (rhs / it->second)).endl ();
             rhs /= it->second;
             if(rhs < maxPadding[it->first])
 		//std::cout << "c Setting new bound for " << index2v[it->first]->getRepr() << ": " << rhs << " instead of " << maxPadding[it->first] << std::endl;
@@ -1623,7 +1621,7 @@ for (auto& eq: input_options.equations){
 	
 	for(int i = 0 ; i < numVars ; i++){
 	  
-	std::cout  << "bound for " << index2v[i]->getRepr() << ": " << maxPadding[i] << std::endl; //).endl ();
+	(wrap  << "bound for " << index2v[i]->getRepr() << ": " << maxPadding[i]).endl ();
   }
 	// Encode variables for terminal symbols
 	
@@ -1755,12 +1753,12 @@ for (auto& eq: input_options.equations){
   
   int stateVarsSeen = 0;
   int stateVarsOverall = 0;
-  if(out){
+  if(wrap){
 	for(int t = 0 ; t < stateTables.size();t++){
 	  vector<Var> & v = stateTables[t];
 	  int nCols = stateTableColumns[t];
 	  int nRows = stateTableRows[t];
-	  std::cout << "print a " << nRows << " x " << nCols << " matrix..." << std::endl;//). endl ();
+	  (wrap << "print a " << nRows << " x " << nCols << " matrix..."). endl ();
 	  int index = 0;
 	  for(int i = 0 ; i < nRows ; i++){
 		for(int j = 0 ; j < nCols ; j++){
@@ -1768,23 +1766,23 @@ for (auto& eq: input_options.equations){
 		  assert(index == getIndex(nCols, i, j));
 		  if(S.varSeen[v[getIndex(nCols, i, j)]]){
 			stateVarsSeen++;
-			std::cout << "*";
+			wrap << "*";
 		  }
 		  else {
-			std::cout << " ";
+			wrap << " ";
 		  }
 		  index++;
 		}
-		std::cout << "|" << i  << std::endl; //).endl ();
+		 (wrap << "|" << i).endl ();
 	  }
 	  assert(index == v.size());
 	  //wrap << endl;
 	}
   }
-  if (out){
-	//Words::Solvers::Formatter ff ("saw %1% out of %2% state variables! ");
-	//(wrap << (ff % stateVarsSeen % stateVarsOverall).str ()).endl(); //<< std::endl;
-  	std::cout << "c Saw " << stateVarsSeen << " out of " << stateVarsOverall << " variables!" << std::endl;
+  if (wrap){
+	Words::Solvers::Formatter ff ("saw %1% out of %2% state variables! ");
+	(wrap << (ff % stateVarsSeen % stateVarsOverall).str ()).endl(); //<< std::endl;
+  	//std::cout << "c Saw " << stateVarsSeen << " out of " << stateVarsOverall << " variables!" << std::endl;
   }
 
   if(S.showModel && ret==l_True) {
@@ -1834,7 +1832,7 @@ for (auto& eq: input_options.equations){
 	  }
 	  cout << endl;
 	  }*/
-	if(out){
+	if(wrap){
 	  for(int t = 0 ; t < stateTables.size();t++){
 		vector<Var> & v = stateTables[t];
 		int index = 0;
@@ -1843,19 +1841,18 @@ for (auto& eq: input_options.equations){
 				
 			assert(index == getIndex(stateTableColumns[t], i, j));
 			if(S.modelValue(v[index]) == l_True){
-			  std::cout << "*";
+			  wrap << "*";
 			}
 			else if(S.modelValue(v[index]) == l_False){
-			  std::cout << " ";
+			  wrap << " ";
 			}
 			else
-			  std::cout << "?";
+			   wrap << "?";
 			index++;
 		  }
-		  std::cout << "|" << i << std::endl; //). endl ();
+		  (wrap << "|" << i). endl ();
 		}
-		//wrap.endl();
-		std::cout << "" << std::endl;
+		wrap.endl();
 	  }
 	}
 
