@@ -174,15 +174,14 @@ void readSymbols(Words::Word & s){
 		index2t[sigmaSize-1] = e->getTerminal();
           }
 	} else if (e->isVariable()){
-	  int tmp = vIndices.size();
-	  vIndices[e->getVariable()] = tmp;
-	  index2v[tmp] = e->getVariable();	
+	      if(vIndices.count(e->getVariable()) == 0){
+	  	int tmp = vIndices.size();
+	  	vIndices[e->getVariable()] = tmp;
+	  	index2v[tmp] = e->getVariable();
+	     }	
 	}
 
   }
-
-
-
 
    /*for(size_t j = 0 ; j < s.size();j++){
 	if(terminal(s[j])){
@@ -237,7 +236,7 @@ void reify_or(Solver & s, Lit lhs, vec<Lit> & rhs){
 
 
 void addOneHotEncoding(Solver & s){
-  int numVars = variableIndices.size();
+  int numVars = vIndices.size();
 
   assert(numVars > 0);
   for(int i = 0 ; i < numVars ; i++){
@@ -919,12 +918,12 @@ void sharpenBounds(Solver & s, Words::Equation& eq,StreamWrapper& out){
   map<int, int> coefficients, letter_coefficients;
    int c = 0;
     getCoefficients(eq, coefficients, c,letter_coefficients);
-	if (out) {
-	  (out << "Got equation ").endl();
+	if (0) {
+	  std::cout << "Got equation " << std::endl; //).endl();
 	  for(map<int, int>::iterator it = coefficients.begin() ; it != coefficients.end();it++){
-		out << it->second << " * " << index2v[it->first] << " ";
+		  std::cout << it->second << " * " << index2v[it->first]->getRepr() << " ";
 	  }
-	  (out << "= " << c).endl ();
+	  std::cout << "= " << c << std::endl;//).endl ();
 	}
 	for(map<int, int>::iterator it = coefficients.begin() ; it != coefficients.end();it++){
         if(it->second != 0){ // only consider unbalanced variables!
@@ -935,10 +934,11 @@ void sharpenBounds(Solver & s, Words::Equation& eq,StreamWrapper& out){
                     rhs -= others->second * maxPadding[others->first];
                 }
             }
-			if (out)
-			  (out << "c Can infer bound " << index2v[it->first] << " <= " << rhs << "/" << it->second << " = " << (rhs / it->second)).endl ();
+			if (0)
+			  std::cout << "c Can infer bound " << index2v[it->first]->getRepr() << " <= " << rhs << "/" << it->second << " = " << (rhs / it->second) << std::endl; //).endl ();
             rhs /= it->second;
             if(rhs < maxPadding[it->first])
+		//std::cout << "c Setting new bound for " << index2v[it->first]->getRepr() << ": " << rhs << " instead of " << maxPadding[it->first] << std::endl;
                 maxPadding[it->first] = rhs;
         }
     }
@@ -1495,9 +1495,6 @@ Words::Solvers::Result setupSolverMain (Words::Options& opt){//std::vector<std::
 	readSymbols(eq.rhs);
   }
 
-
-
-
   return  Words::Solvers::Result::NoIdea;
 
 }
@@ -1552,6 +1549,8 @@ template<bool newencode = true>
   }
   */
 
+
+
 for (auto& eq: input_options.equations){
 	sharpenBounds(S,eq,wrap);
 }
@@ -1562,13 +1561,12 @@ for (auto& eq: input_options.equations){
   {
 	Words::Solvers::Timing::Timer overalltimer (tkeeper,"Encoding ");
 	
-
-//	index2t[sigmaSize] = context.getEpsilon(); //THIS NEEDS A FIX
-	numVars = variableIndices.size();
+	index2t[sigmaSize] = context.getEpsilon(); //THIS NEEDS A FIX
+	numVars = vIndices.size();
 	
 	for(int i = 0 ; i < numVars ; i++){
 	  
-	  (wrap << "bound for " << index2v[i] << ": " << maxPadding[i]).endl ();
+	std::cout  << "bound for " << index2v[i]->getRepr() << ": " << maxPadding[i] << std::endl; //).endl ();
   }
 	// Encode variables for terminal symbols
 	
@@ -1663,6 +1661,11 @@ for (auto& eq: input_options.equations){
 	for(int i = 0 ; i < input_equations_lhs.size();i++){
 	  encodeEquation<newencode>(S, input_equations_lhs[i], input_equations_rhs[i], true, squareAuto,wrap);
 	}
+
+	/*for (auto& eq : input_options.equations){
+	  encodeEquation<newencode>(S, eq, true, squareAuto, wrap);
+	}*/
+
 
   }
 

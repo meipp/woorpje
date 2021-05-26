@@ -550,7 +550,7 @@ namespace Words {
     IEntry* addSequence (const SeqInput&);
     IEntry* findSymbol (const std::string& c) const;
     IEntry* findSymbol (char c) const { return findSymbol (std::string(1,c));}
-    Terminal* getEpsilon ();
+    Terminal* getEpsilon () const;
     std::unique_ptr<WordBuilder> makeWordBuilder (Word& w)  {return std::make_unique<WordBuilder> (*this,w);}
     bool conformsToConventions () const;
     size_t nbVars () const;

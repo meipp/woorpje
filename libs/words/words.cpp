@@ -146,7 +146,7 @@ namespace Words {
 	return nullptr;
   }
 
-  Terminal* Context::getEpsilon () {
+  Terminal* Context::getEpsilon () const {
 	return _internal->terminals[0];
   }
   
