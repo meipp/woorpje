@@ -118,9 +118,8 @@ namespace Words {
 		  std::vector<std::pair<char, int>> lhs;
 		  int rhs = lc->getRHS ();
 		  for (auto& vm : *lc) {
-			  char variableName = vm.entry->getRepr ();
 			  int coefficient = vm.number;
-			  lhs.push_back(std::make_pair(variableName,coefficient));
+			  lhs.push_back(std::make_pair(vm.entry->getVariable(),coefficient));
 		  }
 		  addLinearConstraint(lhs,rhs);
 

@@ -141,11 +141,11 @@ void clear () {
 }
 
 void clearIndexMaps () {
-	 index2Terminal.clear ();
-	  index2Varible.clear ();
-	  terminalIndices.clear ();
-	  variableIndices.clear ();
-	  sigmaSize = 0;
+	 index2t.clear ();
+	 index2v.clear ();
+	 tIndices.clear ();
+	 vIndices.clear ();
+	 sigmaSize = 0;
 }
 
 void clearLinears() {
@@ -161,13 +161,8 @@ void readSymbols(string & s){
 
 void readSymbols(Words::Word & s){
   for (auto e: s){
-	if(e->isSequence()){
-   	  /*for(auto ee: (e->getSequence())){
-	 	if(tIndices.count(ee->getTerminal()) == 0){
-			tIndices[ee->getTerminal()]=sigmaSize++;
-			index2t[sigmaSize-1] = ee->getTerminal();
-		}
-          }*/	
+  	if(e->isSequence()){	
+			// TODO: Add Sequences
 	} else if (e->isTerminal()){
 	  if(tIndices.count(e->getTerminal()) == 0){
 	  	tIndices[e->getTerminal()]=sigmaSize++;
@@ -182,20 +177,6 @@ void readSymbols(Words::Word & s){
 	}
 
   }
-
-   /*for(size_t j = 0 ; j < s.size();j++){
-	if(terminal(s[j])){
-	  if(terminalIndices.count(s[j]) == 0){
-		terminalIndices[s[j]]=sigmaSize++;
-		index2Terminal[sigmaSize-1] = s[j];
-	  }
-	}
-	else if(variableIndices.count(s[j]) == 0){
-	  int tmp = variableIndices.size();
-	  variableIndices[s[j]] = tmp;
-	  index2Varible[tmp] = s[j];
-	}
-  }*/
 }
 
 // lhs <-> /\ rhs
@@ -274,8 +255,9 @@ void getCoefficients(Words::Equation& eq, map<int, int> & coefficients, int & c,
     assert(c == 0);
 
    for (auto e : eq.lhs){
-	// TODO: Add Sequences
-       if (e->isTerminal()){
+       if(e->isSequence()){	
+			// TODO: Add Sequences
+		} else if (e->isTerminal()){
        		letter_coefficients[tIndices.at(e->getTerminal())]++;
 		c++;	
        } else if (e->isVariable()){
@@ -284,39 +266,15 @@ void getCoefficients(Words::Equation& eq, map<int, int> & coefficients, int & c,
    }
 
    for (auto e : eq.rhs){
-	if (e->isTerminal()){
+	if(e->isSequence()){	
+			// TODO: Add Sequences
+		} else if (e->isTerminal()){
 		letter_coefficients[tIndices.at(e->getTerminal())]--;
 		c--;
 	} else if (e->isVariable()){
 		coefficients[vIndices[e->getVariable()]]++;
  	}
    }
-
-
-
-/*
-
-    for(size_t j = 0 ; j < lhs.size();j++){
-        if(terminal(lhs[j])){
-			letter_coefficients[terminalIndices.at(lhs[j])]++;
-            c++;
-        }
-        else {
-            assert(variableIndices.count(lhs[j]) != 0);
-            coefficients[variableIndices[lhs[j]]]--;
-        }
-    }
-    for(size_t j = 0 ; j < rhs.size();j++){
-        if(terminal(rhs[j])){
-			letter_coefficients[terminalIndices.at(rhs[j])]--;
-            c--;
-        }
-        else {
-		  assert(variableIndices.count(rhs[j]) != 0);
-		  coefficients[variableIndices[rhs[j]]]++;
-        }
-    }
-    */
 }
 
 // TODO: Lin-Constraint (via MDDs)
@@ -472,15 +430,6 @@ bool addSizeEqualityConstraint(Solver & s, Words::Equation& eq,StreamWrapper& ou
 
 	}
 
-	//        vector<pair<int, int> > & v = it->second;
-	//        for(int i = 0 ; i < v.size();i++){
-	//            //
-	//            vec<Lit> ps;
-	//            ps.push(~mkLit(partialSumVariables[it->first])); // A[i-1, j]
-	//            assert(coefficients.count(i));
-	//            int c = (v[i].second - it->first.second) / coefficients[i];
-	//            assert(it->first.second + c * coefficients[i] == v[i].second);
-	//        }
   }
   return true;
 }
@@ -759,7 +708,10 @@ void encodeEquation(Solver & S, Words::Equation & eq, bool localOptimisation, bo
 
   // w1 resp. lhs
   for (auto e : eq.lhs){
-  	if (e->isTerminal()){
+
+  	if(e->isSequence()){	
+			// TODO: Add Sequences
+	} else if (e->isTerminal()){
   		for(int j = 0 ; j <= sigmaSize ; j++){
 			w1[make_pair(column, j)] = constantsVars[make_pair(tIndices.at(e->getTerminal()), j)];
 	  	}
@@ -777,31 +729,6 @@ void encodeEquation(Solver & S, Words::Equation & eq, bool localOptimisation, bo
   	}
   }
 
-
-  /*
-  for(int i = 0 ; i < input_w1.size() ; i++){
-	if(terminal(input_w1[i])){
-	  for(int j = 0 ; j <= sigmaSize ; j++){
-		w1[make_pair(column, j)] = constantsVars[make_pair(terminalIndices.at(input_w1[i]), j)];
-	  }
-	  column++;
-	}
-	else{
-	  assert(variable(input_w1[i]));
-	  //cout << "c Looking for variable " << input_w1[i] << endl;
-	  assert(maxPadding.count(variableIndices[input_w1[i]]));
-	  for(int j = 0 ; j < maxPadding[variableIndices[input_w1[i]]] ; j++){
-		for(int k = 0 ; k <= sigmaSize ; k++){
-		  assert(variableVars.count(make_pair(make_pair(variableIndices[input_w1[i]], j), k)));
-		  w1[make_pair(column, k)] = variableVars[make_pair(make_pair(variableIndices[input_w1[i]], j), k)];
-		}
-		column++;
-	  }
-	}
-  }*/
-
-
-
   szLHS = column;
   if (out) {
 	(out << "c LHS done. We have " << szLHS << " many colums.").endl();
@@ -810,7 +737,9 @@ void encodeEquation(Solver & S, Words::Equation & eq, bool localOptimisation, bo
   column = 0;
   // w2 resp. rhs
   for (auto e : eq.rhs){
-  	if (e->isTerminal()){
+  	if(e->isSequence()){	
+			// TODO: Add Sequences
+	} else if (e->isTerminal()){
   		for(int j = 0 ; j <= sigmaSize ; j++){
 			w2[make_pair(column, j)] = constantsVars[make_pair(tIndices.at(e->getTerminal()), j)];
 	  	}
@@ -827,31 +756,6 @@ void encodeEquation(Solver & S, Words::Equation & eq, bool localOptimisation, bo
 		}
   	}
   }
-
-
-  /*
-  for(int i = 0 ; i < input_w2.size() ; i++){
-	if(terminal(input_w2[i])){
-	  for(int j = 0 ; j <= sigmaSize ; j++){
-		w2[make_pair(column, j)] = constantsVars[make_pair(terminalIndices.at(input_w2[i]), j)];
-	  }
-	  column++;
-	}
-	else{
-	  assert(variable(input_w2[i]));
-	  assert(maxPadding.count(variableIndices[input_w2[i]]));
-
-	  for(int j = 0 ; j < maxPadding[variableIndices[input_w2[i]]] ; j++){
-		for(int k = 0 ; k <= sigmaSize ; k++){
-		  assert(variableVars.count(make_pair(make_pair(variableIndices[input_w2[i]], j), k)));
-		  w2[make_pair(column, k)] = variableVars[make_pair(make_pair(variableIndices[input_w2[i]], j), k)];
-		}
-		column++;
-	  }
-	}
-  }
-  */
-
 
   szRHS = column;
   if (out) {
@@ -1520,8 +1424,6 @@ bool substitude(std::string& str, const char& from, const std::string& to) {
 
 Words::Solvers::Result setupSolverMain (Words::Options& opt){//std::vector<std::string>& mlhs, std::vector<std::string>& mrhs) {
  clearIndexMaps();
-  //input_equations_lhs = mlhs;
-  //input_equations_rhs = mrhs;
   vector<std::string> input_equations_lhs_tmp;
   vector<std::string> input_equations_rhs_tmp;
 
@@ -1554,12 +1456,12 @@ Words::Solvers::Result setupSolverMain (Words::Options& opt){//std::vector<std::
 
 }
 
-void addLinearConstraint (vector<pair<char, int>> lhs, int rhs) {
+void addLinearConstraint (vector<pair<Words::Variable*, int>> lhs, int rhs) {
 	map<int,int> coefficients;
 	for (auto x : lhs){
 		// NOT CORRECT, THIS NEEDS A FIX!!!!
-		if(variableIndices.count(x.first)){
-			coefficients[variableIndices.at(x.first)] = x.second;
+		if(vIndices.count(x.first)){
+			coefficients[vIndices.at(x.first)] = x.second;
 		}
 
 	}
@@ -1589,26 +1491,9 @@ template<bool newencode = true>
   assert(reg == 0 && "No regulars yet! ");
   
 
-
-  //sigmaSize = terminalIndices.size();
-  // TODO: Optimise order!
-  //cout << "ALL used equations:" << endl;
-  /*for(int i = 0 ; i < input_options.equations.size();i++){
-	// TODO: Derive bounds on lengths here?
-
-
-	//cout << input_equations_lhs[i] << " " << input_equations_rhs[i] << endl;
-
-
-	sharpenBounds(S, input_equations_lhs[i], input_equations_rhs[i],wrap);
-  }
-  */
-
-
-
-for (auto& eq: input_options.equations){
+  for (auto& eq: input_options.equations){
 	sharpenBounds(S,eq,wrap);
-}
+  }
 
 
 
@@ -1616,13 +1501,12 @@ for (auto& eq: input_options.equations){
   {
 	Words::Solvers::Timing::Timer overalltimer (tkeeper,"Encoding ");
 	
-	index2t[sigmaSize] = context.getEpsilon(); //THIS NEEDS A FIX
+	index2t[sigmaSize] = context.getEpsilon();
 	numVars = vIndices.size();
 	
 	for(int i = 0 ; i < numVars ; i++){
-	  
-	(wrap  << "bound for " << index2v[i]->getRepr() << ": " << maxPadding[i]).endl ();
-  }
+	  (wrap  << "bound for " << index2v[i]->getRepr() << ": " << maxPadding[i]).endl ();
+  	}
 	// Encode variables for terminal symbols
 	
 	for(int i = 0 ; i <= sigmaSize ; i++){
@@ -1673,15 +1557,6 @@ for (auto& eq: input_options.equations){
 	}
 	addOneHotEncoding(S);
   	
-	/*
-	for(int i = 0 ; i < input_equations_lhs.size();i++){
-	  bool succ = addSizeEqualityConstraint(S, input_equations_lhs[i], input_equations_rhs[i],wrap);
-	  if(!succ){
-		return Words::Solvers::Result::NoSolution;
-	  }
-	}
-	*/
-
 	for (auto& eq : input_options.equations){
 		bool succ = addSizeEqualityConstraint(S, eq, wrap);
 		if (!succ){
