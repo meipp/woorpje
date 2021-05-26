@@ -803,7 +803,7 @@ void encodeEquation(Solver & S, Words::Equation & eq, bool localOptimisation, bo
 
 
   szLHS = column;
-  if (1) {
+  if (out) {
 	std::cout << "c LHS done. We have " << szLHS << " many colums." << std::endl;
   }
 
@@ -854,7 +854,7 @@ void encodeEquation(Solver & S, Words::Equation & eq, bool localOptimisation, bo
 
 
   szRHS = column;
-  if (1) {
+  if (out) {
 	std::cout << "c RHS done. We have " << szRHS << " many colums." << std::endl;
   }
 
@@ -868,7 +868,7 @@ void encodeEquation(Solver & S, Words::Equation & eq, bool localOptimisation, bo
   }
   if(fillUntilSquare){
 	if(szLHS < szRHS){
-	  if (1)
+	  if (out)
 		std::cout << "c Padding left-hand side: " << std::endl; //).endl();
 	  for( ; szLHS < szRHS ; szLHS++){
 		for(int j = 0 ; j <= sigmaSize ; j++){
@@ -878,7 +878,7 @@ void encodeEquation(Solver & S, Words::Equation & eq, bool localOptimisation, bo
 	  }
 	}
 	if(szLHS > szRHS){
-	  if (1)
+	  if (out)
 		std::cout << "c Padding right-hand side: " << std::endl; //).endl ();
 	  for( ; szRHS < szLHS ; szRHS++){
 		for(int j = 0 ; j <= sigmaSize ; j++){
@@ -888,7 +888,7 @@ void encodeEquation(Solver & S, Words::Equation & eq, bool localOptimisation, bo
 	}
 	assert(szRHS == szLHS);
   }
-  if (1) {
+  if (out) {
 	//(out << (Words::Solvers::Formatter ("creating table of size %1% x %2%") % szLHS % szRHS).str ()).endl (); 
 	std::cout << "c Creating table of size " << szLHS << "x" << szRHS << std::endl;
 
@@ -975,7 +975,7 @@ void sharpenBounds(Solver & s, Words::Equation& eq,StreamWrapper& out){
   map<int, int> coefficients, letter_coefficients;
    int c = 0;
     getCoefficients(eq, coefficients, c,letter_coefficients);
-	if (0) {
+	if (out) {
 	  std::cout << "Got equation " << std::endl; //).endl();
 	  for(map<int, int>::iterator it = coefficients.begin() ; it != coefficients.end();it++){
 		  std::cout << it->second << " * " << index2v[it->first]->getRepr() << " ";
@@ -991,7 +991,7 @@ void sharpenBounds(Solver & s, Words::Equation& eq,StreamWrapper& out){
                     rhs -= others->second * maxPadding[others->first];
                 }
             }
-			if (0)
+			if (out)
 			  std::cout << "c Can infer bound " << index2v[it->first]->getRepr() << " <= " << rhs << "/" << it->second << " = " << (rhs / it->second) << std::endl; //).endl ();
             rhs /= it->second;
             if(rhs < maxPadding[it->first])
@@ -1755,7 +1755,7 @@ for (auto& eq: input_options.equations){
   
   int stateVarsSeen = 0;
   int stateVarsOverall = 0;
-  if(1){
+  if(out){
 	for(int t = 0 ; t < stateTables.size();t++){
 	  vector<Var> & v = stateTables[t];
 	  int nCols = stateTableColumns[t];
@@ -1781,7 +1781,7 @@ for (auto& eq: input_options.equations){
 	  //wrap << endl;
 	}
   }
-  if (1){
+  if (out){
 	//Words::Solvers::Formatter ff ("saw %1% out of %2% state variables! ");
 	//(wrap << (ff % stateVarsSeen % stateVarsOverall).str ()).endl(); //<< std::endl;
   	std::cout << "c Saw " << stateVarsSeen << " out of " << stateVarsOverall << " variables!" << std::endl;
@@ -1834,7 +1834,7 @@ for (auto& eq: input_options.equations){
 	  }
 	  cout << endl;
 	  }*/
-	if(1){
+	if(out){
 	  for(int t = 0 ; t < stateTables.size();t++){
 		vector<Var> & v = stateTables[t];
 		int index = 0;
