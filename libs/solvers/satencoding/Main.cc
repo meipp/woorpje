@@ -1784,14 +1784,9 @@ for (auto& eq: input_options.equations){
   if (1){
 	//Words::Solvers::Formatter ff ("saw %1% out of %2% state variables! ");
 	//(wrap << (ff % stateVarsSeen % stateVarsOverall).str ()).endl(); //<< std::endl;
-	//printf("c saw %d out of %d state variables! \n", stateVarsSeen, stateVarsOverall);
   	std::cout << "c Saw " << stateVarsSeen << " out of " << stateVarsOverall << " variables!" << std::endl;
-
-
-  //-------------- Result is put in a external file
-
-	//printf(ret == l_True ? "s SATISFIABLE\n" : ret == l_False ? "s UNSATISFIABLE\n" : "s INDETERMINATE\n");
   }
+
   if(S.showModel && ret==l_True) {
 	printf("v ");
 	for (int i = 0; i < S.nVars(); i++)
@@ -1810,12 +1805,12 @@ for (auto& eq: input_options.equations){
 	  for(int j = 0 ; j < maxPadding[i] ; j++){
 		for(int k = 0 ; k < sigmaSize ; k++){
 		  if(S.modelValue(variableVars[make_pair(make_pair(i, j), k)]) == l_True){
-			sub.push_back (context.findSymbol (index2Terminal[k]));
+			sub.push_back (context.findSymbol (index2t[k]));
 		
 		  }
 		}
 	  }
-	  substitution[context.findSymbol (index2Varible[i])] = std::move(sub);
+	  substitution[context.findSymbol (index2v[i])] = std::move(sub);
 	}
 
 	//To be handled by external solver
@@ -1839,7 +1834,7 @@ for (auto& eq: input_options.equations){
 	  }
 	  cout << endl;
 	  }*/
-	if(wrap){
+	if(1){
 	  for(int t = 0 ; t < stateTables.size();t++){
 		vector<Var> & v = stateTables[t];
 		int index = 0;
@@ -1848,18 +1843,19 @@ for (auto& eq: input_options.equations){
 				
 			assert(index == getIndex(stateTableColumns[t], i, j));
 			if(S.modelValue(v[index]) == l_True){
-			  wrap << "*";
+			  std::cout << "*";
 			}
 			else if(S.modelValue(v[index]) == l_False){
-			  wrap << " ";
+			  std::cout << " ";
 			}
 			else
-			  wrap << "?";
+			  std::cout << "?";
 			index++;
 		  }
-		  (wrap << "|" << i). endl ();
+		  std::cout << "|" << i << std::endl; //). endl ();
 		}
-		wrap.endl();
+		//wrap.endl();
+		std::cout << "" << std::endl;
 	  }
 	}
 
