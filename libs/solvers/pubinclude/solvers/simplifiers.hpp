@@ -306,6 +306,9 @@ namespace Words {
 	  }
 
 	  static Simplified solverReduce  (Words::Options& opt, Substitution& substitution, std::vector<Constraints::Constraint_ptr>& cstr) {
+		return Simplified::JustReduced;
+		  
+		  
 		std::vector<Words::Equation>::iterator it = opt.equations.begin();
 		std::vector<Words::Equation>::iterator end = opt.equations.end();
 		size_t i = 0;

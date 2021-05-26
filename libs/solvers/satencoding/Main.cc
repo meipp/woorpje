@@ -910,7 +910,7 @@ void sharpenBounds(Solver & s, Words::Equation& eq,StreamWrapper& out){
 bool addLinearEqualityConstraint(Solver & s, map<int,int> & coefficients, int & rhs, StreamWrapper&out){
 	  set<pair<int, int>> states;
 	  set<pair<int, int>> acceptingStates;
-	  int numVars = variableIndices.size();
+	  int numVars = vIndices.size();
 	  states.insert(make_pair(-1, 0));    // state for the empty prefix
 	  vector<int >  currentRow;
 	  map<pair<int, int>, set<pair<int, int> > > predecessors, successors;
@@ -937,9 +937,9 @@ bool addLinearEqualityConstraint(Solver & s, map<int,int> & coefficients, int & 
 		(out << (Words::Solvers::Formatter ("Created %d states for MDD! ") % states.size ()).str()).endl ();
 	  }
 	  //printf("c created %d states for MDD! \n", states.size());
-	  /*for(set<pair<int, int> >::iterator it = states.begin() ; it != states.end();it++){
-		cout << "initial state: " << it->first << " " << it->second << endl;
-	    }*/
+	  //for(set<pair<int, int> >::iterator it = states.begin() ; it != states.end();it++){
+	  //cout << "initial state: " << it->first << " " << it->second << endl;
+	  //  }
 
 	  if(acceptingStates.size() == 0){
 		return false;
@@ -1461,10 +1461,11 @@ void addLinearConstraint (vector<pair<Words::Variable*, int>> lhs, int rhs) {
 	for (auto x : lhs){
 		// NOT CORRECT, THIS NEEDS A FIX!!!!
 		if(vIndices.count(x.first)){
-			coefficients[vIndices.at(x.first)] = x.second;
+			coefficients[vIndices[x.first]] = x.second;
 		}
 
 	}
+
 	input_linears_lhs.push_back (coefficients);
 	input_linears_rhs.push_back (rhs);
 }
@@ -1579,6 +1580,8 @@ template<bool newencode = true>
 		/* if (lhsValue > input_linears_rhs[i]){
 			 return Words::Solvers::Result::NoSolution; //DefinitelyNoSolution;
 		 }*/
+
+
 
 		  bool succ = addLinearEqualityConstraint(S, input_linears_lhs[i], input_linears_rhs[i],wrap);
 		  if(!succ){

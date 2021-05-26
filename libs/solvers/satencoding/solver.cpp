@@ -13,7 +13,7 @@
 
 Words::Solvers::Result setupSolverMain (Words::Options& opt); //std::vector<std::string>&, std::vector<std::string>&);
 void clearLinears();
-void addLinearConstraint (std::vector<std::pair<char, int>> lhs, int rhs);
+void addLinearConstraint (std::vector<std::pair<Words::Variable*, int>> lhs, int rhs);
 
 template<bool>
 ::Words::Solvers::Result runSolver (const bool squareAuto, size_t bound, const Words::Context&,Words::Substitution&,Words::Solvers::Timing::Keeper&,std::ostream*);
@@ -115,7 +115,7 @@ namespace Words {
 			relay.pushMessage ("Missing Dummy Variable");
 			return false;
 		  }
-		  std::vector<std::pair<char, int>> lhs;
+		  std::vector<std::pair<Words::Variable*, int>> lhs;
 		  int rhs = lc->getRHS ();
 		  for (auto& vm : *lc) {
 			  int coefficient = vm.number;
