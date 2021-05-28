@@ -9,6 +9,10 @@ include_directories(/usr/local/Cellar/flex/2.6.4_1/include)
 endif(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
 
+include_directories(/home/mku/share/packages/include)
+include_directories(/home/mku/share/packages/include/cvc4)
+
+
 SET (ToolName woorpje)
 SET (Translator ${ToolName}2SMT)
 SET (VERSION_MAJOR 0)

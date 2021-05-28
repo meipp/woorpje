@@ -18,7 +18,6 @@
  	set_property(TARGET murmur PROPERTY IMPORTED_LOCATION ${install_dir}/lib/libmurmurhash.so.2.0.0)
 	
 	
-	
 	target_include_directories(murmur INTERFACE ${source_dir}) 
 	install (DIRECTORY ${install_dir}/lib DESTINATION .)
 

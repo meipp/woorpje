@@ -162,7 +162,8 @@ void readSymbols(string & s){
 void readSymbols(Words::Word & s){
   for (auto e: s){
   	if(e->isSequence()){	
-			// TODO: Add Sequences
+	std::cout << "c SEQUENCE!" << std::endl;	
+		// TODO: Add Sequences
 	} else if (e->isTerminal()){
 	  if(tIndices.count(e->getTerminal()) == 0){
 	  	tIndices[e->getTerminal()]=sigmaSize++;
@@ -1664,11 +1665,11 @@ template<bool newencode = true>
   }
 
   if(S.showModel && ret==l_True) {
-	printf("v ");
-	for (int i = 0; i < S.nVars(); i++)
-	  if (S.model[i] != l_Undef)
-		printf("%s%s%d", (i==0)?"":" ", (S.model[i]==l_True)?"":"-", i+1);
-	printf(" 0\n");
+	//printf("v ");
+	//for (int i = 0; i < S.nVars(); i++)
+	  //if (S.model[i] != l_Undef)
+		//printf("%s%s%d", (i==0)?"":" ", (S.model[i]==l_True)?"":"-", i+1);
+	//printf(" 0\n");
   }
 
   if(ret == l_True){

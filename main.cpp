@@ -360,7 +360,9 @@ int main (int argc, char** argv) {
 			  gatherer.setSubstitution (sub);
 			  Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
 			}
-			
+			if (DefinitelyNoSolutionCount == totalcount){
+	 			 Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);	
+			}
 		  }
 		  
 		  if (diagnostic)
@@ -420,13 +422,12 @@ int main (int argc, char** argv) {
 	  }
 	  job = jg->newJob ();
 	}
-	if (noSolutionCount) {
+
+	if (DefinitelyNoSolutionCount == totalcount){
+	  Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);	
+	} else if (noSolutionCount) {
 	  Words::Host::Terminate (Words::Host::ExitCode::NoSolution,std::cout);
-	}
-	else if (DefinitelyNoSolutionCount ==totalcount) {
-	  Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
-	}
-	else {
+	} else {
 	  Words::Host::Terminate (Words::Host::ExitCode::NoIdea,std::cout);
 	}
   }catch (Words::WordException& e) {

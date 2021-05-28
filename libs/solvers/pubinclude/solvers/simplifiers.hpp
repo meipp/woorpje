@@ -306,7 +306,7 @@ namespace Words {
 	  }
 
 	  static Simplified solverReduce  (Words::Options& opt, Substitution& substitution, std::vector<Constraints::Constraint_ptr>& cstr) {
-		return Simplified::JustReduced;
+		//return Simplified::JustReduced;
 		  
 		  
 		std::vector<Words::Equation>::iterator it = opt.equations.begin();
@@ -315,19 +315,27 @@ namespace Words {
 		while (it != end) {
 		  IEntry* variable = nullptr;
 		  Word* subsWord = nullptr;
+		
+
+		 std::cout << "\n\nc Consider equation " << it->lhs << " == " << it->rhs << std::endl;
 
           	  // Select a variable and a proper substitution
           	  if (it->lhs.entries () == 1 && (*it->lhs.begin ())->isVariable() && !it->rhs.containsVariable((*it->lhs.begin ()))) {
+			std::cout << "c LHS" << std::endl;
 			variable = (*it->lhs.begin ());
 			subsWord = &it->rhs;
 		  }
 
           	  if (it->rhs.entries () == 1 && (*it->rhs.begin ())->isVariable() && !it->lhs.containsVariable((*it->rhs.begin ()))) {
+			std::cout << "c RHS" << std::endl;
 			variable = (*it->rhs.begin ());
 			subsWord = &it->lhs;
 		  }
 
 		  if (variable) {
+			std::cout << "c Found something to simplify: " << variable->getRepr() << " == " << *subsWord << std::endl;
+			
+
 			std::vector<Words::Equation> eqs;
 			assert(subsWord);
 			for (auto& mapit : substitution) {
@@ -341,6 +349,8 @@ namespace Words {
 			  if (it == iit){
 				continue;
               		  }
+				
+			  std::cout << "c Applying substitution to " << iit->lhs << " == " << iit->rhs << std::endl;
 
 			  std::vector<Constraints::Constraint_ptr> cstr;
 			  auto res = replaceVarInEquation (*iit,variable,*subsWord,cstr); 
@@ -352,16 +362,21 @@ namespace Words {
 			  }
 			}
 			if (eqs.size() == 0) {
+			   std::cout << "cc All equations processed" << std::endl;
 			   auto thisVar = substitution.find(variable);
 			   substitution.erase(thisVar);	
 				
 			   for (auto et = subsWord->ebegin(); et != subsWord->eend(); ++et) {
+				std::cout << "cc Consider " << (*et)->getRepr() << std::endl;
 				if ((*et)->isVariable () ){
-				subsWord->substitudeVariable((*et),Word());  
+			        std::cout << "cc Is variable. Replace " << (*et)->getRepr() << std::endl;
+				subsWord->substitudeVariable((*et),Word()); 
+			       et--;	
 				Constraints::Constraint_ptr  constr (new Words::Constraints::Unrestricted (*et)); 
 				  cstr.push_back (constr);
 				}
 			  }
+			  std::cout << "cc Substition after erasing variables " << *subsWord << std::endl;
 			  substitution.insert(std::make_pair (variable,*subsWord));
 			}
 			opt.equations = eqs;
@@ -375,8 +390,10 @@ namespace Words {
 
 
 		
-		if (opt.equations.size ()){
+		//if (opt.equations.size ()){
+			std::cout << "c Got equations!" << std::endl;
 		  for (auto x : substitution){
+			std::cout << "c Pushing substitutions back to the equation system: " << x.first->getRepr() << " == " << x.second << std::endl;
 			Substitution dummy;
 			Words::Equation eq;
 			eq.lhs = { x.first };
@@ -389,10 +406,10 @@ namespace Words {
 
 		  return Simplified::JustReduced;
 		  
-		}
+		/*}
         else {
 		  return Simplified::ReducedSatis;
-		}
+		}*/
 		
 	  }
 	  
@@ -539,7 +556,9 @@ namespace Words {
 		  Words::Algorithms::ParikhMatrix rhs_p_pm;
 		  Words::Algorithms::ParikhMatrix rhs_s_pm;
 
-          // Avoid the calculation of an empty parikh image
+         
+		 
+	 // Avoid the calculation of an empty parikh image
           if (eq.lhs.characters() == 0 && eq.rhs.characters() == 0){
               return Simplified::ReducedSatis;
           } else if (eq.lhs.characters() == 0){
@@ -569,20 +588,19 @@ namespace Words {
 			int coefficentLhs = 0;
 
 			for (auto a : eq.ctxt->getVariableAlphabet()){
-                if(coefficentLhs != 0){
-				  seenTwoVariables = true;
-				  break; //  saw two variables, we can not do anything at this point
-                } else {
+                		if(coefficentLhs != 0){
+				  	seenTwoVariables = true;
+				 	 break; //  saw two variables, we can not do anything at this point
+                		} else {
 				  if (rhs_p_pm[rSize-1].count(a) == 1 && lhs_p_pm[lSize-1].count(a) == 1){
 					coefficentLhs = (lhs_p_pm[lSize-1][a]-rhs_p_pm[rSize-1][a]);
 				  } else if (lhs_p_pm[lSize-1].count(a) == 1){
 					coefficentLhs = lhs_p_pm[lSize-1][a];
 				  } else if (rhs_p_pm[rSize-1].count(a) == 1){
 					coefficentLhs = -rhs_p_pm[rSize-1][a];
-                  }
+                  		  }
 				}
 			}
-
 
 			if (!seenTwoVariables){
 			  for (auto a : eq.ctxt->getTerminalAlphabet()){
@@ -594,7 +612,8 @@ namespace Words {
 				  sumRhs = sumRhs-rhs_p_pm[rSize-1][a];
 				}
 			  }
-              if (coefficentLhs != 0 && sumRhs % coefficentLhs != 0){
+
+              if (coefficentLhs != 0 && (sumRhs % coefficentLhs) != 0){
 				return Simplified::ReducedNsatis;
 			  }
 			}
@@ -686,9 +705,7 @@ namespace Words {
 
 
     using FoldPreSufParikh = SequenceSimplifier2<Words::Equation,ConstSequenceFolding,PrefixReducer,SuffixReducer,ParikhMatrixMismatch,ConstSequenceMismatch>;
-	using CoreSimplifier = SequenceSimplifier2<Words::Options,RunAllEq<FoldPreSufParikh>,
-											   SubstitutionReasoningNew<FoldPreSufParikh>
-												   >;
+    using CoreSimplifier = SequenceSimplifier2<Words::Options,RunAllEq<FoldPreSufParikh>,SubstitutionReasoningNew<FoldPreSufParikh>>;
 	//using CoreSimplifier = RunAllEq<ParikhMatrixMismatch>;
 	//using CoreSimplifier = RunAllEq<PrefixReducer>;
 	//using CoreSimplifier = RunAllEq<SequenceSimplifier<ConstSequenceMismatch,
