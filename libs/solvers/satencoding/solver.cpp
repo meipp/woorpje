@@ -37,9 +37,12 @@ namespace Words {
 		std::vector<std::string> lhs;
 		std::vector<std::string> rhs;
 
-		
-		
-			
+		// hack to add lost variables due to simplificaiton
+		//auto ctx = opt.context;
+		// quickly add a word equation X == X whenever X is in variables but does not occur in equations...
+
+
+
 		for (auto& eq : opt.equations) {
 		  str.str("");
 		  for (auto e : eq.lhs) {
@@ -60,7 +63,7 @@ namespace Words {
 		}
 		
 		clearLinears();
-		
+
 		for (auto& constraint : opt.constraints) {
 		  if (!handleConstraint (*constraint,relay,entry))
 			return ::Words::Solvers::Result::NoIdea;

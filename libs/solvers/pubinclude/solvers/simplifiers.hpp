@@ -357,10 +357,13 @@ namespace Words {
               		  if ( res == Simplified::ReducedNsatis)  {
 				return Simplified::ReducedNsatis;
 			  } else if ( res == Simplified::JustReduced) {
-				std::copy (cstr.begin(),cstr.end(),std::back_inserter(opt.constraints));
+				//std::copy (cstr.begin(),cstr.end(),std::back_inserter(opt.constraints));
                 		eqs.push_back (*iit);
 			  }
 			}
+
+			// potentially fails if we have 
+			/*
 			if (eqs.size() == 0) {
 			   std::cout << "cc All equations processed" << std::endl;
 			   auto thisVar = substitution.find(variable);
@@ -379,6 +382,8 @@ namespace Words {
 			  std::cout << "cc Substition after erasing variables " << *subsWord << std::endl;
 			  substitution.insert(std::make_pair (variable,*subsWord));
 			}
+			*/
+
 			opt.equations = eqs;
 			it = opt.equations.begin();
             		end = opt.equations.end();
