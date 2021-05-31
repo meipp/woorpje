@@ -38,9 +38,21 @@ namespace Words {
 		std::vector<std::string> rhs;
 
 		// hack to add lost variables due to simplificaiton
-		//auto ctx = opt.context;
-		// quickly add a word equation X == X whenever X is in variables but does not occur in equations...
+		auto ctx = opt.context;
+		for (auto &x : ctx->getVariableAlphabet()){
+			Words::Word side ({x});
+			Words::Equation eq (side,side);
+			opt.equations.push_back(eq);
+		}
 
+
+		// we need at least one terminal symbol
+		//
+		std::cout << ctx->getTerminalAlphabet().size() << std::endl;
+		if (ctx->getTerminalAlphabet().size( ) == 1 && opt.constraints.size() > 0){
+			std::cout << "xxx" << std::endl;
+			ctx->addTerminal('a');
+		}
 
 
 		for (auto& eq : opt.equations) {
