@@ -401,9 +401,14 @@ namespace Words {
 
 
 		
-		if (opt.equations.size ()){
+	        //if (opt.equations.size ()){
 			//std::cout << "c Got equations!" << std::endl;
 		  for (auto x : substitution){
+			//std::vector<IEntry*> vars;
+			//x.second.getVariables(vars);
+
+			if (x.second.characters()){
+
 			//std::cout << "c Pushing substitutions back to the equation system: " << x.first->getRepr() << " == " << x.second << std::endl;
 			Substitution dummy;
 			Words::Equation eq;
@@ -413,8 +418,10 @@ namespace Words {
 			std::vector<Constraints::Constraint_ptr> cstr;
 			ConstSequenceFolding::solverReduce (eq,dummy,cstr);
 			opt.equations.push_back(eq);
+			}
 		  }
-
+		
+		if(opt.equations.size()){
 		  return Simplified::JustReduced;
 		  
 		}
