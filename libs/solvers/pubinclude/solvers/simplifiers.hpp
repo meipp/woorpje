@@ -154,7 +154,7 @@ namespace Words {
           else {
 			cstr.clear();
 			s.clear();
-			std::cout << "u Prefix UNSAT" << std::endl;
+			//std::cout << "u Prefix UNSAT" << std::endl;
 			return Simplified::ReducedNsatis;
           }
 		}
@@ -208,7 +208,7 @@ namespace Words {
             else {
               s.clear();
 			  cstr.clear();
-			  std::cout << "u Suffix UNSAT" << std::endl;
+			  //std::cout << "u Suffix UNSAT" << std::endl;
 			  return Simplified::ReducedNsatis;
             }
           }
@@ -250,7 +250,7 @@ namespace Words {
 		Words::Sequence* constSeq = (*constSide->ebegin())->getSequence (); 
 		for (auto seq : consts) {
 		  if (!seq->isFactorOf (*constSeq)) {
-			 std::cout << "u ConstSeq mismatch UNSAT" << std::endl;
+			 //std::cout << "u ConstSeq mismatch UNSAT" << std::endl;
 			return Simplified::ReducedNsatis;
 		  }
 		}
@@ -387,6 +387,7 @@ namespace Words {
 			  std::cout << "cc Substition after erasing variables " << *subsWord << std::endl;
 			  substitution.insert(std::make_pair (variable,*subsWord));
 			}
+			 * 
 			*/
 
 			opt.equations = eqs;
@@ -400,7 +401,7 @@ namespace Words {
 
 
 		
-		//if (opt.equations.size ()){
+		if (opt.equations.size ()){
 			//std::cout << "c Got equations!" << std::endl;
 		  for (auto x : substitution){
 			//std::cout << "c Pushing substitutions back to the equation system: " << x.first->getRepr() << " == " << x.second << std::endl;
@@ -416,10 +417,10 @@ namespace Words {
 
 		  return Simplified::JustReduced;
 		  
-		/*}
+		}
         else {
 		  return Simplified::ReducedSatis;
-		}*/
+		}
 		
 	  }
 	  
@@ -555,7 +556,7 @@ namespace Words {
 
       static Simplified oneSideEmptyCheck (Words::Word &w){
           if (!w.noTerminalWord()){
-               std::cout << w << " parikh unsat" << std::endl;
+               //std::cout << w << " parikh unsat" << std::endl;
 	       return Simplified::ReducedNsatis;
 	  }else
               return Simplified::JustReduced;
@@ -570,7 +571,7 @@ namespace Words {
          
 		 
 	 // Avoid the calculation of an empty parikh image
-	  std::cout << "PARIK EQUATION: " << eq.lhs << " == " << eq.rhs << std::endl;
+	  //std::cout << "PARIK EQUATION: " << eq.lhs << " == " << eq.rhs << std::endl;
 	//std::cout << eq.lhs.characters() << " " << eq.lhs << std::endl;
 
           if (eq.lhs.characters() == 0 && eq.rhs.characters() == 0){
@@ -628,7 +629,7 @@ namespace Words {
 			  }
 
               if (coefficentLhs != 0 && (sumRhs % coefficentLhs) != 0){
-		      		std::cout << "u Parik Unsat" << std::endl;
+		      		//std::cout << "u Parik Unsat" << std::endl;
 				return Simplified::ReducedNsatis;
 			  }
 			}
@@ -684,7 +685,7 @@ namespace Words {
 			  }
 			  
 			  if ((processPrefix && !terminalsAlignPrefix) || (processSuffix && !terminalsAlignSuffix)){
-				  std::cout << "u Parikh UNSAT 2" << std::endl;
+				  //std::cout << "u Parikh UNSAT 2" << std::endl;
 				  return Simplified::ReducedNsatis;
 			  }
 			  
