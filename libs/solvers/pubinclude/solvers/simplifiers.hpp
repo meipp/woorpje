@@ -154,6 +154,7 @@ namespace Words {
           else {
 			cstr.clear();
 			s.clear();
+			std::cout << "u Prefix UNSAT" << std::endl;
 			return Simplified::ReducedNsatis;
           }
 		}
@@ -207,6 +208,7 @@ namespace Words {
             else {
               s.clear();
 			  cstr.clear();
+			  std::cout << "u Suffix UNSAT" << std::endl;
 			  return Simplified::ReducedNsatis;
             }
           }
@@ -248,6 +250,7 @@ namespace Words {
 		Words::Sequence* constSeq = (*constSide->ebegin())->getSequence (); 
 		for (auto seq : consts) {
 		  if (!seq->isFactorOf (*constSeq)) {
+			 std::cout << "u ConstSeq mismatch UNSAT" << std::endl;
 			return Simplified::ReducedNsatis;
 		  }
 		}
@@ -317,23 +320,24 @@ namespace Words {
 		  Word* subsWord = nullptr;
 		
 
-		 std::cout << "\n\nc Consider equation " << it->lhs << " == " << it->rhs << std::endl;
+		 //std::cout << "\n\nc Consider equation " << it->lhs << " == " << it->rhs << std::endl;
 
           	  // Select a variable and a proper substitution
           	  if (it->lhs.entries () == 1 && (*it->lhs.begin ())->isVariable() && !it->rhs.containsVariable((*it->lhs.begin ()))) {
-			std::cout << "c LHS" << std::endl;
+			
+			  //std::cout << "c LHS" << std::endl;
 			variable = (*it->lhs.begin ());
 			subsWord = &it->rhs;
 		  }
 
           	  if (it->rhs.entries () == 1 && (*it->rhs.begin ())->isVariable() && !it->lhs.containsVariable((*it->rhs.begin ()))) {
-			std::cout << "c RHS" << std::endl;
+			//std::cout << "c RHS" << std::endl;
 			variable = (*it->rhs.begin ());
 			subsWord = &it->lhs;
 		  }
 
 		  if (variable) {
-			std::cout << "c Found something to simplify: " << variable->getRepr() << " == " << *subsWord << std::endl;
+			//std::cout << "c Found something to simplify: " << variable->getRepr() << " == " << *subsWord << std::endl;
 			
 
 			std::vector<Words::Equation> eqs;
@@ -350,11 +354,12 @@ namespace Words {
 				continue;
               		  }
 				
-			  std::cout << "c Applying substitution to " << iit->lhs << " == " << iit->rhs << std::endl;
+			  //std::cout << "c Applying substitution to " << iit->lhs << " == " << iit->rhs << std::endl;
 
 			  std::vector<Constraints::Constraint_ptr> cstr;
 			  auto res = replaceVarInEquation (*iit,variable,*subsWord,cstr); 
               		  if ( res == Simplified::ReducedNsatis)  {
+				  std::cout << "u SubsReason UNSAT" << std::endl;
 				return Simplified::ReducedNsatis;
 			  } else if ( res == Simplified::JustReduced) {
 				//std::copy (cstr.begin(),cstr.end(),std::back_inserter(opt.constraints));
@@ -396,9 +401,9 @@ namespace Words {
 
 		
 		//if (opt.equations.size ()){
-			std::cout << "c Got equations!" << std::endl;
+			//std::cout << "c Got equations!" << std::endl;
 		  for (auto x : substitution){
-			std::cout << "c Pushing substitutions back to the equation system: " << x.first->getRepr() << " == " << x.second << std::endl;
+			//std::cout << "c Pushing substitutions back to the equation system: " << x.first->getRepr() << " == " << x.second << std::endl;
 			Substitution dummy;
 			Words::Equation eq;
 			eq.lhs = { x.first };
@@ -549,9 +554,10 @@ namespace Words {
 	public:
 
       static Simplified oneSideEmptyCheck (Words::Word &w){
-          if (!w.noTerminalWord())
-              return Simplified::ReducedNsatis;
-           else
+          if (!w.noTerminalWord()){
+               std::cout << w << " parikh unsat" << std::endl;
+	       return Simplified::ReducedNsatis;
+	  }else
               return Simplified::JustReduced;
       }
 
@@ -564,6 +570,9 @@ namespace Words {
          
 		 
 	 // Avoid the calculation of an empty parikh image
+	  std::cout << "PARIK EQUATION: " << eq.lhs << " == " << eq.rhs << std::endl;
+	//std::cout << eq.lhs.characters() << " " << eq.lhs << std::endl;
+
           if (eq.lhs.characters() == 0 && eq.rhs.characters() == 0){
               return Simplified::ReducedSatis;
           } else if (eq.lhs.characters() == 0){
@@ -619,6 +628,7 @@ namespace Words {
 			  }
 
               if (coefficentLhs != 0 && (sumRhs % coefficentLhs) != 0){
+		      		std::cout << "u Parik Unsat" << std::endl;
 				return Simplified::ReducedNsatis;
 			  }
 			}
@@ -674,7 +684,8 @@ namespace Words {
 			  }
 			  
 			  if ((processPrefix && !terminalsAlignPrefix) || (processSuffix && !terminalsAlignSuffix)){
-				return Simplified::ReducedNsatis;
+				  std::cout << "u Parikh UNSAT 2" << std::endl;
+				  return Simplified::ReducedNsatis;
 			  }
 			  
 			  processPrefix = true;

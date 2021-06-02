@@ -199,33 +199,36 @@ namespace Words {
 	    return false;
 		  
 
-	  /*        std::cout << "----------------------"<< std::endl;
+	          std::cout << "#######################################"<< std::endl;
 		    std::cout << "Start modification on:" << from << std::endl;
-		    std::cout << "=====================" <<  std::endl; */
+		    std::cout << "=====================" <<  std::endl; 
 	  // modifyLinearConstraints(to, sub);
           auto beforeSimp = to->copy ();
-	  /*        std::cout << "First modification:" << *to << std::endl;
+	          std::cout << "First modification:" << *to << std::endl;
 		    std::cout << "Substitution was: " << sub << std::endl;
 		    std::cout << "=====================" <<  std::endl;
-	  */
+	  		
 	  Words::Substitution simplSub;
 	  std::vector<Constraints::Constraint_ptr> ptr;
 	  auto res = Words::Solvers::CoreSimplifier::solverReduce (*to,simplSub,ptr);
 		  
 	  //std::copy(ptr.begin(),ptr.end(),std::back_inserter (to->constraints));
-	  /*   std::cout << "Second modification:" << *to << std::endl;
+	    std::cout << "Second modification:" << *to << std::endl;
 	       std::cout << "Substitution was: " << simplSub << std::endl;
-	       std::cout << "----------------------"<< std::endl;
-	  */
+	       std::cout << "###########################################"<< std::endl;
+	 	
 	  if(!modifyLinearConstraints(to, simplSub))
 	    return false;
 
 	  if (res==Simplified::ReducedNsatis){
-	    return false;
+	    	std::cout << "c Simplifier reported UNSAT" << std::endl;
+		 return false;
 	  }
 		  
-          if (waiting.contains(to))
-	    return false;
+          if (waiting.contains(to)){
+	    	 std::cout << "???" << std::endl;
+		 //return false;
+	   }
 	  
 	  auto node = graph.getNode (from);			
 	  auto simpnode = graph.makeNode (beforeSimp);
@@ -371,7 +374,7 @@ namespace Words {
 	auto inode = graph.makeNode (insert);
 
         if (res==Simplified::ReducedNsatis){
-          return Words::Solvers::Result::DefinitelyNoSolution;
+	  return Words::Solvers::Result::DefinitelyNoSolution;
         }
 	else if (res==Simplified::ReducedSatis) {
 	  if (linearsSatisfiedByEmpty (*insert)) {
@@ -391,7 +394,7 @@ namespace Words {
 	      return Words::Solvers::Result::HasSolution;
 	    }
 	    else if (res == Words::SMT::SolverResult::NSatis) {
-	      return Words::Solvers::Result::DefinitelyNoSolution;
+		   return Words::Solvers::Result::DefinitelyNoSolution;
 	    }
 			
 	    else
@@ -405,6 +408,10 @@ namespace Words {
 	}
 	while (waiting.size()) {
           auto cur = waiting.pullElement ();
+	
+	std::cout << "---------" << std::endl;
+	std::cout << "Consider the equation: " << waiting.size() << " " << *cur << std::endl;
+
           RuleSequencer<Handler,PrefixReasoningLeftHandSide,PrefixReasoningRightHandSide,PrefixReasoningEqual,PrefixEmptyWordLeftHandSide,PrefixEmptyWordRightHandSide,PrefixLetterLeftHandSide,PrefixLetterRightHandSide,SuffixReasoningLeftHandSide,SuffixReasoningRightHandSide,SuffixReasoningEqual,SuffixEmptyWordLeftHandSide,SuffixEmptyWordRightHandSide,SuffixLetterLeftHandSide,SuffixLetterRightHandSide>::runRules (handler,*cur);
           relay.progressMessage ((Words::Solvers::Formatter ("Passed: %1%, Waiting: %2%") % waiting.passedsize() % waiting.size()).str());
 	}
