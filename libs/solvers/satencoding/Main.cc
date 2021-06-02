@@ -1476,9 +1476,13 @@ template<bool newencode = true>
 									Words::Solvers::Timing::Keeper& tkeeper, std::ostream* odia = nullptr) {
 
   clear ();
+  {
+  //Words::Solvers::Timing::Timer overalltimer (tkeeper, "Setup ");
+
   globalMaxPadding = static_cast<int> (bound);
   for (size_t i = 0; i< vIndices.size();i++) {
 	  maxPadding[i] = globalMaxPadding;
+  }
   }
   StreamWrapper wrap (odia);
   Solver S;
@@ -1489,20 +1493,26 @@ template<bool newencode = true>
   falseConst = S.newVar();
   S.addClause(~mkLit(falseConst));
   
+
   //assert(lin == 0 && "No linears yet! ");
   assert(reg == 0 && "No regulars yet! ");
   
-
+  {
+  //Words::Solvers::Timing::Timer (tkeeper,"Sharpen Bounds ");
   for (auto& eq: input_options.equations){
 	sharpenBounds(S,eq,wrap);
+  }
   }
 
 
 
   int numVars;
-  {
-	Words::Solvers::Timing::Timer overalltimer (tkeeper,"Encoding ");
-	
+  {	
+	std::stringstream ss;
+	ss << "Encoding [bound: " << bound << ", variables : " << input_options.context->getVariableAlphabet().size() << ", equations: " << input_options.equations.size() << "]"; 
+
+	Words::Solvers::Timing::Timer overalltimer (tkeeper,ss.str());
+	Words::Solvers::Timing::Timer bla (tkeeper, "Encoding total ");
 	index2t[sigmaSize] = context.getEpsilon();
 	numVars = vIndices.size();
 	
@@ -1511,6 +1521,8 @@ template<bool newencode = true>
   	}
 	// Encode variables for terminal symbols
 	
+	{	
+	//Words::Solvers::Timing::Timer shit (tkeeper,"Encode constants ");
 	for(int i = 0 ; i <= sigmaSize ; i++){
 	  for(int j = 0 ; j <= sigmaSize ; j++){
 		Var v = S.newVar();
@@ -1522,10 +1534,13 @@ template<bool newencode = true>
 		  S.addClause(~mkLit(v));
 	  }
 	}
+	}
 	
 	// Take a variable, and index and a sigma, and return if the variable at index "i" equals sigma
 	// g:  x, i, sigma -> BV
 	
+	{
+	//Words::Solvers::Timing::Timer (tkeeper,"Encode variables ");
 	for(int i = 0 ; i < numVars ; i++){
 	  assert(maxPadding.count(i));
 	  for(int j = 0 ; j < maxPadding[i] ; j++){
@@ -1534,14 +1549,18 @@ template<bool newencode = true>
 		  variableVars[make_pair(make_pair(i, j), k)] = v;
 		}
 	  }
+	
 	  // Assert that epsilons occur at the end of a substitution
 	  for(int j = 0 ; j + 1 < maxPadding[i] ; j++){
 		S.addClause(~mkLit(variableVars[make_pair(make_pair(i, j), sigmaSize)]), mkLit(variableVars[make_pair(make_pair(i, j+1), sigmaSize)]) );
 	  }
 	}
+	}
 	
 	// Alldifferent: Make sure that each variable is assigned to exactly one letter from Sigma (or epsilon)
 	// TODO: Do this with linear number of clauses (!!!)
+	{
+		
 	for(int i = 0 ; i < numVars ; i++){
 	  assert(maxPadding.count(i));
 	  for(int j = 0 ; j < maxPadding[i] ; j++){
@@ -1557,18 +1576,28 @@ template<bool newencode = true>
 		S.addClause(ps);
 	  }
 	}
+	}
+
+	{
+	//Words::Solvers::Timing::Timer (tkeeper,"Encode OneHot ");
 	addOneHotEncoding(S);
-  	
+	}
+
+	
+	{
+	//Words::Solvers::Timing::Timer (tkeeper,"Encode length abstraction ");
 	for (auto& eq : input_options.equations){
 		bool succ = addSizeEqualityConstraint(S, eq, wrap);
 		if (!succ){
 			return Words::Solvers::Result::NoSolution;
 		}
 	}
+	}
 
 
-
+	{
 	// linears
+	//Words::Solvers::Timing::Timer (tkeeper,"Encode linear constraints ");
 	for(int i = 0 ; i < input_linears_lhs.size();i++){
 		 // quick check whether a linear constraint can be satisfiable using the given bounds
 		/* int lhsValue = 0;
@@ -1589,6 +1618,7 @@ template<bool newencode = true>
 			return Words::Solvers::Result::NoSolution;
 		  }
 	}
+	}
 	
 	
 	/*
@@ -1596,13 +1626,15 @@ template<bool newencode = true>
 	  encodeEquation<newencode>(S, input_equations_lhs[i], input_equations_rhs[i], true, squareAuto,wrap);
 	}
 	*/
-
+	{
+	//Words::Solvers::Timing::Timer (tkeeper,"Encode word equations ");
 	for (auto& eq : input_options.equations){
 	  encodeEquation<newencode>(S, eq, true, squareAuto, wrap);
 	}
+	}
 
 
-  }
+ }
 
   // HIER
 
