@@ -393,7 +393,7 @@ namespace Words {
       return Words::Hash::Hash<const IEntry*> (word.data (),word.size(),seed);
     }
 	
-    void getSequences ( std::vector<Sequence*>& seq) {
+    void getSequences ( std::vector<Sequence*>& seq) const {
       for (auto i : word) {
 	if (i->isSequence ()) {
 	  seq.push_back (i->getSequence ());
@@ -401,7 +401,7 @@ namespace Words {
       }
     }
 
-    void getVariables (std::vector<IEntry*>& vars){
+    void getVariables (std::vector<IEntry*>& vars) const {
       auto end = eend();
       auto begin = ebegin();
       for (auto it=begin; it != end; ++it) {
@@ -424,7 +424,7 @@ namespace Words {
       return (word.size() == 1 &&  word.at(0)->isSequence ()) || word.size() == 0;
     }
 
-    bool noTerminalWord() {
+    bool noTerminalWord() const {
       std::vector<Sequence*> seqs;
       getSequences(seqs);
       return seqs.size() == 0;

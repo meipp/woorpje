@@ -271,6 +271,29 @@ struct SuffixLetterRightHandSide {
   }
 };
 
+struct GuessConstIsOneVariable {
+  static void runRule (const Words::Equation& eq, Words::Substitution& sub) {
+	const Words::Word* constside;
+	const Words::Word* varside;
+	
+	if (eq.lhs.noVariableWord () && eq.rhs.noTerminalWord ()) {
+	  constside = &eq.lhs;
+	  varside =   &eq.rhs;
+	}
+
+	if (eq.rhs.noVariableWord () && eq.lhs.noTerminalWord ()) {
+	  constside = &eq.rhs;
+	  varside =   &eq.lhs;
+	}
+
+	if (constside && varside) {
+	  Words::Word w ({*constside->ebegin()});
+	  sub.insert (std::pair<Words::IEntry*,Words::Word>(*varside->ebegin(), w));
+	}
+	
+	
+  }
+};
 
 
 
