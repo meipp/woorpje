@@ -5,6 +5,7 @@
 
 #include "words/words.hpp"
 #include "words/exceptions.hpp"
+#include "words/regex.hpp"
 #include "host/resources.hpp"
 #include "host/exitcodes.hpp"
 #include "parser/parsing.hpp"
@@ -313,8 +314,12 @@ int main (int argc, char** argv) {
 	std::fstream inp;
 	inp.open (conffile);
 	auto parser = Words::makeParser (Words::ParserType::Standard,inp);
+	std::cout << "[*] Parsing input file \n";
 	auto jg = parser->Parse (std::cout);
+	std::cout << "[*] Parsing done \n";
 	auto job = jg->newJob ();
+	
+
 	size_t noSolutionCount = 0;
 	size_t DefinitelyNoSolutionCount = 0;
 	size_t noIdeaCount = 0;
@@ -322,7 +327,7 @@ int main (int argc, char** argv) {
 	while (job) {
 	  totalcount++;
 	  if (!job->options.hasIneqquality ()) {
-	
+		
 		
 		Words::Solvers::Solver_ptr solver = buildSolver (solverr);
 		auto s = std::move(job->solver);
@@ -366,51 +371,52 @@ int main (int argc, char** argv) {
 		  }
 		  
 		  if (diagnostic)
-			solver->enableDiagnosticOutput ();	
-		  try {
-			Words::Solvers::StreamRelay relay (std::cout);
-			Words::Solvers::Result ret;
-		     
+			  solver->enableDiagnosticOutput ();	
+		  
+      try {
+        Words::Solvers::StreamRelay relay (std::cout);
+        Words::Solvers::Result ret;
+          
+        
+        ret =  solver->Solve (job->options,relay);
+        
+        solver->getMoreInformation(std::cout);
+        
+        std::cout << "\n" << std::endl;
+          
+        switch (ret) {
+          
+          case Words::Solvers::Result::HasSolution: {
+          solver->getResults (gatherer);
+          Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
+          }
+          case Words::Solvers::Result::NoSolution: {
+          //Words::Host::Terminate (Words::Host::ExitCode::NoSolution,std::cout);
+          noSolutionCount++;
+          break;
+          }
+          case Words::Solvers::Result::DefinitelyNoSolution: {
+          //Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
+          DefinitelyNoSolutionCount++;
+          break;
+          }
+          
+          default:
+          //Words::Host::Terminate (Words::Host::ExitCode::NoIdea,std::cout);
+          noIdeaCount++;
+          }
 			
-			ret =  solver->Solve (job->options,relay);
-			
-			solver->getMoreInformation(std::cout);
-			
-			std::cout << "\n" << std::endl;
-			  
-			switch (ret) {
-			  
-			case Words::Solvers::Result::HasSolution: {
-			  solver->getResults (gatherer);
-			  Words::Host::Terminate (Words::Host::ExitCode::GotSolution,std::cout);
-			}
-			case Words::Solvers::Result::NoSolution: {
-			  //Words::Host::Terminate (Words::Host::ExitCode::NoSolution,std::cout);
-			  noSolutionCount++;
-			  break;
-			}
-			case Words::Solvers::Result::DefinitelyNoSolution: {
-			  //Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
-			  DefinitelyNoSolutionCount++;
-			  break;
-			}
-			  
-			default:
-			  //Words::Host::Terminate (Words::Host::ExitCode::NoIdea,std::cout);
-			  noIdeaCount++;
-			}
-			
-		  }catch (Words::Solvers::OutOfMemoryException&) {
-			Words::Host::Terminate (Words::Host::ExitCode::OutOfMemory,std::cout);
-		  }
-		  catch (Words::UnsupportedFeature& o) {
-			std::cout << o.what () << std::endl;
-			Words::Host::Terminate (Words::Host::ExitCode::UnsupportedFeature,std::cout);
-		  }	
-		  catch (Words::WordException& o) {
-			std::cout << o.what () << std::endl;
-			Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
-		  }
+      }catch (Words::Solvers::OutOfMemoryException&) {
+      Words::Host::Terminate (Words::Host::ExitCode::OutOfMemory,std::cout);
+      }
+      catch (Words::UnsupportedFeature& o) {
+      std::cout << o.what () << std::endl;
+      Words::Host::Terminate (Words::Host::ExitCode::UnsupportedFeature,std::cout);
+      }	
+      catch (Words::WordException& o) {
+      std::cout << o.what () << std::endl;
+      Words::Host::Terminate (Words::Host::ExitCode::ConfigurationError,std::cout);
+      }
 		}
 		else {
 		  std::cerr << "No solver specified" << std::endl;

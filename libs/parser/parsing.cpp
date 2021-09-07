@@ -1,5 +1,6 @@
 #include "parser/parsing.hpp"
 
+
 namespace Words {
 
   Parser_ptr makeStdParser (std::istream&);
@@ -10,6 +11,6 @@ namespace Words {
 #ifdef SMTPARSER
     return makeSMTParser (is);
 #endif
-    return makeStdParser (is);
+    return makeSMTParser (is);
   }
 }

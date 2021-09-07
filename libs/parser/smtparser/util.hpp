@@ -114,78 +114,69 @@ namespace Words {
 							 eqs(e),
 							 solver(s),
 							 neqmap(neqmap),
-							 assumptions(assumptions)
-								  
+							 assumptions(assumptions)					  
     {}
 	
     template<class T>
+
     void visitRedirect (T& c) {
       assert(alreadyCreated.count(c.hash()));
       auto l = Glucose::var(alreadyCreated.at(c.hash()));
       auto res = solver.modelValue(l);
       if (res == l_True) {
-		if (constraints.count(l)) {
-		  job->options.constraints.push_back(constraints.at(l));
-		}
-		
-		if (eqs.count(l)) {
-		  job->options.equations.push_back(eqs.at(l));
-		}
+        if (constraints.count(l)) {
+          job->options.constraints.push_back(constraints.at(l));
+        }
+        
+        if (eqs.count(l)) {
+          job->options.equations.push_back(eqs.at(l));
+        }
 
-		clause.push(~Glucose::mkLit(l));
-		
-	  
+        clause.push(~Glucose::mkLit(l));	  
       }
       else if (res == l_False) {
-		clause.push(Glucose::mkLit(l));
+		    clause.push(Glucose::mkLit(l));
       }
     }
 	
     void Run (ASTNode& m) {
       m.accept (*this);
-	  
     }
 
     auto finalise () {
-	  auto var = solver.newVar ();
-	  auto lit = Glucose::mkLit (var);
-	  assumptions.push(lit);
-	  solver.addClause (clause);
-	  reify_or_bi (solver,lit,clause);
+      auto var = solver.newVar ();
+      auto lit = Glucose::mkLit (var);
+      assumptions.push(lit);
+      solver.addClause (clause);
+      reify_or_bi (solver,lit,clause);
 	  
 	  
       return std::move(job);
     }
     
-    virtual void caseLEQ (LEQ& c)
-    {
+    virtual void caseLEQ (LEQ& c) {
       visitRedirect (c);
     }
 	
 	
-    virtual void caseLT (LT& c)
-    {
+    virtual void caseLT (LT& c) {
       visitRedirect (c);
     }
 	
-    virtual void caseGEQ (GEQ& c)
-    {
+    virtual void caseGEQ (GEQ& c) {
       visitRedirect (c);
     }
 	
-    virtual void caseGT (GT& c)
-    {
+    virtual void caseGT (GT& c) {
       visitRedirect (c);
     }
 	
-    virtual void caseEQ (EQ& c)
-    {
+    virtual void caseEQ (EQ& c) {
       visitRedirect(c);
       
     } 
     
-    virtual void caseNEQ (NEQ& c)
-    {
+    virtual void caseNEQ (NEQ& c) {
       assert(neqmap.count(c.hash()));
       neqmap.at(c.hash())->accept (*this);
     }
@@ -202,48 +193,40 @@ namespace Words {
 	
 	
     virtual void caseAssert (Assert& c) {
-      auto l = Glucose::var(alreadyCreated.at(c.getExpr()->hash()));
+      //auto l = Glucose::var(alreadyCreated.at(c.getExpr()->hash()));
       c.getExpr()->accept(*this);
     }
 	 
 	
-    virtual void caseDisjunction (Disjunction& c)
-    {
+    virtual void caseDisjunction (Disjunction& c){
       assert(alreadyCreated.count(c.hash()));
       auto l = Glucose::var(alreadyCreated.at(c.hash()));
       if (solver.modelValue (l) == l_True) {
-	for (auto cc : c)  {
-	  auto ll = Glucose::var(alreadyCreated.at(cc->hash()));
-	  auto res = solver.modelValue (ll);
-	  if (res!=l_False) {
-	    cc->accept (*this);
-	  }
-	  if ( res== l_True)
-	    break;
-	}
-	clause.push(~Glucose::mkLit(l));
-      }
-      
-      else if (solver.modelValue (l) == l_False){
-	clause.push(Glucose::mkLit(l));
-      }
-      
-      
+        for (auto cc : c)  {
+          auto ll = Glucose::var(alreadyCreated.at(cc->hash()));
+          auto res = solver.modelValue (ll);
+          if (res!=l_False) {
+            cc->accept (*this);
+          }
+          if ( res== l_True)
+            break;
+        }
+	      clause.push(~Glucose::mkLit(l));
+      } else if (solver.modelValue (l) == l_False){
+	      clause.push(Glucose::mkLit(l));
+      }      
     }
     
-    virtual void caseConjunction (Conjunction& c)
-    {
+    virtual void caseConjunction (Conjunction& c) {
       assert(alreadyCreated.count(c.hash()));
       auto l = Glucose::var(alreadyCreated.at(c.hash()));
       if (solver.modelValue (l) == l_True) {
-	for (auto cc : c)  {
-	  cc->accept (*this);
-	}
-	clause.push(~Glucose::mkLit(l));
-      }
-
-      else if (solver.modelValue (l) == l_False) {
-	clause.push(Glucose::mkLit(l));
+        for (auto cc : c)  {
+          cc->accept (*this);
+        }
+      	clause.push(~Glucose::mkLit(l));
+      } else if (solver.modelValue (l) == l_False) {
+	      clause.push(Glucose::mkLit(l));
       }
     }
    
@@ -256,7 +239,7 @@ namespace Words {
     Glucose::Solver& solver;
     Glucose::vec<Glucose::Lit> clause;
     std::unordered_map<size_t,ASTNode_ptr>& neqmap;
-	Glucose::vec<Glucose::Lit>& assumptions;
+	  Glucose::vec<Glucose::Lit>& assumptions;
   };
   
 }

@@ -1447,7 +1447,6 @@ Words::Solvers::Result setupSolverMain (Words::Options& opt){//std::vector<std::
  	readSymbols(input_equations_rhs[i]);
 
    }*/
-
   for(auto& eq : opt.equations){
 	readSymbols(eq.lhs);
 	readSymbols(eq.rhs);
