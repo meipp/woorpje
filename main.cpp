@@ -5,7 +5,7 @@
 
 #include "words/words.hpp"
 #include "words/exceptions.hpp"
-#include "words/regex.hpp"
+#include "words/regconstraints.hpp"
 #include "host/resources.hpp"
 #include "host/exitcodes.hpp"
 #include "parser/parsing.hpp"
@@ -318,7 +318,8 @@ int main (int argc, char** argv) {
 	auto jg = parser->Parse (std::cout);
 	std::cout << "[*] Parsing done \n";
 	auto job = jg->newJob ();
-	
+
+    
 
 	size_t noSolutionCount = 0;
 	size_t DefinitelyNoSolutionCount = 0;

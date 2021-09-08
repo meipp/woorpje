@@ -1,10 +1,11 @@
 #include <string>
 #include<vector>
 #include "smtparser/ast.hpp"
+#include "words/words.hpp"
 
 
 namespace Words {
-    namespace Regex {
+    namespace RegularConstraints {
         /**
          * ABC for regular expression trees.
          */
@@ -107,6 +108,20 @@ namespace Words {
 
         };
 
+        struct RegConstraint {
+        public:
+            RegConstraint(Words::Word pattern, std::shared_ptr<RegNode> expr): pattern(pattern), expr(expr) {};
 
-    }  // namespace Regex
+            void toString(std::ostream& os) {
+                os << pattern;
+                os << "⋵ ";
+                expr->toString(os);
+            }
+
+            Words::Word  pattern;
+            std::shared_ptr<RegNode> expr;
+        };
+
+
+    }  // namespace RegularConstraints
 }  // namespace Words
