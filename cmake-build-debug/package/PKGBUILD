@@ -1,0 +1,25 @@
+# $Id$
+# Maintainer: Danny Bøgsted Poulsen <dbp@informatik.uni-kiel.de>
+
+pkgname=woorpje
+pkgver=0_3_1
+pkgrel=1
+pkgdesc="A string solver"
+install=woorpje.install
+arch=('x86_64')
+url="http://lodin.boegstedpoulsen.dk"
+depends=('cvc4' 'z3')
+makedepends=('unzip')
+source=(../../woorpje-0_3_1.zip)
+license=('custom')
+sha256sums=('SKIP')
+
+
+
+
+package() {
+  mkdir -p "$pkgdir"/opt/woorpje
+  cp -r "/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/package/src/woorpje-0_3_1"/* "$pkgdir"/opt/woorpje 
+  install -Dm644 "$pkgdir"/opt/woorpje/license/LICENSE  "$pkgdir"/usr/share/licenses/$pkgname/LICENSE
+}
+

@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="smtlib_parser"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\external\;CMake Files\external\smtparser\;CMake Files\external\smtparser\src\;CMake Files\..\;CMake Files\..\..\;CMake Files\..\..\..\;CMake Files\..\..\..\..\;CMake Files\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\..\..\usr\;CMake Files\..\..\..\..\..\..\..\..\usr\lib\;CMake Files\..\..\..\..\..\..\..\..\usr\lib\x86_64-linux-gnu\;CMake Files\..\..\..\..\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\;CMake Files\..\..\..\..\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\Boost-1.74.0\;CMake Files\..\..\..\..\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\boost_headers-1.74.0\;CMake Files\..\..\..\..\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\boost_program_options-1.74.0\;CMake Files\cmake-build-debug\;CMake Files\cmake-build-debug\external\;CMake Files\cmake-build-debug\external\murmurhash\;CMake Files\cmake-build-debug\external\murmurhash\tmp\;CMake Files\libs\;CMake Files\libs\glucose\;CMake Files\libs\glucose\core\;CMake Files\libs\glucose\utils\;CMake Files\libs\host\;CMake Files\libs\words\;CMake Files\libs\parser\;CMake Files\libs\parser\smtparser\;CMake Files\libs\parser\standard\;CMake Files\libs\solvers\;CMake Files\libs\solvers\satencoding\;CMake Files\libs\solvers\puresmt\;CMake Files\libs\solvers\levis\;CMake Files\libs\smt\;CMake Files\test\;CMake Files\test\track1\;CMake Files\package\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="main">
+				<Option output="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/main" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/mku/share/packages/include"/>
+					<Add directory="/home/mku/share/packages/include/cvc4"/>
+					<Add directory="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/external/smtparser/src/include"/>
+					<Add directory="/usr/include/c++/10"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/10"/>
+					<Add directory="/usr/include/c++/10/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/10/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/Makefile&quot;  VERBOSE=1 main"/>
+					<CompileFile command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="main/fast">
+				<Option output="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/main" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/mku/share/packages/include"/>
+					<Add directory="/home/mku/share/packages/include/cvc4"/>
+					<Add directory="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/external/smtparser/src/include"/>
+					<Add directory="/usr/include/c++/10"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/10"/>
+					<Add directory="/usr/include/c++/10/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/10/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/Makefile&quot;  VERBOSE=1 main/fast"/>
+					<CompileFile command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="smtparser">
+				<Option output="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/src/libsmtparser.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/src"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/mku/share/packages/include"/>
+					<Add directory="/home/mku/share/packages/include/cvc4"/>
+					<Add directory="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/external/smtparser/src/include"/>
+					<Add directory="/usr/include/c++/10"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/10"/>
+					<Add directory="/usr/include/c++/10/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/10/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/src/Makefile&quot;  VERBOSE=1 smtparser"/>
+					<CompileFile command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/src/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/src/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/src/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="smtparser/fast">
+				<Option output="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/src/libsmtparser.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/src"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/mku/share/packages/include"/>
+					<Add directory="/home/mku/share/packages/include/cvc4"/>
+					<Add directory="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/external/smtparser/src/include"/>
+					<Add directory="/usr/include/c++/10"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/10"/>
+					<Add directory="/usr/include/c++/10/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/10/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/src/Makefile&quot;  VERBOSE=1 smtparser/fast"/>
+					<CompileFile command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/src/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/src/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j4 -f &quot;/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/src/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/src/key.cpp">
+			<Option target="smtparser"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/src/key.cpp.rule">
+			<Option target="smtparser"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/src/lex.yy.cc">
+			<Option target="smtparser"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/smtparser/src/lex.yy.cc.rule">
+			<Option target="smtparser"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/external/smtparser/test.cpp">
+			<Option target="main"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/config.h.in">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/external/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\external\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/external/smtparser/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\external\smtparser\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/external/smtparser/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\external\smtparser\src\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/../../../../../../../../usr/lib/x86_64-linux-gnu/cmake/BoostDetectToolset-1.74.0.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/../../../../../../../../usr/lib/x86_64-linux-gnu/cmake/Boost-1.74.0/BoostConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\Boost-1.74.0\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/../../../../../../../../usr/lib/x86_64-linux-gnu/cmake/Boost-1.74.0/BoostConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\Boost-1.74.0\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/../../../../../../../../usr/lib/x86_64-linux-gnu/cmake/boost_headers-1.74.0/boost_headers-config-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\boost_headers-1.74.0\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/../../../../../../../../usr/lib/x86_64-linux-gnu/cmake/boost_headers-1.74.0/boost_headers-config.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\boost_headers-1.74.0\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/../../../../../../../../usr/lib/x86_64-linux-gnu/cmake/boost_program_options-1.74.0/boost_program_options-config-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\boost_program_options-1.74.0\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/../../../../../../../../usr/lib/x86_64-linux-gnu/cmake/boost_program_options-1.74.0/boost_program_options-config.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\boost_program_options-1.74.0\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/../../../../../../../../usr/lib/x86_64-linux-gnu/cmake/boost_program_options-1.74.0/libboost_program_options-variant-shared.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\boost_program_options-1.74.0\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/../../../../../../../../usr/lib/x86_64-linux-gnu/cmake/boost_program_options-1.74.0/libboost_program_options-variant-static.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\boost_program_options-1.74.0\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/cmake-build-debug/external/murmurhash/tmp/murmurhash-cfgcmd.txt.in">
+			<Option virtualFolder="CMake Files\cmake-build-debug\external\murmurhash\tmp\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/libs/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\libs\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/libs/glucose/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\libs\glucose\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/libs/glucose/core/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\libs\glucose\core\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/libs/glucose/utils/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\libs\glucose\utils\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/libs/host/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\libs\host\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/libs/words/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\libs\words\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/libs/parser/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\libs\parser\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/libs/parser/smtparser/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\libs\parser\smtparser\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/libs/parser/standard/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\libs\parser\standard\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/libs/solvers/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\libs\solvers\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/libs/solvers/satencoding/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\libs\solvers\satencoding\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/libs/solvers/puresmt/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\libs\solvers\puresmt\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/libs/solvers/levis/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\libs\solvers\levis\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/libs/smt/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\libs\smt\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/test/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\test\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/test/track1/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\test\track1\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/package/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\package\"/>
+		</Unit>
+		<Unit filename="/home/kevin/Dev/Uni/Master/SS21/Masterarbeit/woorpjegit/package/PKGBUILD.in">
+			<Option virtualFolder="CMake Files\package\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

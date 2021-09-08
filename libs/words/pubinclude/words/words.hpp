@@ -647,7 +647,7 @@ namespace Words {
         std::shared_ptr<Context> context;
         std::vector<Equation> equations;
         std::vector<Constraints::Constraint_ptr> constraints;
-        std::shared_ptr<std::vector<Words::RegularConstraints::RegConstraint>> recons;
+        std::vector<std::shared_ptr<Words::RegularConstraints::RegConstraint>> recons;
 
         uint32_t eqhash(uint32_t seed) const {
             for (auto &eq: equations) {

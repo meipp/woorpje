@@ -10,6 +10,7 @@
 #include "solvers/exceptions.hpp"
 #include "core/Solver.h"
 #include "solver.hpp"
+#include "regular/regencoding.h"
 
 Words::Solvers::Result setupSolverMain (Words::Options& opt); //std::vector<std::string>&, std::vector<std::string>&);
 void clearLinears();
@@ -33,6 +34,7 @@ namespace Words {
 
 		Words::IEntry* entry = opt.context->getEpsilon ();
 	
+		// Unused?
 		std::stringstream str;
 		std::vector<std::string> lhs;
 		std::vector<std::string> rhs;
@@ -80,6 +82,8 @@ namespace Words {
 		  if (!handleConstraint (*constraint,relay,entry))
 			return ::Words::Solvers::Result::NoIdea;
 		}
+
+
 		Words::Solvers::Timing::Timer overalltimer (timekeep,"Overall Solving Time");
 		
 		
@@ -95,6 +99,8 @@ namespace Words {
 											 )
 						   ); 
 		int i = 0;
+
+		
 		Words::Solvers::Result ret = Words::Solvers::Result::NoSolution;
 		while(i < actualb){
 		  i++;
@@ -144,9 +150,6 @@ namespace Words {
 		  relay.pushMessage ("Only Lineary Constraints are supported");
 		  return false;
 		}
-
-
-	  
 	  }
 	}
 	

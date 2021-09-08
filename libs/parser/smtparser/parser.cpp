@@ -36,9 +36,13 @@ namespace Words {
 
                 // Copy regular constraint
                 std::vector<std::shared_ptr<Words::RegularConstraints::RegConstraint>> rcp{};
+                for (Words::RegularConstraints::RegConstraint rc: recons) {
+                    auto shrd = std::make_shared<Words::RegularConstraints::RegConstraint>(std::move(rc));
+                    rcp.push_back(shrd);
+                }
 
-                auto mSharedPtr = std::make_shared<std::vector<Words::RegularConstraints::RegConstraint>>(std::move(recons));
-                job->options.recons = mSharedPtr;
+                //auto mSharedPtr = std::make_shared<std::vector<Words::RegularConstraints::RegConstraint>>(std::move(recons));
+                job->options.recons = rcp;
 
                 return job;
             } else {

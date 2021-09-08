@@ -319,7 +319,11 @@ int main (int argc, char** argv) {
 	std::cout << "[*] Parsing done \n";
 	auto job = jg->newJob ();
 
-    
+    for(std::shared_ptr<Words::RegularConstraints::RegConstraint> rc: job->options.recons) {
+		rc->toString(std::cout);
+		std::cout << "\n";
+	}
+	
 
 	size_t noSolutionCount = 0;
 	size_t DefinitelyNoSolutionCount = 0;
