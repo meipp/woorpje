@@ -701,9 +701,10 @@ namespace Words {
             std::vector<Words::RegularConstraints::RegConstraint> rcs{};
 
             
-            RegularConstraintBuilder rBuilder(*jg->context, rcs);
+
 
             for (auto &t: jg->parser.getAssert()) {
+                RegularConstraintBuilder rBuilder(*jg->context, rcs);
                 t->accept(tadder);
                 lbuilder.Run(*t);
                 rBuilder.run(*t);
