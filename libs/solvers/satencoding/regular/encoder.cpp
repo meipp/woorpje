@@ -56,7 +56,8 @@ namespace RegularEncoding {
     }
 
     PropositionalLogic::PLFormula
-    InductiveEncoder::doEncode(std::vector<FilledPos> filledPat, std::shared_ptr<Words::RegularConstraints::RegNode> expression) {
+    InductiveEncoder::doEncode(std::vector<FilledPos> filledPat,
+                               std::shared_ptr<Words::RegularConstraints::RegNode> expression) {
 
         /*
         stringstream esstr;
@@ -96,7 +97,7 @@ namespace RegularEncoding {
             }
             PLFormula result = encodeWord(filledPat, expressionIdx);
             //ccache[consthash] = &result;
-            return  result;
+            return result;
 
         } else if (opr != nullptr) {
             switch (opr->getOperator()) {
@@ -119,7 +120,8 @@ namespace RegularEncoding {
     }
 
     PropositionalLogic::PLFormula
-    InductiveEncoder::encodeUnion(std::vector<FilledPos> filledPat, std::shared_ptr<Words::RegularConstraints::RegOperation> expression) {
+    InductiveEncoder::encodeUnion(std::vector<FilledPos> filledPat,
+                                  std::shared_ptr<Words::RegularConstraints::RegOperation> expression) {
         vector<PLFormula> disj{};
         for (auto c: expression->getChildren()) {
             // TODO: Check length abstraction
@@ -130,28 +132,56 @@ namespace RegularEncoding {
     }
 
 
-    std::shared_ptr<Words::RegularConstraints::RegOperation> makeNodeBinary(std::shared_ptr<Words::RegularConstraints::RegOperation> opr) {
+    std::shared_ptr<Words::RegularConstraints::RegOperation>
+    makeNodeBinary(std::shared_ptr<Words::RegularConstraints::RegOperation> opr) {
         if (opr->getChildren().size() <= 2) {
             return opr;
         }
 
+        // New root
+        shared_ptr<Words::RegularConstraints::RegOperation> root = make_shared<Words::RegularConstraints::RegOperation>(
+                Words::RegularConstraints::RegularOperator::CONCAT);
+
+        auto lhs = opr->getChildren()[0];
+        shared_ptr<Words::RegularConstraints::RegOperation> rhs = make_shared<Words::RegularConstraints::RegOperation>(
+                Words::RegularConstraints::RegularOperator::CONCAT);
+        for (int i = 1; i < opr->getChildren().size(); i++) {
+            rhs->addChild(opr->getChildren()[i]);
+        }
+
+        // Add new children
+        root->addChild(lhs);
+        root->addChild(rhs);
+
+        return root;
     }
 
     PropositionalLogic::PLFormula
-    InductiveEncoder::encodeConcat(std::vector<FilledPos> filledPat, std::shared_ptr<Words::RegularConstraints::RegOperation> expression) {
+    InductiveEncoder::encodeConcat(std::vector<FilledPos> filledPat,
+                                   std::shared_ptr<Words::RegularConstraints::RegOperation> expression) {
+
+        if (expression->getChildren().size() > 2) {
+            auto bin = makeNodeBinary(expression);
+            return encodeConcat(filledPat, bin);
+        }
+
+
+
+
         vector<PLFormula> disj{};
         auto L = expression->getChildren()[0];
         auto R = expression->getChildren()[1];
+
         for (int i = 0; i <= int(filledPat.size()); i++) {
 
             // TODO: Check length abstraction
             //cout << i << "\n";
-            vector<FilledPos> prefix(filledPat.begin(), filledPat.begin()+i);
+            vector<FilledPos> prefix(filledPat.begin(), filledPat.begin() + i);
             //cout << "\tPrefix: " << prefix.size() << "\n";
-            vector<FilledPos> suffix(filledPat.begin()+i, filledPat.end());
+            vector<FilledPos> suffix(filledPat.begin() + i, filledPat.end());
             //cout << "\tSuffix: " << suffix.size() << "\n";
             PLFormula fl = doEncode(prefix, L);
-            PLFormula fr = doEncode(suffix, L);
+            PLFormula fr = doEncode(suffix, R);
 
             PLFormula current = PLFormula::land(vector<PLFormula>{fl, fr});
             disj.push_back(current);
@@ -190,7 +220,7 @@ namespace RegularEncoding {
                 for (auto fp: filledPat) {
                     if (fp.isTerminal()) {
                         // Can't be substituted to lambda
-                        return  ffalse;
+                        return ffalse;
                         int ci = fp.getTerminalIndex();
                         auto word = constantsVars->at(make_pair(ci, sigmaSize));
                         conj.push_back(PLFormula::lit(word));
