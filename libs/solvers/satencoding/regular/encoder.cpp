@@ -2,7 +2,7 @@
 #include <typeinfo>
 #include <words/exceptions.hpp>
 #include "regencoding.h"
-
+#include "boost/container_hash/hash.hpp"
 
 using namespace std;
 using namespace RegularEncoding::PropositionalLogic;
@@ -57,6 +57,27 @@ namespace RegularEncoding {
 
     PropositionalLogic::PLFormula
     InductiveEncoder::doEncode(std::vector<FilledPos> filledPat, std::shared_ptr<Words::RegularConstraints::RegNode> expression) {
+
+        /*
+        stringstream esstr;
+        expression->toString(esstr);
+        vector<size_t> hashes{boost::hash_value(esstr.str())};
+        for(auto c: filledPat) {
+            if (c.isTerminal()) {
+                hashes.push_back(boost::hash_value(c.getTerminalIndex()));
+            } else {
+                hashes.push_back(boost::hash_value(c.getVarIndex()));
+            }
+        }
+        size_t consthash = boost::hash_range(hashes.begin(), hashes.end());
+
+
+        if (ccache.count(consthash) == 1) {
+            return  *ccache.at(consthash);
+        }*/
+
+
+
         std::shared_ptr<Words::RegularConstraints::RegWord> word = dynamic_pointer_cast<Words::RegularConstraints::RegWord>(
                 expression);
         std::shared_ptr<Words::RegularConstraints::RegOperation> opr = dynamic_pointer_cast<Words::RegularConstraints::RegOperation>(
@@ -73,12 +94,14 @@ namespace RegularEncoding {
                     throw new Words::WordException("Only constant regular expressions allowed");
                 }
             }
-            return encodeWord(filledPat, expressionIdx);
+            PLFormula result = encodeWord(filledPat, expressionIdx);
+            //ccache[consthash] = &result;
+            return  result;
 
         } else if (opr != nullptr) {
             switch (opr->getOperator()) {
                 case Words::RegularConstraints::RegularOperator::CONCAT:
-                    //return encodeConcat(filledPat, opr);
+                    return encodeConcat(filledPat, opr);
                     break;
                 case Words::RegularConstraints::RegularOperator::UNION:
                     return encodeUnion(filledPat, opr);
@@ -99,10 +122,49 @@ namespace RegularEncoding {
     InductiveEncoder::encodeUnion(std::vector<FilledPos> filledPat, std::shared_ptr<Words::RegularConstraints::RegOperation> expression) {
         vector<PLFormula> disj{};
         for (auto c: expression->getChildren()) {
+            // TODO: Check length abstraction
             PLFormula f = doEncode(filledPat, c);
             disj.push_back(f);
         }
         return PLFormula::lor(disj);
+    }
+
+
+    std::shared_ptr<Words::RegularConstraints::RegOperation> makeNodeBinary(std::shared_ptr<Words::RegularConstraints::RegOperation> opr) {
+        if (opr->getChildren().size() <= 2) {
+            return opr;
+        }
+
+    }
+
+    PropositionalLogic::PLFormula
+    InductiveEncoder::encodeConcat(std::vector<FilledPos> filledPat, std::shared_ptr<Words::RegularConstraints::RegOperation> expression) {
+        vector<PLFormula> disj{};
+        auto L = expression->getChildren()[0];
+        auto R = expression->getChildren()[1];
+        for (int i = 0; i <= int(filledPat.size()); i++) {
+
+            // TODO: Check length abstraction
+            //cout << i << "\n";
+            vector<FilledPos> prefix(filledPat.begin(), filledPat.begin()+i);
+            //cout << "\tPrefix: " << prefix.size() << "\n";
+            vector<FilledPos> suffix(filledPat.begin()+i, filledPat.end());
+            //cout << "\tSuffix: " << suffix.size() << "\n";
+            PLFormula fl = doEncode(prefix, L);
+            PLFormula fr = doEncode(suffix, L);
+
+            PLFormula current = PLFormula::land(vector<PLFormula>{fl, fr});
+            disj.push_back(current);
+        }
+
+        if (disj.empty()) {
+            // None is satisfiable due to length abstraction
+            return ffalse;
+        } else if (disj.size() == 1) {
+            return disj[0];
+        } else {
+            return PLFormula::lor(disj);
+        }
     }
 
     PropositionalLogic::PLFormula InductiveEncoder::encodeWord(vector<FilledPos> filledPat,
@@ -110,21 +172,25 @@ namespace RegularEncoding {
 
         if (filledPat.size() < expressionIdx.size()) {
             // Unsat
-            cout << "UNSAT due to |pat| < |expr|\n";
+            //cout << "UNSAT due to |pat| < |expr|\n";
             return ffalse;
         }
 
+        // TODO: Length abstraction
+
         if (expressionIdx.empty()) {
-            cout << "Empty Expression\n";
+            //cout << "Empty Expression\n";
             if (filledPat.empty()) {
-                cout << "SAT as both empty\n";
+                //cout << "SAT as both empty\n";
                 return ftrue;
             } else {
-                cout << "Encoding pure lambda substitution\n";
+                //cout << "Encoding pure lambda substitution\n";
                 // All to lambda
                 vector<PLFormula> conj{};
                 for (auto fp: filledPat) {
                     if (fp.isTerminal()) {
+                        // Can't be substituted to lambda
+                        return  ffalse;
                         int ci = fp.getTerminalIndex();
                         auto word = constantsVars->at(make_pair(ci, sigmaSize));
                         conj.push_back(PLFormula::lit(word));

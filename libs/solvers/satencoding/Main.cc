@@ -1708,6 +1708,7 @@ template<bool newencode = true>
 
 
         //Handle regular constraints
+        cout << "Current bound: " << bound << "\n";
         for (auto recon: input_options.recons) {
             RegularEncoding::InductiveEncoder inductiveEncoder(*recon, context, S, sigmaSize,
                                                                &vIndices,

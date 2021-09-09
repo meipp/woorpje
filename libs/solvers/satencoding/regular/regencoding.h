@@ -2,6 +2,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include <iostream>
@@ -96,14 +97,15 @@ namespace RegularEncoding {
             int getLiteral() const { return literal; }
         };
 
-        std::set<std::set<int>> tseytin_cnf(PLFormula&, Glucose::Solver& s);
+        std::set<std::set<int>> tseytin_cnf(PLFormula &, Glucose::Solver &s);
 
     } // namespace PropositionalLogic
 
     class FilledPos {
     public:
-        FilledPos(int tIndex): tIndex(tIndex), isTerm(true) {};
-        FilledPos(std::pair<int, int> vIndex): vIndex(std::move(vIndex)), isTerm(false) {};
+        FilledPos(int tIndex) : tIndex(tIndex), isTerm(true) {};
+
+        FilledPos(std::pair<int, int> vIndex) : vIndex(std::move(vIndex)), isTerm(false) {};
 
         bool isTerminal() {
             return isTerm;
@@ -116,6 +118,7 @@ namespace RegularEncoding {
         int getTerminalIndex() {
             return tIndex;
         }
+
         std::pair<int, int> getVarIndex() {
             return vIndex;
         }
@@ -124,7 +127,7 @@ namespace RegularEncoding {
     private:
         bool isTerm;
         int tIndex = -1;
-        std::pair<int, int> vIndex = std::make_pair(-1,-1);
+        std::pair<int, int> vIndex = std::make_pair(-1, -1);
     };
 
     class Encoder {
@@ -188,7 +191,7 @@ namespace RegularEncoding {
                          std::map<std::pair<std::pair<int, int>, int>, Glucose::Var> *variableVars,
                          std::map<std::pair<int, int>, Glucose::Var> *constantsVars)
                 : Encoder(constraint, ctx, solver, sigmaSize, vIndices, maxPadding, tIndices, variableVars,
-                          constantsVars) {
+                          constantsVars) /*, *ccache(std::unordered_map<size_t, PropositionalLogic::PLFormula*>())*/ {
 
         };
 
@@ -202,13 +205,18 @@ namespace RegularEncoding {
         encodeWord(std::vector<FilledPos> filledPat, std::vector<int> expressionIdx);
 
         PropositionalLogic::PLFormula
-        encodeUnion(std::vector<FilledPos> filledPat, std::shared_ptr<Words::RegularConstraints::RegOperation> expression);
+        encodeUnion(std::vector<FilledPos> filledPat,
+                    std::shared_ptr<Words::RegularConstraints::RegOperation> expression);
 
         PropositionalLogic::PLFormula
-        encodeConcat(std::vector<FilledPos> filledPat, std::shared_ptr<Words::RegularConstraints::RegOperation> expression);
+        encodeConcat(std::vector<FilledPos> filledPat,
+                     std::shared_ptr<Words::RegularConstraints::RegOperation> expression);
 
         PropositionalLogic::PLFormula
-        encodeStar(std::vector<FilledPos> filledPat, std::shared_ptr<Words::RegularConstraints::RegOperation> expression);
+        encodeStar(std::vector<FilledPos> filledPat,
+                   std::shared_ptr<Words::RegularConstraints::RegOperation> expression);
+
+        //std::unordered_map<size_t, PropositionalLogic::PLFormula*> ccache;
 
     };
 
