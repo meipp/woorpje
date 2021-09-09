@@ -216,17 +216,20 @@ namespace RegularEncoding {
 
         set<set<int>> tseytin_cnf(PLFormula& formula, Glucose::Solver &solver) {
 
-            if (!formula.is_nenf()) {
+            /*if (!formula.is_nenf()) {
                 throw invalid_argument("Formula must be in NENF");
-            }
+            }*/
 
             int max_var = formula.max_var();
+
             formula.make_binary();
 
-
+            cout << "\tmaincnf...";
+            cout.flush();
             tuple<PLFormula, vector<tuple<int, PLFormula>>, int> tseytin_conf = maincnf(formula,
                                                                                         vector<tuple<int, PLFormula>>{},
                                                                                         max_var + 1, solver);
+            cout << "ok\n";
             //cout << "Got tseytin form\n";
             PLFormula phi = get<0>(tseytin_conf);
             vector<tuple<int, PLFormula>> defs = get<1>(tseytin_conf);

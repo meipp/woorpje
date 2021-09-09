@@ -1,5 +1,6 @@
 #include <map>
 #include <set>
+#include <list>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -100,6 +101,80 @@ namespace RegularEncoding {
         std::set<std::set<int>> tseytin_cnf(PLFormula &, Glucose::Solver &s);
 
     } // namespace PropositionalLogic
+
+
+    namespace LengthAbstraction {
+
+        class ArithmeticProgressions {
+        public:
+            ArithmeticProgressions() {
+                progressions = std::list<std::pair<int, int>>{};
+            }
+
+            void add(std::pair<int, int> p) {
+                progressions.push_back(p);
+            };
+
+
+            void mergeOther(ArithmeticProgressions& other) {
+                progressions.splice(progressions.end(), other.progressions);
+            }
+
+            std::list<std::pair<int, int>>& getProgressions() {
+                return progressions;
+            }
+
+            std::string toString() {
+                if (progressions.size() == 0) {
+                    return "{}";
+                }
+                std::stringstream ss;
+                ss << "{";
+                for (std::pair<int, int> ab: progressions) {
+                     ss << "("<< ab.first << ", " << ab.second << "), ";
+                }
+                ss << "}";
+                return ss.str();
+            }
+
+            /**
+             * Returns true if and only if there is some progression (a,b) such that for an n k = a+nb holds.
+             * @param k the interger to check
+             */
+            bool contains(int k) {
+                if (k < 0) {
+                    return false;
+                }
+                for (std::pair<int, int> p: progressions) {
+                    int a = p.first;
+                    int b = p.second;
+                    if (b == 0) {
+                        if (k == a) {
+                            // k = a + 0b
+                            return true;
+                        }
+                    } else {
+                        int n = (k - a) / b;
+                        if (k == a + n * b) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            ArithmeticProgressions intersection(ArithmeticProgressions other);
+
+        private:
+            std::list<std::pair<int, int>> progressions;
+
+        };
+
+        // Todo: return unique_ptr for performance!
+        ArithmeticProgressions fromExpression(Words::RegularConstraints::RegNode &);
+
+    }
+
 
     class FilledPos {
     public:
