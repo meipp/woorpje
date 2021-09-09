@@ -15,6 +15,7 @@ namespace Words {
             virtual ~RegNode() {}
             virtual void toString(std::ostream& os) = 0;
             virtual bool isLeaf() {return false;}
+            virtual void getAlphabet(Words::WordBuilder wb) = 0;
         };
 
         /**
@@ -69,6 +70,11 @@ namespace Words {
                 }
             }
 
+            void getAlphabet(Words::WordBuilder wb) {
+                for (auto c: children) {
+                    c->getAlphabet(wb);
+                }
+            }
             /**
              * Returns a vector of the operand nodes.
              */
@@ -91,8 +97,15 @@ namespace Words {
             }
 
             virtual bool isLeaf() { return true; }
+            void getAlphabet(Words::WordBuilder wb) {
 
-        private:
+                for (auto e: word) {
+                    if (e->isTerminal()) {
+                        wb << e->getTerminal()->getChar();
+                    }
+                }
+            }
+
             Words::Word word;
         };
 
@@ -103,8 +116,8 @@ namespace Words {
 
             void toString(std::ostream& os) {
                 os << "</>";
-                
             }
+            void getAlphabet(Words::WordBuilder wb) {}
 
         };
 

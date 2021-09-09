@@ -17,16 +17,65 @@ namespace RegularEncoding {
 
         bool PLFormula::valid() {
             if (junctor == Junctor::LIT) {
-                return subformulae.size() == 0;
+                if (subformulae.size() != 0) {
+                    std::cout << "Literals can' have operands\n";
+                    return false;
+                }
             } else if (junctor == Junctor::AND || junctor == Junctor::OR) {
-                return subformulae.size() >= 2;
+                if (subformulae.size() < 2) {
+                    std::cout << "AND/OR must have at least 2 operands\n";
+                    return false;
+                }
             } else if (junctor == Junctor::NOT) {
-                return subformulae.size() == 1;
+                if (subformulae.size() != 1) {
+                    std::cout << "NOT can only have one operand\n";
+                    return false;
+                }
             }
 
+            for (auto s: subformulae) {
+                return s.valid();
+            }
 
-            return false;
+            return true;
 
+        }
+
+        string PLFormula::toString() {
+            stringstream ss;
+
+            switch (junctor) {
+
+                case Junctor::LIT:
+                    ss << literal;
+                    break;
+                case Junctor::AND:
+                    ss << "AND (";
+                    for (auto s: subformulae) {
+                        ss << s.toString();
+                        ss << " ";
+                    }
+                    ss << ") ";
+                    break;
+                case Junctor::OR:
+                    ss << "OR(";
+                    for (auto s: subformulae) {
+                        ss << s.toString();
+                        ss << " ";
+                    }
+                    ss << ") ";
+                    break;
+                case Junctor::NOT:
+                    ss << "-(";
+                    for (auto s: subformulae) {
+                        ss << s.toString();
+                        ss << " ";
+                    }
+                    ss << ") ";
+                    break;
+            }
+
+            return ss.str();
         }
 
         bool PLFormula::is_nenf() {
@@ -44,6 +93,7 @@ namespace RegularEncoding {
             return true;
         }
 
+        // TODO: Use pointers instread of copying
         void PLFormula::make_binary() {
             if (junctor == Junctor::AND || junctor == Junctor::OR) {
                 if (subformulae.size() > 2) {
@@ -51,6 +101,15 @@ namespace RegularEncoding {
                     vector<PLFormula> rightsubs(subformulae.begin() + 1, subformulae.end());
                     PLFormula right = PLFormula(junctor, rightsubs);
                     subformulae = vector<PLFormula>{left, right};
+                } else if (subformulae.size() == 1) {
+                    auto subf = subformulae[0];
+                    junctor = subf.junctor;
+                    literal = subf.literal;
+                    subformulae = subf.subformulae;
+                } else if (subformulae.empty()) {
+                    cout << "Invalid formula, junctor has " << subformulae.size() << " operands\n";
+                    cout << toString() << "\n";
+                    exit(-1);
                 }
             }
             for (int i = 0; i < subformulae.size(); i++) {
@@ -107,15 +166,21 @@ namespace RegularEncoding {
 
         namespace {
             tuple<PLFormula, vector<tuple<int, PLFormula>>, int>
-            defstep(Junctor, PLFormula, PLFormula, vector<tuple<int, PLFormula>>, int);
+            defstep(Junctor, PLFormula, PLFormula, vector<tuple<int, PLFormula>>, int, Glucose::Solver& solver);
 
             tuple<PLFormula, vector<tuple<int, PLFormula>>, int>
-            maincnf(PLFormula f, vector<tuple<int, PLFormula>> defs, int n) {
+            maincnf(PLFormula f, vector<tuple<int, PLFormula>> defs, int n, Glucose::Solver& solver) {
 
                 if (f.getJunctor() == Junctor::AND) {
-                    return defstep(Junctor::AND, f.getSubformulae()[0], f.getSubformulae()[1], defs, n);
+
+                    return defstep(Junctor::AND, f.getSubformulae()[0], f.getSubformulae()[1], defs, n, solver);
                 } else if (f.getJunctor() == Junctor::OR) {
-                    return defstep(Junctor::OR, f.getSubformulae()[0], f.getSubformulae()[1], defs, n);
+                    if (f.getSubformulae().size() != 2) {
+                        cout << "Error: OR must have two operands but has " << f.getSubformulae().size()  << "\n";
+                        cout << "Formula: " << f.getSubformulae()[0].toString();
+                        exit(-1);
+                    }
+                    return defstep(Junctor::OR, f.getSubformulae()[0], f.getSubformulae()[1], defs, n, solver);
                 } else if (f.getJunctor() == Junctor::NOT) {
                     int lit = -f.getSubformulae()[0].getLiteral();
                     PLFormula ff = PLFormula::lit(lit);
@@ -124,18 +189,22 @@ namespace RegularEncoding {
                     // Literal
                     return make_tuple(f, defs, n);
                 }
+
             }
 
             tuple<PLFormula, vector<tuple<int, PLFormula>>, int>
-            defstep(Junctor junctor, PLFormula f1, PLFormula f2, vector<tuple<int, PLFormula>> defs, int n) {
+            defstep(Junctor junctor, PLFormula f1, PLFormula f2, vector<tuple<int, PLFormula>> defs, int n, Glucose::Solver& solver) {
 
-                tuple<PLFormula, vector<tuple<int, PLFormula>>, int> left = maincnf(f1, defs, n);
-                tuple<PLFormula, vector<tuple<int, PLFormula>>, int> right = maincnf(f2, get<1>(left), get<2>(left));
 
-                int n2 = get<2>(right);
+                tuple<PLFormula, vector<tuple<int, PLFormula>>, int> left = maincnf(f1, defs, n, solver);
+                tuple<PLFormula, vector<tuple<int, PLFormula>>, int> right = maincnf(f2, get<1>(left), get<2>(left), solver);
+
+
+                int n2 = solver.newVar();
                 PLFormula phi = (junctor == Junctor::AND) ? PLFormula::land(
-                        vector<PLFormula>{get<0>(left), get<0>(right)}) : PLFormula::lor(
-                        vector<PLFormula>{get<0>(left), get<0>(right)});
+                        vector<PLFormula>{get<0>(left), get<0>(right)})
+                                                          : PLFormula::lor(
+                                vector<PLFormula>{get<0>(left), get<0>(right)});
                 tuple<int, PLFormula> newDef = make_tuple(n2, phi);
 
                 vector<tuple<int, PLFormula>> newdefs = get<1>(right);
@@ -145,7 +214,8 @@ namespace RegularEncoding {
             }
         }
 
-        set<set<int>> tseytin_cnf(PLFormula formula) {
+        set<set<int>> tseytin_cnf(PLFormula& formula, Glucose::Solver &solver) {
+
             if (!formula.is_nenf()) {
                 throw invalid_argument("Formula must be in NENF");
             }
@@ -156,7 +226,8 @@ namespace RegularEncoding {
 
             tuple<PLFormula, vector<tuple<int, PLFormula>>, int> tseytin_conf = maincnf(formula,
                                                                                         vector<tuple<int, PLFormula>>{},
-                                                                                        max_var + 1);
+                                                                                        max_var + 1, solver);
+            //cout << "Got tseytin form\n";
             PLFormula phi = get<0>(tseytin_conf);
             vector<tuple<int, PLFormula>> defs = get<1>(tseytin_conf);
 
@@ -165,11 +236,12 @@ namespace RegularEncoding {
             cnf.insert(set<int>{phi.getLiteral()});
 
 
+
             for (int i = 0; i < defs.size(); i++) {
+
                 int l = get<0>(defs[i]);
                 PLFormula fl = get<1>(defs[i]);
 
-                cout << l << "\n";
 
                 if (fl.getJunctor() == Junctor::AND) {
                     // l <-> fl1 /\ ... /\ fln <==> (-l \/ fl1) /\ ... /\ (-l \/ fln) /\ (-fl1 \/ ... \/ -fln \/ l)
@@ -196,7 +268,6 @@ namespace RegularEncoding {
                 }
 
             }
-
             return cnf;
         }
 
