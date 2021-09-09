@@ -1708,24 +1708,25 @@ template<bool newencode = true>
 
 
         //Handle regular constraints
-        RegularEncoding::InductiveEncoder inductiveEncoder(*input_options.recons[0], context, S, sigmaSize, &vIndices,
-                                                           &maxPadding, &tIndices, &variableVars, &constantsVars);
-        set<set<int>> clauses = inductiveEncoder.encode();
-
-        // Convert clasues and add to solver
-
-        for (set<int> cl: clauses) {
-            vec<Lit> clvec;
-            for (int l: cl) {
-                int isneg = l < 0;
-                Glucose::Lit lit= mkLit(abs(l));
-                if (isneg) {
-                    clvec.push(~lit);
-                } else {
-                    clvec.push(lit);
+        for (auto recon: input_options.recons) {
+            RegularEncoding::InductiveEncoder inductiveEncoder(*recon, context, S, sigmaSize,
+                                                               &vIndices,
+                                                               &maxPadding, &tIndices, &variableVars, &constantsVars);
+            set<set<int>> clauses = inductiveEncoder.encode();
+            // Convert clasues and add to solver
+            for (set<int> cl: clauses) {
+                vec<Lit> clvec;
+                for (int l: cl) {
+                    int isneg = l < 0;
+                    Glucose::Lit lit = mkLit(abs(l));
+                    if (isneg) {
+                        clvec.push(~lit);
+                    } else {
+                        clvec.push(lit);
+                    }
                 }
+                S.addClause(clvec);
             }
-            S.addClause(clvec);
         }
 
 
