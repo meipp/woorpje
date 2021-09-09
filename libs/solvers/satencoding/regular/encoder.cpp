@@ -1,11 +1,13 @@
 #include <iostream>
-#include <typeinfo>
 #include <words/exceptions.hpp>
 #include "regencoding.h"
 #include "boost/container_hash/hash.hpp"
 
 using namespace std;
 using namespace RegularEncoding::PropositionalLogic;
+
+const int UNROLLBOUND = 8;
+
 
 namespace RegularEncoding {
 
@@ -107,7 +109,7 @@ namespace RegularEncoding {
                 case Words::RegularConstraints::RegularOperator::UNION:
                     return encodeUnion(filledPat, opr);
                 case Words::RegularConstraints::RegularOperator::STAR:
-                    //return encodeStar(filledPat, opr);
+                    return encodeStar(filledPat, opr);
                     break;
             }
         } else if (emps != nullptr) {
@@ -132,21 +134,28 @@ namespace RegularEncoding {
     }
 
 
+    /**
+     * Helper function to make n-ary concatenation binary.
+     * Does not mutate the input parameter.
+     * @param concat the n-ary concatenation
+     * @return A new RegNode that has two exactly children, where the RHS contains all other concats,
+     *      or the input param itself, if it was already binary.
+     */
     std::shared_ptr<Words::RegularConstraints::RegOperation>
-    makeNodeBinary(std::shared_ptr<Words::RegularConstraints::RegOperation> opr) {
-        if (opr->getChildren().size() <= 2) {
-            return opr;
+    makeNodeBinary(std::shared_ptr<Words::RegularConstraints::RegOperation> concat) {
+        if (concat->getChildren().size() <= 2) {
+            return concat;
         }
 
         // New root
         shared_ptr<Words::RegularConstraints::RegOperation> root = make_shared<Words::RegularConstraints::RegOperation>(
                 Words::RegularConstraints::RegularOperator::CONCAT);
 
-        auto lhs = opr->getChildren()[0];
+        auto lhs = concat->getChildren()[0];
         shared_ptr<Words::RegularConstraints::RegOperation> rhs = make_shared<Words::RegularConstraints::RegOperation>(
                 Words::RegularConstraints::RegularOperator::CONCAT);
-        for (int i = 1; i < opr->getChildren().size(); i++) {
-            rhs->addChild(opr->getChildren()[i]);
+        for (int i = 1; i < concat->getChildren().size(); i++) {
+            rhs->addChild(concat->getChildren()[i]);
         }
 
         // Add new children
@@ -164,8 +173,6 @@ namespace RegularEncoding {
             auto bin = makeNodeBinary(expression);
             return encodeConcat(filledPat, bin);
         }
-
-
 
 
         vector<PLFormula> disj{};
@@ -195,6 +202,45 @@ namespace RegularEncoding {
         } else {
             return PLFormula::lor(disj);
         }
+    }
+
+    PropositionalLogic::PLFormula
+    InductiveEncoder::encodeStar(std::vector<FilledPos> filledPat,
+               std::shared_ptr<Words::RegularConstraints::RegOperation> expression) {
+
+
+        vector<PLFormula> disj{};
+        for (int b = 0; b < 5; b++) {
+            shared_ptr<Words::RegularConstraints::RegOperation> current = make_shared<Words::RegularConstraints::RegOperation>(
+                    Words::RegularConstraints::RegularOperator::CONCAT);
+
+            for (int l = 0; l < b; l++) {
+                current->addChild(expression->getChildren()[0]);
+            }
+            current->toString(cout);
+            cout<<"\n";
+
+            if (current->getChildren().empty()) {
+                auto cf = encodeWord(filledPat, vector<int>{});
+                disj.push_back(cf);
+            } else if (current->getChildren().size() == 1) {
+                auto cf = doEncode(filledPat, current->getChildren()[0]);
+                disj.push_back(cf);
+            } else {
+                auto cf = doEncode(filledPat, current);
+                disj.push_back(cf);
+            }
+
+
+        }
+        if (disj.empty()) {
+            return ffalse;
+        } else if(disj.size() == 1) {
+            return disj[0];
+        } else {
+            return PLFormula::lor(disj);
+        }
+
     }
 
     PropositionalLogic::PLFormula InductiveEncoder::encodeWord(vector<FilledPos> filledPat,
