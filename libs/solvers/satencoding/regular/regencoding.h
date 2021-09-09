@@ -196,19 +196,19 @@ namespace RegularEncoding {
 
     private:
         PropositionalLogic::PLFormula
-        doEncode(Words::Word pat, std::shared_ptr<Words::RegularConstraints::RegNode> expression);
+        doEncode(std::vector<FilledPos>, std::shared_ptr<Words::RegularConstraints::RegNode> expression);
 
         PropositionalLogic::PLFormula
         encodeWord(std::vector<FilledPos> filledPat, std::vector<int> expressionIdx);
 
         PropositionalLogic::PLFormula
-        encodeUnion(Words::Word pat, std::shared_ptr<Words::RegularConstraints::RegOperation> expression);
+        encodeUnion(std::vector<FilledPos> filledPat, std::shared_ptr<Words::RegularConstraints::RegOperation> expression);
 
         PropositionalLogic::PLFormula
-        encodeConcat(Words::Word pat, std::shared_ptr<Words::RegularConstraints::RegOperation> expression);
+        encodeConcat(std::vector<FilledPos> filledPat, std::shared_ptr<Words::RegularConstraints::RegOperation> expression);
 
         PropositionalLogic::PLFormula
-        encodeStar(Words::Word pat, std::shared_ptr<Words::RegularConstraints::RegOperation> expression);
+        encodeStar(std::vector<FilledPos> filledPat, std::shared_ptr<Words::RegularConstraints::RegOperation> expression);
 
     };
 

@@ -42,6 +42,8 @@ namespace Words {
             };
             virtual bool isLeaf() { return false; }
 
+            RegularOperator getOperator() { return op;};
+
             void toString(std::ostream& os) {
                 switch(op) {
                     case RegularOperator::UNION:
