@@ -165,11 +165,11 @@ namespace RegularEncoding {
 
 
         namespace {
-            tuple<PLFormula, vector<tuple<int, PLFormula>>, int>
-            defstep(Junctor, PLFormula, PLFormula, vector<tuple<int, PLFormula>>, int, Glucose::Solver& solver);
+            tuple<PLFormula, int>
+            defstep(Junctor, PLFormula&, PLFormula&, vector<tuple<int, PLFormula>>&, int, Glucose::Solver& solver);
 
-            tuple<PLFormula, vector<tuple<int, PLFormula>>, int>
-            maincnf(PLFormula f, vector<tuple<int, PLFormula>> defs, int n, Glucose::Solver& solver) {
+            tuple<PLFormula, int>
+            maincnf(PLFormula& f, vector<tuple<int, PLFormula>>& defs, int n, Glucose::Solver& solver) {
 
                 if (f.getJunctor() == Junctor::AND) {
 
@@ -184,21 +184,21 @@ namespace RegularEncoding {
                 } else if (f.getJunctor() == Junctor::NOT) {
                     int lit = -f.getSubformulae()[0].getLiteral();
                     PLFormula ff = PLFormula::lit(lit);
-                    return make_tuple(ff, defs, n);
+                    return make_tuple(ff,  n);
                 } else {
                     // Literal
-                    return make_tuple(f, defs, n);
+                    return make_tuple(f,  n);
                 }
 
             }
 
-            tuple<PLFormula, vector<tuple<int, PLFormula>>, int>
-            defstep(Junctor junctor, PLFormula f1, PLFormula f2, vector<tuple<int, PLFormula>> defs, int n, Glucose::Solver& solver) {
+            tuple<PLFormula, int>
+            defstep(Junctor junctor, PLFormula& f1, PLFormula& f2, vector<tuple<int, PLFormula>>& defs, int n, Glucose::Solver& solver) {
 
 
-                tuple<PLFormula, vector<tuple<int, PLFormula>>, int> left = maincnf(f1, defs, n, solver);
-                tuple<PLFormula, vector<tuple<int, PLFormula>>, int> right = maincnf(f2, get<1>(left), get<2>(left), solver);
-
+                tuple<PLFormula, int> left = maincnf(f1, defs, n, solver);
+                tuple<PLFormula,  int> right = maincnf(f2, defs, n, solver);
+                // get<1>(left)
 
                 int n2 = solver.newVar();
                 PLFormula phi = (junctor == Junctor::AND) ? PLFormula::land(
@@ -206,11 +206,8 @@ namespace RegularEncoding {
                                                           : PLFormula::lor(
                                 vector<PLFormula>{get<0>(left), get<0>(right)});
                 tuple<int, PLFormula> newDef = make_tuple(n2, phi);
-
-                vector<tuple<int, PLFormula>> newdefs = get<1>(right);
-                newdefs.push_back(newDef);
-
-                return make_tuple(PLFormula::lit(n2), newdefs, n2 + 1);
+                defs.push_back(newDef);
+                return make_tuple(PLFormula::lit(n2), n2 + 1);
             }
         }
 
@@ -226,13 +223,14 @@ namespace RegularEncoding {
 
             cout << "\tmaincnf...";
             cout.flush();
-            tuple<PLFormula, vector<tuple<int, PLFormula>>, int> tseytin_conf = maincnf(formula,
-                                                                                        vector<tuple<int, PLFormula>>{},
+            vector<tuple<int, PLFormula>> tmp{};
+            tuple<PLFormula, int> tseytin_conf = maincnf(formula,
+                                                                                        tmp,
                                                                                         max_var + 1, solver);
             cout << "ok\n";
             //cout << "Got tseytin form\n";
             PLFormula phi = get<0>(tseytin_conf);
-            vector<tuple<int, PLFormula>> defs = get<1>(tseytin_conf);
+            //vector<tuple<int, PLFormula>> defs = get<1>(tseytin_conf);
 
 
             set<set<int>> cnf{};
@@ -240,10 +238,10 @@ namespace RegularEncoding {
 
 
 
-            for (int i = 0; i < defs.size(); i++) {
+            for (int i = 0; i < tmp.size(); i++) {
 
-                int l = get<0>(defs[i]);
-                PLFormula fl = get<1>(defs[i]);
+                int l = get<0>(tmp[i]);
+                PLFormula fl = get<1>(tmp[i]);
 
 
                 if (fl.getJunctor() == Junctor::AND) {
