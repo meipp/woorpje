@@ -4,8 +4,6 @@
 #include <algorithm>
 #include <iostream>
 
-#include "../lib/commons.cpp"
-
 
 using namespace std;
 using namespace commons;

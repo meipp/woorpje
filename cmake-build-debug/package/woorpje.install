@@ -1,8 +1,0 @@
-post_install() {
-  ln -s  "/opt/woorpje/bin/woorpje" /usr/bin/woorpje	
-  
-}
-
-post_remove () {
-  rm /usr/bin/woorpje
-}

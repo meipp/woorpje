@@ -1,7 +1,7 @@
 ### Build ###
 build/
 bin/
-
+cmake-build-debug/
 
 ### CMake ###
 CMakeLists.txt.user
