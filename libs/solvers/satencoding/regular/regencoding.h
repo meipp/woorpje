@@ -291,6 +291,10 @@ namespace RegularEncoding {
         encodeStar(std::vector<FilledPos> filledPat,
                    std::shared_ptr<Words::RegularConstraints::RegOperation> expression);
 
+        PropositionalLogic::PLFormula
+        encodeNone(std::vector<FilledPos> filledPat,
+                   std::shared_ptr<Words::RegularConstraints::RegEmpty> empty);
+
         //std::unordered_map<size_t, PropositionalLogic::PLFormula*> ccache;
 
     };

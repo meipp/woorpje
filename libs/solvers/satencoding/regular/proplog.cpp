@@ -166,17 +166,17 @@ namespace RegularEncoding {
 
         namespace {
             tuple<PLFormula, int>
-            defstep(Junctor, PLFormula&, PLFormula&, vector<tuple<int, PLFormula>>&, int, Glucose::Solver& solver);
+            defstep(Junctor, PLFormula &, PLFormula &, vector<tuple<int, PLFormula>> &, int, Glucose::Solver &solver);
 
             tuple<PLFormula, int>
-            maincnf(PLFormula& f, vector<tuple<int, PLFormula>>& defs, int n, Glucose::Solver& solver) {
+            maincnf(PLFormula &f, vector<tuple<int, PLFormula>> &defs, int n, Glucose::Solver &solver) {
 
                 if (f.getJunctor() == Junctor::AND) {
 
                     return defstep(Junctor::AND, f.getSubformulae()[0], f.getSubformulae()[1], defs, n, solver);
                 } else if (f.getJunctor() == Junctor::OR) {
                     if (f.getSubformulae().size() != 2) {
-                        cout << "Error: OR must have two operands but has " << f.getSubformulae().size()  << "\n";
+                        cout << "Error: OR must have two operands but has " << f.getSubformulae().size() << "\n";
                         cout << "Formula: " << f.getSubformulae()[0].toString();
                         exit(-1);
                     }
@@ -184,20 +184,21 @@ namespace RegularEncoding {
                 } else if (f.getJunctor() == Junctor::NOT) {
                     int lit = -f.getSubformulae()[0].getLiteral();
                     PLFormula ff = PLFormula::lit(lit);
-                    return make_tuple(ff,  n);
+                    return make_tuple(ff, n);
                 } else {
                     // Literal
-                    return make_tuple(f,  n);
+                    return make_tuple(f, n);
                 }
 
             }
 
             tuple<PLFormula, int>
-            defstep(Junctor junctor, PLFormula& f1, PLFormula& f2, vector<tuple<int, PLFormula>>& defs, int n, Glucose::Solver& solver) {
+            defstep(Junctor junctor, PLFormula &f1, PLFormula &f2, vector<tuple<int, PLFormula>> &defs, int n,
+                    Glucose::Solver &solver) {
 
 
                 tuple<PLFormula, int> left = maincnf(f1, defs, n, solver);
-                tuple<PLFormula,  int> right = maincnf(f2, defs, n, solver);
+                tuple<PLFormula, int> right = maincnf(f2, defs, n, solver);
                 // get<1>(left)
 
                 int n2 = solver.newVar();
@@ -211,7 +212,7 @@ namespace RegularEncoding {
             }
         }
 
-        set<set<int>> tseytin_cnf(PLFormula& formula, Glucose::Solver &solver) {
+        set<set<int>> tseytin_cnf(PLFormula &formula, Glucose::Solver &solver) {
 
             /*if (!formula.is_nenf()) {
                 throw invalid_argument("Formula must be in NENF");
@@ -221,21 +222,19 @@ namespace RegularEncoding {
 
             formula.make_binary();
 
-            cout << "\tmaincnf...";
+
             cout.flush();
             vector<tuple<int, PLFormula>> tmp{};
             tuple<PLFormula, int> tseytin_conf = maincnf(formula,
-                                                                                        tmp,
-                                                                                        max_var + 1, solver);
-            cout << "ok\n";
-            //cout << "Got tseytin form\n";
+                                                         tmp,
+                                                         max_var + 1, solver);
+
+
             PLFormula phi = get<0>(tseytin_conf);
-            //vector<tuple<int, PLFormula>> defs = get<1>(tseytin_conf);
 
 
             set<set<int>> cnf{};
             cnf.insert(set<int>{phi.getLiteral()});
-
 
 
             for (int i = 0; i < tmp.size(); i++) {

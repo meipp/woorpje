@@ -126,14 +126,13 @@ namespace RegularEncoding {
                         ArithmeticProgressions sub = fromExpression(*opr.getChildren()[0]);
                         if (sub.getProgressions().size() == 1){
                             pair<int, int> ab = *(sub.getProgressions().begin());
-                            cout << "\t(" << ab.first << ", " << ab.second << ")\n";
                             cache[restr] = star_single(ab);
                             return cache[restr];
                         } else {
                             vector<pair<int, int>> asvec(sub.getProgressions().begin(), sub.getProgressions().end());
                             auto ps = commons::powerset(asvec);
                             ArithmeticProgressions aps;
-                            for (vector<pair<int, int>> subset: ps) {
+                            for (const vector<pair<int, int>>& subset: ps) {
                                 for(pair<int, int> p: subset) {
                                     if (aps.getProgressions().empty()) {
                                         aps = star_single(p);
@@ -163,6 +162,7 @@ namespace RegularEncoding {
 
             try {
                 RegEmpty& emps = dynamic_cast<Words::RegularConstraints::RegEmpty&>(expression);
+                return {};
             } catch (std::bad_cast&) {}
 
         };

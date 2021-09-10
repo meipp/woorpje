@@ -613,8 +613,13 @@ namespace Words {
         }
 
         virtual void caseReNone(ReNone &c) {
-            for (auto &cc: c)
-                cc->accept(*this);
+
+            std::shared_ptr<Words::RegularConstraints::RegEmpty> empty(new Words::RegularConstraints::RegEmpty);
+            if (root == nullptr) {
+                root = empty;
+            } else {
+                parent->addChild(empty);
+            }
         }
 
 

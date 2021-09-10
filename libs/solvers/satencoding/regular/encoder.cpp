@@ -56,7 +56,7 @@ namespace RegularEncoding {
 
     set<set<int>> InductiveEncoder::encode() {
 
-        cout << "\n [*] Encoding ";
+        cout << "\n[*] Encoding ";
         constraint.toString(cout);
         cout << "\n";
 
@@ -65,15 +65,16 @@ namespace RegularEncoding {
 
         vector<FilledPos> filledPat = filledPattern(pattern);
 
+        auto start = high_resolution_clock::now();
         PropositionalLogic::PLFormula f = doEncode(filledPat, expr);
 
-        cout << "making cnf of depth " << f.depth() << "...\n";
-        auto start = high_resolution_clock::now();
+        cout << "\t - Built formula with depth " << f.depth() << ", creating CNF\n";
+
         set<set<int>> cnf = PropositionalLogic::tseytin_cnf(f, solver);
         auto stop = high_resolution_clock::now();
         auto duration = duration_cast<milliseconds>(stop - start);
-        cout << "Ok, "<< cnf.size() << "clauses, ";
-        cout << duration.count() << "ms" << endl;
+        cout << "\t - CNF done, "<< cnf.size() << " clauses\n";
+        cout << "[*] Encoding done. Took " << duration.count() << "ms" << endl;
         return cnf;
     }
 
@@ -160,8 +161,6 @@ namespace RegularEncoding {
             if (lengthOk) {
                 PLFormula f = doEncode(filledPat, c);
                 disj.push_back(f);
-            } else {
-                cout << "\t UNION LA not satsified\n";
             }
         }
         if (disj.empty()) {
@@ -279,24 +278,22 @@ namespace RegularEncoding {
                std::shared_ptr<Words::RegularConstraints::RegOperation> expression) {
 
         LengthAbstraction::ArithmeticProgressions la = LengthAbstraction::fromExpression(*expression);
+
         bool lengthOk = false;
         // < or <= ?? Also, for other cases?
         for (int i = numTerminals(filledPat); i<=filledPat.size(); i++) {
             if (la.contains(i)) {
                 lengthOk = true;
-                cout << "length ok: " << i << "\n";
-                cout << la.toString();
                 break;
             }
         }
 
         if (!lengthOk) {
-            cout << "NOPE\n";
             return ffalse;
         }
 
         vector<PLFormula> disj{};
-        for (int b = 0; b < 5; b++) {
+        for (int b = 0; b < UNROLLBOUND; b++) {
             shared_ptr<Words::RegularConstraints::RegOperation> current = make_shared<Words::RegularConstraints::RegOperation>(
                     Words::RegularConstraints::RegularOperator::CONCAT);
 
@@ -326,6 +323,12 @@ namespace RegularEncoding {
             return PLFormula::lor(disj);
         }
 
+    }
+
+    PropositionalLogic::PLFormula
+    InductiveEncoder::encodeNone(std::vector<FilledPos> filledPat,
+               std::shared_ptr<Words::RegularConstraints::RegEmpty> empty) {
+        return ffalse;
     }
 
     PropositionalLogic::PLFormula InductiveEncoder::encodeWord(vector<FilledPos> filledPat,
