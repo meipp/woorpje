@@ -108,19 +108,23 @@ namespace RegularEncoding {
         class ArithmeticProgressions {
         public:
             ArithmeticProgressions() {
-                progressions = std::list<std::pair<int, int>>{};
+                progressions = std::set<std::pair<int, int>>{};
             }
 
             void add(std::pair<int, int> p) {
-                progressions.push_back(p);
+                //progressions.push_back(p);
+                progressions.insert(p);
             };
 
 
-            void mergeOther(ArithmeticProgressions& other) {
-                progressions.splice(progressions.end(), other.progressions);
+            void mergeOther(ArithmeticProgressions &other) {
+                std::set<std::pair<int, int>> newProgs;
+                for (auto p: other.getProgressions()) {
+                    progressions.insert(p);
+                }
             }
 
-            std::list<std::pair<int, int>>& getProgressions() {
+            std::set<std::pair<int, int>> &getProgressions() {
                 return progressions;
             }
 
@@ -131,7 +135,7 @@ namespace RegularEncoding {
                 std::stringstream ss;
                 ss << "{";
                 for (std::pair<int, int> ab: progressions) {
-                     ss << "("<< ab.first << ", " << ab.second << "), ";
+                    ss << "(" << ab.first << ", " << ab.second << "), ";
                 }
                 ss << "}";
                 return ss.str();
@@ -166,7 +170,7 @@ namespace RegularEncoding {
             ArithmeticProgressions intersection(ArithmeticProgressions other);
 
         private:
-            std::list<std::pair<int, int>> progressions;
+            std::set<std::pair<int, int>> progressions;
 
         };
 

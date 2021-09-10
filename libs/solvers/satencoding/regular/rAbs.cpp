@@ -19,7 +19,7 @@ namespace RegularEncoding {
         unordered_map<string, ArithmeticProgressions> cache{};
 
         namespace {
-            void concat(ArithmeticProgressions& lhs, ArithmeticProgressions& rhs) {
+            ArithmeticProgressions concat(ArithmeticProgressions& lhs, ArithmeticProgressions& rhs) {
                 ArithmeticProgressions result;
                 for (pair<int, int> ab1: lhs.getProgressions()) {
                     int a1 = ab1.first;
@@ -40,7 +40,6 @@ namespace RegularEncoding {
                         ArithmeticProgressions P;
                         ArithmeticProgressions Q;
                         P.add(make_pair(a1+a2+nu, d));
-
 
                         int k1 = 0, k2 = 0;
                         while (b1*k1 + b2*k2 < pow(b, 2)) {
@@ -64,6 +63,7 @@ namespace RegularEncoding {
                         result.mergeOther(Q);
                     }
                 }
+                return result;
             }
 
             ArithmeticProgressions star_single(pair<int, int> ab) {
@@ -88,6 +88,8 @@ namespace RegularEncoding {
             stringstream ss;
             expression.toString(ss);
             string restr = ss.str();
+
+
             if (cache.count(restr) > 0) {
                 return cache[restr];
             }
@@ -113,24 +115,27 @@ namespace RegularEncoding {
                         RegNode &rhs = *opr.getChildren()[1];
                         auto left = fromExpression(lhs);
                         auto right = fromExpression(rhs);
-                        concat(left, right);
+                        left = concat(left, right);
                         for (int i = 2; i < opr.getChildren().size(); i++) {
-                            ArithmeticProgressions right = fromExpression(*opr.getChildren()[i]);
-                            left.mergeOther(right);
+                            right = fromExpression(*opr.getChildren()[i]);
+                            left = concat(left, right);
                         }
-                        cache[restr] = right;
-                        return right;
+                        cache[restr] = left;
+                        return left;
                         break;
                     }
                     case RegularOperator::STAR: {
                         ArithmeticProgressions sub = fromExpression(*opr.getChildren()[0]);
                         if (sub.getProgressions().size() == 1){
+
                             pair<int, int> ab = *(sub.getProgressions().begin());
                             cache[restr] = star_single(ab);
                             return cache[restr];
                         } else {
                             vector<pair<int, int>> asvec(sub.getProgressions().begin(), sub.getProgressions().end());
+
                             auto ps = commons::powerset(asvec);
+
                             ArithmeticProgressions aps;
                             for (const vector<pair<int, int>>& subset: ps) {
                                 for(pair<int, int> p: subset) {
@@ -138,7 +143,7 @@ namespace RegularEncoding {
                                         aps = star_single(p);
                                     } else {
                                         ArithmeticProgressions next = star_single(p);
-                                        concat(aps, next);
+                                        aps = concat(aps, next);
                                     }
                                 }
                             }

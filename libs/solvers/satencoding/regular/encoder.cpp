@@ -8,7 +8,6 @@ using namespace std::chrono;
 using namespace std;
 using namespace RegularEncoding::PropositionalLogic;
 
-const int UNROLLBOUND = 8;
 
 
 namespace RegularEncoding {
@@ -207,6 +206,7 @@ namespace RegularEncoding {
     InductiveEncoder::encodeConcat(std::vector<FilledPos> filledPat,
                                    std::shared_ptr<Words::RegularConstraints::RegOperation> expression) {
 
+
         if (expression->getChildren().size() > 2) {
             auto bin = makeNodeBinary(expression);
             return encodeConcat(filledPat, bin);
@@ -250,11 +250,7 @@ namespace RegularEncoding {
                 }
             }
 
-
             if (!lengthOk) {
-                //At least one does not satisfy length abstraction
-                //cout << "\t CONCAT LA not satsified\n";
-                cout << "\tLA for suffix failed\n";
                 continue;
             }
 
@@ -296,7 +292,7 @@ namespace RegularEncoding {
         }
 
         vector<PLFormula> disj{};
-        for (int b = 0; b < UNROLLBOUND; b++) {
+        for (int b = 0; b < filledPat.size()+1; b++) {
             shared_ptr<Words::RegularConstraints::RegOperation> current = make_shared<Words::RegularConstraints::RegOperation>(
                     Words::RegularConstraints::RegularOperator::CONCAT);
 
