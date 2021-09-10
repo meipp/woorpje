@@ -3,10 +3,10 @@
 #include "regencoding.h"
 #include <chrono>
 using namespace std::chrono;
-#include "boost/container_hash/hash.hpp"
 
 using namespace std;
 using namespace RegularEncoding::PropositionalLogic;
+
 
 
 
@@ -81,23 +81,7 @@ namespace RegularEncoding {
     InductiveEncoder::doEncode(std::vector<FilledPos> filledPat,
                                std::shared_ptr<Words::RegularConstraints::RegNode> expression) {
 
-        /*
-        stringstream esstr;
-        expression->toString(esstr);
-        vector<size_t> hashes{boost::hash_value(esstr.str())};
-        for(auto c: filledPat) {
-            if (c.isTerminal()) {
-                hashes.push_back(boost::hash_value(c.getTerminalIndex()));
-            } else {
-                hashes.push_back(boost::hash_value(c.getVarIndex()));
-            }
-        }
-        size_t consthash = boost::hash_range(hashes.begin(), hashes.end());
 
-
-        if (ccache.count(consthash) == 1) {
-            return  *ccache.at(consthash);
-        }*/
 
         std::shared_ptr<Words::RegularConstraints::RegWord> word = dynamic_pointer_cast<Words::RegularConstraints::RegWord>(
                 expression);
@@ -116,7 +100,6 @@ namespace RegularEncoding {
                 }
             }
             PLFormula result = encodeWord(filledPat, expressionIdx);
-            //ccache[consthash] = &result;
             return result;
 
         } else if (opr != nullptr) {
@@ -395,7 +378,7 @@ namespace RegularEncoding {
             if (j + 1 < filledPat.size()) {
                 if (filledPat[j + 1].isTerminal()) {
                     // Unsat, cant set terminal to lambda
-                    conj = vector<PLFormula>{ffalse};
+                    continue;
                 } else {
                     pair<int, int> xij = filledPat[j + 1].getVarIndex();
                     auto word = variableVars->at(make_pair(xij, sigmaSize));
