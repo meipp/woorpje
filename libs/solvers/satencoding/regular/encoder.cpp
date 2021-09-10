@@ -218,18 +218,20 @@ namespace RegularEncoding {
         auto R = expression->getChildren()[1];
 
 
+
         LengthAbstraction::ArithmeticProgressions laL = LengthAbstraction::fromExpression(*L);
         LengthAbstraction::ArithmeticProgressions laR = LengthAbstraction::fromExpression(*R);
+
+
         for (int i = 0; i <= int(filledPat.size()); i++) {
-            //cout << i << "\n";
+
             vector<FilledPos> prefix(filledPat.begin(), filledPat.begin() + i);
-            //cout << "\tPrefix: " << prefix.size() << "\n";
             vector<FilledPos> suffix(filledPat.begin() + i, filledPat.end());
+
 
             // Check length abstractions
             bool lengthOk = false;
-            //cout << "A\n";
-            //cout << "B1\n";
+
             for(int i = numTerminals(prefix); i <= prefix.size(); i++ ) {
                 if (laL.contains(i)) {
                     lengthOk = true;
@@ -242,7 +244,7 @@ namespace RegularEncoding {
             }
             lengthOk = false;
             for(int i = numTerminals(suffix); i <= suffix.size(); i++ ) {
-                if (laL.contains(i)) {
+                if (laR.contains(i)) {
                     lengthOk = true;
                     break;
                 }
@@ -252,6 +254,7 @@ namespace RegularEncoding {
             if (!lengthOk) {
                 //At least one does not satisfy length abstraction
                 //cout << "\t CONCAT LA not satsified\n";
+                cout << "\tLA for suffix failed\n";
                 continue;
             }
 
