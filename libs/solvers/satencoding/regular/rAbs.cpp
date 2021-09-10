@@ -4,6 +4,8 @@
 #include "regencoding.h"
 #include "commons.h"
 #include <chrono>
+#include <boost/math/common_factor.hpp>
+
 using namespace std::chrono;
 
 
@@ -17,7 +19,7 @@ namespace RegularEncoding {
         unordered_map<string, ArithmeticProgressions> cache{};
 
         namespace {
-            ArithmeticProgressions& concat(ArithmeticProgressions& lhs, ArithmeticProgressions& rhs) {
+            void concat(ArithmeticProgressions& lhs, ArithmeticProgressions& rhs) {
                 ArithmeticProgressions result;
                 for (pair<int, int> ab1: lhs.getProgressions()) {
                     int a1 = ab1.first;
@@ -64,6 +66,21 @@ namespace RegularEncoding {
                 }
             }
 
+            ArithmeticProgressions star_single(pair<int, int> ab) {
+                // Single element
+                ArithmeticProgressions ap;
+                if (ab.second == 0) {
+                    ap.add(make_pair(0, ab.first));
+                } else {
+                    int lcm = boost::math::lcm (ab.first, ab.second);
+                    for (int i = 1; i < lcm; i++) {
+                        ap.add(make_pair(ab.first*i, boost::math::gcd(ab.first, ab.second)));
+                    }
+
+                }
+                return ap;
+            }
+
         }
 
         ArithmeticProgressions fromExpression(RegNode& expression) {
@@ -96,7 +113,7 @@ namespace RegularEncoding {
                         RegNode &rhs = *opr.getChildren()[1];
                         auto left = fromExpression(lhs);
                         auto right = fromExpression(rhs);
-                        left = concat(left, right);
+                        concat(left, right);
                         for (int i = 2; i < opr.getChildren().size(); i++) {
                             ArithmeticProgressions right = fromExpression(*opr.getChildren()[i]);
                             left.mergeOther(right);
@@ -108,13 +125,26 @@ namespace RegularEncoding {
                     case RegularOperator::STAR: {
                         ArithmeticProgressions sub = fromExpression(*opr.getChildren()[0]);
                         if (sub.getProgressions().size() == 1){
-
+                            pair<int, int> ab = *(sub.getProgressions().begin());
+                            cout << "\t(" << ab.first << ", " << ab.second << ")\n";
+                            cache[restr] = star_single(ab);
+                            return cache[restr];
                         } else {
                             vector<pair<int, int>> asvec(sub.getProgressions().begin(), sub.getProgressions().end());
                             auto ps = commons::powerset(asvec);
-                            for (auto subset: ps) {
-                                // TODO
+                            ArithmeticProgressions aps;
+                            for (vector<pair<int, int>> subset: ps) {
+                                for(pair<int, int> p: subset) {
+                                    if (aps.getProgressions().empty()) {
+                                        aps = star_single(p);
+                                    } else {
+                                        ArithmeticProgressions next = star_single(p);
+                                        concat(aps, next);
+                                    }
+                                }
                             }
+                            cache[restr] = aps;
+                            return aps;
                         }
                     }
                     case RegularOperator::UNION: {

@@ -278,6 +278,22 @@ namespace RegularEncoding {
     InductiveEncoder::encodeStar(std::vector<FilledPos> filledPat,
                std::shared_ptr<Words::RegularConstraints::RegOperation> expression) {
 
+        LengthAbstraction::ArithmeticProgressions la = LengthAbstraction::fromExpression(*expression);
+        bool lengthOk = false;
+        // < or <= ?? Also, for other cases?
+        for (int i = numTerminals(filledPat); i<=filledPat.size(); i++) {
+            if (la.contains(i)) {
+                lengthOk = true;
+                cout << "length ok: " << i << "\n";
+                cout << la.toString();
+                break;
+            }
+        }
+
+        if (!lengthOk) {
+            cout << "NOPE\n";
+            return ffalse;
+        }
 
         vector<PLFormula> disj{};
         for (int b = 0; b < 5; b++) {
