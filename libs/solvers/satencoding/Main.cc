@@ -327,14 +327,14 @@ bool addSizeEqualityConstraint(Solver &s, Words::Equation &eq,
         nextRow.clear();
     }
     if (out) {
-        (out << (Words::Solvers::Formatter("Created %d states for MDD! ") %
+        (out << (Words::Solvers::Formatter("Created %d numStates for MDD! ") %
                  states.size())
                 .str())
                 .endl();
     }
-    // printf("c created %d states for MDD! \n", states.size());
+    // printf("c created %d states for MDD! \n", numStates.size());
     /*for(set<pair<int, int> >::iterator it = states.begin() ; it !=
-      states.end();it++){ cout << "initial state: " << it->first << " " <<
+      numStates.end();it++){ cout << "initial state: " << it->first << " " <<
       it->second << endl;
       }*/
     if (states.count(make_pair(numVars - 1, rhs)) == 0) {
@@ -370,9 +370,9 @@ bool addSizeEqualityConstraint(Solver &s, Words::Equation &eq,
             }
         }
     }
-    Words::Solvers::Formatter ff("have %1% marked states!");
+    Words::Solvers::Formatter ff("have %1% marked numStates!");
     (out << (ff % markedStates.size()).str()).endl();
-    // printf("c have %d marked states! \n", markedStates.size());
+    // printf("c have %d marked numStates! \n", markedStates.size());
     map<pair<int, int>, Var> partialSumVariables;
     for (set<pair<int, int>>::iterator it = markedStates.begin();
          it != markedStates.end(); it++) {
@@ -963,14 +963,14 @@ bool addLinearEqualityConstraint(Solver &s, map<int, int> &coefficients,
         nextRow.clear();
     }
     if (out) {
-        (out << (Words::Solvers::Formatter("Created %d states for MDD! ") %
+        (out << (Words::Solvers::Formatter("Created %d numStates for MDD! ") %
                  states.size())
                 .str())
                 .endl();
     }
-    // printf("c created %d states for MDD! \n", states.size());
-    // for(set<pair<int, int> >::iterator it = states.begin() ; it !=
-    // states.end();it++){ cout << "initial state: " << it->first << " " <<
+    // printf("c created %d numStates for MDD! \n", states.size());
+    // for(set<pair<int, int> >::iterator it = numStates.begin() ; it !=
+    // numStates.end();it++){ cout << "initial state: " << it->first << " " <<
     // it->second << endl;
     //  }
 
@@ -981,7 +981,7 @@ bool addLinearEqualityConstraint(Solver &s, map<int, int> &coefficients,
     set<pair<int, int>> markedStates;
     vector<pair<int, int>> queue;
     int nextIndex = 0;
-    // Mark final states
+    // Mark final numStates
     for (auto x: acceptingStates) {
         markedStates.insert(x);
         queue.push_back(x);
@@ -1010,9 +1010,9 @@ bool addLinearEqualityConstraint(Solver &s, map<int, int> &coefficients,
         }
     }
     Words::Solvers::Formatter ff(
-            "have %1% marked states for linear constraint MDD!");
+            "have %1% marked numStates for linear constraint MDD!");
     (out << (ff % markedStates.size()).str()).endl();
-    // printf("c have %d marked states! \n", markedStates.size());
+    // printf("c have %d marked numStates! \n", markedStates.size());
     map<pair<int, int>, Var> partialSumVariables;
     for (set<pair<int, int>>::iterator it = markedStates.begin();
          it != markedStates.end(); it++) {
@@ -1021,7 +1021,7 @@ bool addLinearEqualityConstraint(Solver &s, map<int, int> &coefficients,
     assert(partialSumVariables.count(make_pair(-1, 0)));
     s.addClause(mkLit(partialSumVariables[make_pair(-1, 0)]));
 
-    // Mark all accepting states active
+    // Mark all accepting numStates active
     for (auto x: acceptingStates) {
         assert(partialSumVariables.count(x));
         s.addClause(mkLit(partialSumVariables[x]));
@@ -1713,17 +1713,11 @@ template<bool newencode = true>
         cout << "Current bound: " << bound << "\n";
         for (auto recon: input_options.recons) {
 
-            RegularEncoding::Automaton::NFA M = RegularEncoding::Automaton::regex_to_nfa(*recon->expr);
-            cout << "e-NFA: " << M.toString() << "\n";
-            M.removeEpsilonTransitions();
-            cout << "NFA: " << M.toString() << "\n";
-            M = M.reduceToReachableState();
-            cout << "NFA: " << M.toString() << "\n";
 
-            RegularEncoding::InductiveEncoder inductiveEncoder(*recon, context, S, sigmaSize,
-                                                               &vIndices,
-                                                               &maxPadding, &tIndices, &variableVars, &constantsVars);
-            set<set<int>> clauses = inductiveEncoder.encode();
+            RegularEncoding::AutomatonEncoder regEncoder(*recon, context, S, sigmaSize,
+                                                         &vIndices,
+                                                         &maxPadding, &tIndices, &variableVars, &constantsVars);
+            set<set<int>> clauses = regEncoder.encode();
             // Convert clasues and add to solver
             for (set<int> cl: clauses) {
                 vec<Lit> clvec;

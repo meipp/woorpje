@@ -229,14 +229,12 @@ namespace RegularEncoding {
                                                          tmp,
                                                          max_var + 1, solver);
 
-
             PLFormula phi = get<0>(tseytin_conf);
-
 
             set<set<int>> cnf{};
             cnf.insert(set<int>{phi.getLiteral()});
 
-
+            cout << "HIER\n";
             for (int i = 0; i < tmp.size(); i++) {
 
                 int l = get<0>(tmp[i]);

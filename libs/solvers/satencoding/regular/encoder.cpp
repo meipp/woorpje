@@ -2,21 +2,20 @@
 #include <words/exceptions.hpp>
 #include "regencoding.h"
 #include <chrono>
-using namespace std::chrono;
+
 
 using namespace std;
 using namespace RegularEncoding::PropositionalLogic;
-
-
+using namespace chrono;
 
 
 namespace RegularEncoding {
 
     namespace {
 
-        int numTerminals(vector<FilledPos>& pat) {
+        int numTerminals(vector<FilledPos> &pat) {
             int ts = 0;
-            for(auto fp: pat) {
+            for (auto fp: pat) {
                 if (fp.isTerminal()) {
                     ts++;
                 }
@@ -53,6 +52,11 @@ namespace RegularEncoding {
 
     }
 
+
+    /*********************************************************************
+     ************************* Inductive Encoder *************************
+     *********************************************************************/
+
     set<set<int>> InductiveEncoder::encode() {
 
         cout << "\n[*] Encoding ";
@@ -60,35 +64,35 @@ namespace RegularEncoding {
         cout << "\n";
 
         Words::Word pattern = constraint.pattern;
-        std::shared_ptr<Words::RegularConstraints::RegNode> expr = constraint.expr;
+        shared_ptr<Words::RegularConstraints::RegNode> expr = constraint.expr;
 
         vector<FilledPos> filledPat = filledPattern(pattern);
 
         auto start = high_resolution_clock::now();
-        PropositionalLogic::PLFormula f = doEncode(filledPat, expr);
+        PLFormula f = doEncode(filledPat, expr);
 
         cout << "\t - Built formula with depth " << f.depth() << ", creating CNF\n";
 
-        set<set<int>> cnf = PropositionalLogic::tseytin_cnf(f, solver);
+        set<set<int>> cnf = tseytin_cnf(f, solver);
         auto stop = high_resolution_clock::now();
         auto duration = duration_cast<milliseconds>(stop - start);
-        cout << "\t - CNF done, "<< cnf.size() << " clauses\n";
+        cout << "\t - CNF done, " << cnf.size() << " clauses\n";
         cout << "[*] Encoding done. Took " << duration.count() << "ms" << endl;
         return cnf;
     }
 
-    PropositionalLogic::PLFormula
-    InductiveEncoder::doEncode(std::vector<FilledPos> filledPat,
-                               std::shared_ptr<Words::RegularConstraints::RegNode> expression) {
+    PLFormula
+    InductiveEncoder::doEncode(vector<FilledPos> filledPat,
+                               shared_ptr<Words::RegularConstraints::RegNode> expression) {
 
 
+        shared_ptr<Words::RegularConstraints::RegWord> word = dynamic_pointer_cast<Words::RegularConstraints::RegWord>(
+                expression);
+        shared_ptr<Words::RegularConstraints::RegOperation> opr = dynamic_pointer_cast<Words::RegularConstraints::RegOperation>(
+                expression);
+        shared_ptr<Words::RegularConstraints::RegEmpty> emps = dynamic_pointer_cast<Words::RegularConstraints::RegEmpty>(
+                expression);
 
-        std::shared_ptr<Words::RegularConstraints::RegWord> word = dynamic_pointer_cast<Words::RegularConstraints::RegWord>(
-                expression);
-        std::shared_ptr<Words::RegularConstraints::RegOperation> opr = dynamic_pointer_cast<Words::RegularConstraints::RegOperation>(
-                expression);
-        std::shared_ptr<Words::RegularConstraints::RegEmpty> emps = dynamic_pointer_cast<Words::RegularConstraints::RegEmpty>(
-                expression);
         if (word != nullptr) {
 
             vector<int> expressionIdx{};
@@ -117,24 +121,24 @@ namespace RegularEncoding {
                 }
             }
         } else if (emps != nullptr) {
-
+            return encodeNone(filledPat, emps);
         } else {
             throw new Words::WordException("Invalid type");
         }
 
-        return PropositionalLogic::PLFormula::lit(0);
+        return PLFormula::lit(0);
     }
 
-    PropositionalLogic::PLFormula
-    InductiveEncoder::encodeUnion(std::vector<FilledPos> filledPat,
-                                  std::shared_ptr<Words::RegularConstraints::RegOperation> expression) {
+    PLFormula
+    InductiveEncoder::encodeUnion(vector<FilledPos> filledPat,
+                                  shared_ptr<Words::RegularConstraints::RegOperation> expression) {
         vector<PLFormula> disj{};
         LengthAbstraction::ArithmeticProgressions la = LengthAbstraction::fromExpression(*expression);
         for (auto c: expression->getChildren()) {
             // TODO: Check length abstraction
             bool lengthOk = false;
             // < or <= ?? Also, for other cases?
-            for (int i = numTerminals(filledPat); i<=filledPat.size(); i++) {
+            for (int i = numTerminals(filledPat); i <= filledPat.size(); i++) {
                 if (la.contains(i)) {
                     lengthOk = true;
                     break;
@@ -161,8 +165,8 @@ namespace RegularEncoding {
      * @return A new RegNode that has two exactly children, where the RHS contains all other concats,
      *      or the input param itself, if it was already binary.
      */
-    std::shared_ptr<Words::RegularConstraints::RegOperation>
-    makeNodeBinary(std::shared_ptr<Words::RegularConstraints::RegOperation> concat) {
+    shared_ptr<Words::RegularConstraints::RegOperation>
+    makeNodeBinary(shared_ptr<Words::RegularConstraints::RegOperation> concat) {
         if (concat->getChildren().size() <= 2) {
             return concat;
         }
@@ -185,9 +189,9 @@ namespace RegularEncoding {
         return root;
     }
 
-    PropositionalLogic::PLFormula
-    InductiveEncoder::encodeConcat(std::vector<FilledPos> filledPat,
-                                   std::shared_ptr<Words::RegularConstraints::RegOperation> expression) {
+    PLFormula
+    InductiveEncoder::encodeConcat(vector<FilledPos> filledPat,
+                                   shared_ptr<Words::RegularConstraints::RegOperation> expression) {
 
 
         if (expression->getChildren().size() > 2) {
@@ -199,7 +203,6 @@ namespace RegularEncoding {
         vector<PLFormula> disj{};
         auto L = expression->getChildren()[0];
         auto R = expression->getChildren()[1];
-
 
 
         LengthAbstraction::ArithmeticProgressions laL = LengthAbstraction::fromExpression(*L);
@@ -215,18 +218,18 @@ namespace RegularEncoding {
             // Check length abstractions
             bool lengthOk = false;
 
-            for(int i = numTerminals(prefix); i <= prefix.size(); i++ ) {
+            for (int i = numTerminals(prefix); i <= prefix.size(); i++) {
                 if (laL.contains(i)) {
                     lengthOk = true;
                     break;
                 }
             }
 
-            if (!lengthOk){
+            if (!lengthOk) {
                 continue;
             }
             lengthOk = false;
-            for(int i = numTerminals(suffix); i <= suffix.size(); i++ ) {
+            for (int i = numTerminals(suffix); i <= suffix.size(); i++) {
                 if (laR.contains(i)) {
                     lengthOk = true;
                     break;
@@ -255,15 +258,15 @@ namespace RegularEncoding {
         }
     }
 
-    PropositionalLogic::PLFormula
-    InductiveEncoder::encodeStar(std::vector<FilledPos> filledPat,
-               std::shared_ptr<Words::RegularConstraints::RegOperation> expression) {
+    PLFormula
+    InductiveEncoder::encodeStar(vector<FilledPos> filledPat,
+                                 shared_ptr<Words::RegularConstraints::RegOperation> expression) {
 
         LengthAbstraction::ArithmeticProgressions la = LengthAbstraction::fromExpression(*expression);
 
         bool lengthOk = false;
         // < or <= ?? Also, for other cases?
-        for (int i = numTerminals(filledPat); i<=filledPat.size(); i++) {
+        for (int i = numTerminals(filledPat); i <= filledPat.size(); i++) {
             if (la.contains(i)) {
                 lengthOk = true;
                 break;
@@ -275,7 +278,7 @@ namespace RegularEncoding {
         }
 
         vector<PLFormula> disj{};
-        for (int b = 0; b < filledPat.size()+1; b++) {
+        for (int b = 0; b < filledPat.size() + 1; b++) {
             shared_ptr<Words::RegularConstraints::RegOperation> current = make_shared<Words::RegularConstraints::RegOperation>(
                     Words::RegularConstraints::RegularOperator::CONCAT);
 
@@ -299,7 +302,7 @@ namespace RegularEncoding {
         }
         if (disj.empty()) {
             return ffalse;
-        } else if(disj.size() == 1) {
+        } else if (disj.size() == 1) {
             return disj[0];
         } else {
             return PLFormula::lor(disj);
@@ -307,18 +310,18 @@ namespace RegularEncoding {
 
     }
 
-    PropositionalLogic::PLFormula
-    InductiveEncoder::encodeNone(std::vector<FilledPos> filledPat,
-               std::shared_ptr<Words::RegularConstraints::RegEmpty> empty) {
+    PLFormula
+    InductiveEncoder::encodeNone(vector<FilledPos> filledPat,
+                                 shared_ptr<Words::RegularConstraints::RegEmpty> empty) {
         return ffalse;
     }
 
-    PropositionalLogic::PLFormula InductiveEncoder::encodeWord(vector<FilledPos> filledPat,
-                                                               vector<int> expressionIdx) {
+    PLFormula InductiveEncoder::encodeWord(vector<FilledPos> filledPat,
+                                           vector<int> expressionIdx) {
 
         // Check length abstraction
         int lb = numTerminals(filledPat);
-        if (expressionIdx.size() < lb || filledPat.size() < expressionIdx.size() ) {
+        if (expressionIdx.size() < lb || filledPat.size() < expressionIdx.size()) {
             // Unsat
             //cout << "\t WORD LA not satsified\n";
             return ffalse;
@@ -385,9 +388,9 @@ namespace RegularEncoding {
                     conj.push_back(PLFormula::lit(word));
 
                     // Remaining of this variable must also be set to lambda
-                    int k=j+2;
-                    while(k < filledPat.size() && filledPat[k].isVariable()) {
-                        if (filledPat[k].getVarIndex().first == xij.first){
+                    int k = j + 2;
+                    while (k < filledPat.size() && filledPat[k].isVariable()) {
+                        if (filledPat[k].getVarIndex().first == xij.first) {
                             auto word = variableVars->at(make_pair(filledPat[k].getVarIndex(), sigmaSize));
                             conj.push_back(PLFormula::lit(word));
                         }
@@ -419,5 +422,236 @@ namespace RegularEncoding {
         }
     }
 
+
+    /*********************************************************************
+     ************************* Inductive Encoder *************************
+     *********************************************************************/
+
+    set<set<int>> AutomatonEncoder::encode() {
+        cout << "\n[*] Encoding ";
+        constraint.toString(cout);
+        cout << "\n";
+
+        Words::Word pattern = constraint.pattern;
+        shared_ptr<Words::RegularConstraints::RegNode> expr = constraint.expr;
+
+        vector<FilledPos> filledPat = filledPattern(pattern);
+
+        auto start = high_resolution_clock::now();
+
+
+        Automaton::NFA M = Automaton::regexToNfa(*expr, ctx);
+        M.removeEpsilonTransitions();
+        M = M.reduceToReachableState();
+        Automaton::NFA Mxi = filledAutomaton(M);
+
+        auto stop = chrono::high_resolution_clock::now();
+        auto duration = chrono::duration_cast<milliseconds>(stop - start);
+        cout << "\t - Built filled NFA with " << Mxi.numStates() << " states and " << Mxi.numTransitions()
+             << " transitions. Took " << duration.count() << "ms\n";
+
+
+        // Initiate State vars
+        for (int q = 0; q < Mxi.numStates(); q++) {
+            for (int i = 0; i <= filledPat.size(); i++) {
+                auto p = make_pair(q, i);
+                stateVars[p] = solver.newVar();
+            }
+        }
+
+
+        set<set<int>> cnf{};
+
+        // Initial State, is a conjunction of literals
+        PLFormula initialConj = encodeInitial(Mxi);
+        // Add each literal as clause to cnf
+        for (auto lit: initialConj.getSubformulae()) {
+            cnf.insert(set<int>{lit.getLiteral()});
+        }
+        // Final States, is a disjunction of literals
+        PLFormula finalDisj = encodeFinal(Mxi, filledPat);
+        // Add all literals as single clause to cnf
+        set<int> finalClause{};
+        for (auto lit: finalDisj.getSubformulae()) {
+            finalClause.insert(lit.getLiteral());
+        }
+        cnf.insert(finalClause);
+
+        stop = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<milliseconds>(stop - start);
+        cout << "\t - Created [Final] and [Initial] constraints. Took " << duration.count() << "ms\n";
+
+        // Transition constraint, is in cnf
+        PLFormula transitionCnf = encodeTransition(Mxi, filledPat);
+        for (auto disj: transitionCnf.getSubformulae()) {
+            set<int> clause{};
+            for (auto lit: disj.getSubformulae()) {
+                clause.insert(lit.getLiteral());
+            }
+            cnf.insert(clause);
+        }
+
+        stop = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<milliseconds>(stop - start);
+        cout << "\t - Created [Transition] constraint. Took " << duration.count() << "ms\n";
+
+        // Predecessor constraint
+        PLFormula predecessor = encodePredecessor(Mxi, filledPat);
+        stop = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<milliseconds>(stop - start);
+        cout << "\t - Created [Predecessor] constraint . Took " << duration.count() << "ms\n";
+
+        set<set<int>> predecessorCnf = tseytin_cnf(predecessor, solver);
+        for (auto clause: predecessorCnf) {
+            cnf.insert(clause);
+        }
+        stop = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<milliseconds>(stop - start);
+        cout << "\t - Created CNF. Took " << duration.count() << "ms\n";
+
+
+        stop = high_resolution_clock::now();
+        duration = duration_cast<milliseconds>(stop - start);
+        cout << "[*] Encoding done. Took " << duration.count() << "ms" << endl;
+        return cnf;
+
+    }
+
+    PLFormula AutomatonEncoder::encodeInitial(Automaton::NFA &Mxi) {
+        vector<PLFormula> conj;
+        PLFormula init = PLFormula::lit(stateVars[make_pair(Mxi.getInitialState(), 0)]);
+        conj.push_back(init);
+        for (int q = 1; q < Mxi.numStates(); q++) {
+            PLFormula notInit = PLFormula::lit(-stateVars[make_pair(q, 0)]);
+            conj.push_back(notInit);
+        }
+        return PLFormula::land(conj);
+    }
+
+    PLFormula AutomatonEncoder::encodeFinal(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat) {
+        vector<PLFormula> disj;
+        int n = filledPat.size();
+        for (int q: Mxi.getFinalStates()) {
+            auto p = make_pair(q, n);
+            disj.push_back(PLFormula::lit(stateVars[p]));
+        }
+        return PLFormula::lor(disj);
+    }
+
+    PLFormula AutomatonEncoder::encodeTransition(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat) {
+        vector<PLFormula> disj;
+
+        for (auto &trans: Mxi.getDelta()) {
+            for (auto &target: trans.second) {
+                for (int i = 0; i < filledPat.size(); i++) {
+                    // TODO: Check length abstraction
+                    vector<PLFormula> clause;
+
+                    int k;
+                    if (target.first->isEpsilon()) {
+                        k = sigmaSize;
+                    } else {
+                        k = tIndices->at(target.first);
+                    }
+
+                    int s = stateVars[make_pair(trans.first, i)];
+                    int word;
+                    if (filledPat[i].isTerminal()) {
+                        int ci = filledPat[i].getTerminalIndex();
+                        word = constantsVars->at(make_pair(ci, k));
+                    } else {
+                        pair<int, int> xij = filledPat[i].getVarIndex();
+                        word = variableVars->at(make_pair(xij, k));
+                    }
+                    int ssucc = stateVars[make_pair(target.second, i + 1)];
+
+                    clause.push_back(PLFormula::lit(-s));
+                    clause.push_back(PLFormula::lit(-word));
+                    clause.push_back(PLFormula::lit(ssucc));
+
+                    disj.push_back(PLFormula::lor(clause));
+                }
+            }
+            return PLFormula::land(disj);
+        }
+
+        return PLFormula::land(vector<PLFormula>{ffalse});
+    }
+
+    PLFormula AutomatonEncoder::encodePredecessor(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat) {
+        // calc pred
+        map<int, set<pair<Words::Terminal *, int>>> pred;
+        for (auto &trans: Mxi.getDelta()) {
+            int qsrc = trans.first;
+            for (auto &target: trans.second) {
+                Words::Terminal *label = target.first;
+                int qdst = target.second;
+                if (pred.count(qdst) == 1) {
+                    pred[qdst].insert(make_pair(label, qsrc));
+                } else {
+                    pred[qdst] = set<pair<Words::Terminal *, int>>{make_pair(label, qsrc)};
+                }
+            }
+        }
+
+        vector<PLFormula> disj;
+        for (int i = 1; i <= filledPat.size(); i++) {
+            for (int q = 0; q < Mxi.numStates(); q++) {
+
+                vector<PLFormula> lits;
+                PLFormula sqi = PLFormula::lit(-stateVars[make_pair(q, i)]);
+
+                lits.push_back(sqi);
+                if (pred.count(q) == 1) {
+                    // Has predecessor(s)
+                    for (auto q_pred: pred[q]) {
+                        // TODO: Check length abstraction
+                        PLFormula sqip = PLFormula::lit(stateVars[make_pair(q_pred.second, i - 1)]);
+                        vector<PLFormula> conj;
+                        int word;
+                        int k;
+                        if (q_pred.first->isEpsilon()) {
+                            k = sigmaSize;
+                        } else {
+                            k = tIndices->at(q_pred.first);
+                        }
+                        if (filledPat[i-1].isTerminal()) {
+                            int ci = filledPat[i-1].getTerminalIndex();
+                            word = constantsVars->at(make_pair(ci, k));
+                        } else {
+                            pair<int, int> xij = filledPat[i-1].getVarIndex();
+                            word = variableVars->at(make_pair(xij, k));
+                        }
+                        conj.push_back(sqip);
+                        conj.push_back(PLFormula::lit(word));
+
+                        lits.push_back(PLFormula::land(conj));
+                    }
+                    disj.push_back(PLFormula::lor(lits));
+                } else {
+                    disj.push_back(sqi);
+                }
+            }
+        }
+
+        if (disj.empty()) {
+            // TODO: FALSE or TRUE?
+            return ffalse;
+        } else if (disj.size() == 1) {
+            return disj[0];
+        } else {
+            return PLFormula::land(disj);
+        }
+
+
+    }
+
+    Automaton::NFA AutomatonEncoder::filledAutomaton(Automaton::NFA &nfa) {
+        Automaton::NFA Mxi(nfa.numStates(), nfa.getDelta(), nfa.getInitialState(), nfa.getFinalStates());
+        for (int q = 0; q < Mxi.numStates(); q++) {
+            Mxi.add_transition(q, ctx.getEpsilon(), q);
+        }
+        return Mxi;
+    }
 
 }

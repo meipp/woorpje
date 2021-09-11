@@ -354,7 +354,23 @@ namespace RegularEncoding {
     };
 
     class AutomatonEncoder : public Encoder {
+    public:
         using Encoder::Encoder;
+
+        std::set<std::set<int>> encode();
+
+    private:
+        PropositionalLogic::PLFormula encodeTransition(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat);
+
+        PropositionalLogic::PLFormula encodePredecessor(Automaton::NFA &nfa, std::vector<FilledPos> filledPat);
+
+        PropositionalLogic::PLFormula encodeFinal(Automaton::NFA &nfa, std::vector<FilledPos> filledPat);
+
+        PropositionalLogic::PLFormula encodeInitial(Automaton::NFA &nfa);
+
+        Automaton::NFA filledAutomaton(Automaton::NFA &nfa);
+
+        std::map<std::pair<int, int>, int> stateVars{};
     };
 
 } // namespace RegularEncoding
