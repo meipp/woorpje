@@ -1,6 +1,7 @@
 #import "regencoding.h"
 
 using namespace Words::RegularConstraints;
+using namespace Words;
 using namespace std;
 
 namespace RegularEncoding {
@@ -22,17 +23,17 @@ namespace RegularEncoding {
             final_states.insert(qf);
         }
 
-        map<int, vector<pair<string, int>>> NFA::offset_states(int of) {
-            map<int, vector<pair<string, int>>> newDelta{};
+        map<int, vector<pair<Terminal*, int>>> NFA::offset_states(int of) {
+            map<int, vector<pair<Terminal*, int>>> newDelta{};
             for (auto trans: delta) {
                 int q_src = trans.first + of;
                 for (auto target: trans.second) {
-                    string label = target.first;
+                    Terminal* label = target.first;
                     int q_target = target.second + of;
                     if (newDelta.count(q_src) == 1) {
                         newDelta[q_src].push_back(make_pair(label, q_target));
                     } else {
-                        vector<pair<string, int>> trans{make_pair(label, q_target)};
+                        vector<pair<Terminal*, int>> trans{make_pair(label, q_target)};
                         newDelta[q_src] = trans;
                     }
                 }
@@ -40,20 +41,17 @@ namespace RegularEncoding {
             return newDelta;
         }
 
-        void NFA::add_transition(int src_q, string label, int target_q) {
+        void NFA::add_transition(int src_q, Terminal* label, int target_q) {
             if (src_q < 0 || src_q >= nQ) {
                 throw new runtime_error("Invalid source state");
             }
             if (target_q < 0 || target_q >= nQ) {
                 throw new runtime_error("Invalid target state");
             }
-            if (label.size() > 1) {
-                throw new runtime_error("Invalid label, must be empty or one character");
-            }
             if (delta.count(src_q) == 1) {
                 delta[src_q].insert(make_pair(label, target_q));
             } else {
-                set<pair<string, int>> trans{make_pair(label, target_q)};
+                set<pair<Terminal*, int>> trans{make_pair(label, target_q)};
                 delta[src_q] = trans;
             }
         }
@@ -64,7 +62,7 @@ namespace RegularEncoding {
                 return closure;
             }
             for (auto trans: delta[q]) {
-                if (trans.first.empty()) {
+                if (trans.first->isEpsilon()) {
                     closure.insert(trans.second);
                     set<int> rec = epsilonClosure(trans.second);
                     closure.insert(rec.begin(), rec.end());
@@ -90,26 +88,27 @@ namespace RegularEncoding {
                 }
             }
             // Remove all epsilon transitions
-            map<int, set<pair<string, int>>> deltaWithoutEpsilon;
+            map<int, set<pair<Terminal*, int>>> deltaWithoutEpsilon;
             for (auto trans: delta) {
                 int q_src = trans.first;
                 for (auto target: trans.second) {
                     int q_target = target.second;
-                    string label = target.first;
-                    if(!label.empty()) {
+                    Terminal* label = target.first;
+                    if(!label->isEpsilon()) {
                         if (deltaWithoutEpsilon.count(q_src) == 1) {
                             deltaWithoutEpsilon[q_src].insert(make_pair(label, q_target));
                         } else {
-                            set<pair<string, int>> trans{make_pair(label, q_target)};
+                            set<pair<Terminal*, int>> trans{make_pair(label, q_target)};
                             deltaWithoutEpsilon[q_src] = trans;
                         }
-                    } 
+                    }
                 }
             }
             delta = deltaWithoutEpsilon;
         }
 
         NFA NFA::reduceToReachableState() {
+
             NFA M;
             // Always reachable
             int q0 = M.new_state();
@@ -137,6 +136,7 @@ namespace RegularEncoding {
                     }
                 }
             }
+
             return M;
 
 
@@ -152,8 +152,8 @@ namespace RegularEncoding {
             ss << "delta = {";
             for (auto trans: delta) {
                 ss << trans.first << ": [";
-                for (pair<string, int> target: trans.second) {
-                    ss << "(" << target.first << ", " << target.second << ")";
+                for (pair<Terminal*, int> target: trans.second) {
+                    ss << "(" << target.first->getChar() << ", " << target.second << ")";
                 }
                 ss << "], ";
             }
@@ -172,7 +172,7 @@ namespace RegularEncoding {
         }
 
 
-        NFA regex_to_nfa(Words::RegularConstraints::RegNode &regExpr) {
+        NFA regexToNfa(Words::RegularConstraints::RegNode &regExpr, Words::Context& ctx) {
             try {
                 RegWord &word = dynamic_cast<RegWord &>(regExpr);
 
@@ -182,7 +182,7 @@ namespace RegularEncoding {
                 int q_src = q0;
                 for (auto c: word.word) {
                     int q_target = M.new_state();
-                    M.add_transition(q_src, string(1, c->getTerminal()->getChar()), q_target);
+                    M.add_transition(q_src,  c->getTerminal(), q_target);
 
                     q_src = q_target;
                 }
@@ -201,11 +201,11 @@ namespace RegularEncoding {
                         M.set_initial_state(q0);
                         set<int> qFs{q0};
                         for (auto sub: opr.getChildren()) {
-                            NFA subM = regex_to_nfa(*sub);
-                            int off = M.states();
+                            NFA subM = regexToNfa(*sub, ctx);
+                            int off = M.numStates();
                             auto offsetDelta = subM.offset_states(off);
-                            for (int i = 0; i < subM.states(); i++) {
-                                // Add states
+                            for (int i = 0; i < subM.numStates(); i++) {
+                                // Add numStates
                                 M.new_state();
                             }
                             // Apply offset delta
@@ -218,7 +218,7 @@ namespace RegularEncoding {
                                     }
                                     if (subM.getInitialState() == trans.first - off) {
                                         for (int qf: qFs) {
-                                            M.add_transition(qf, "", trans.first);
+                                            M.add_transition(qf, ctx.getEpsilon(), trans.first);
                                         }
                                     }
                                 }
@@ -228,7 +228,7 @@ namespace RegularEncoding {
                         int qf = M.new_state();
                         M.add_final_state(qf);
                         for (int q: qFs) {
-                            M.add_transition(q, "", qf);
+                            M.add_transition(q, ctx.getEpsilon(), qf);
                         }
                         return M;
                         break;
@@ -242,11 +242,11 @@ namespace RegularEncoding {
                         set<int> oldFs{};
                         int oldQ0;
                         auto sub = opr.getChildren()[0];
-                        NFA subM = regex_to_nfa(*sub);
-                        int off = M.states();
+                        NFA subM = regexToNfa(*sub, ctx);
+                        int off = M.numStates();
                         auto offsetDelta = subM.offset_states(off);
-                        for (int i = 0; i < subM.states(); i++) {
-                            // Add states
+                        for (int i = 0; i < subM.numStates(); i++) {
+                            // Add numStates
                             M.new_state();
                         }
                         // Apply offset delta
@@ -262,13 +262,13 @@ namespace RegularEncoding {
                             }
                         }
 
-                        M.add_transition(q0, "", oldQ0);
+                        M.add_transition(q0, ctx.getEpsilon(), oldQ0);
                         int qf = M.new_state();
-                        M.add_transition(q0, "", qf);
+                        M.add_transition(q0, ctx.getEpsilon(), qf);
                         M.add_final_state(qf);
                         for (int q: oldFs) {
-                            M.add_transition(q, "", qf);
-                            M.add_transition(q, "", oldQ0);
+                            M.add_transition(q, ctx.getEpsilon(), qf);
+                            M.add_transition(q, ctx.getEpsilon(), oldQ0);
                         }
                         return M;
                         break;
@@ -283,12 +283,12 @@ namespace RegularEncoding {
                         list<int> oldq0s{};
 
                         for (auto sub: opr.getChildren()) {
-                            NFA subM = regex_to_nfa(*sub);
-                            int off = M.states();
+                            NFA subM = regexToNfa(*sub, ctx);
+                            int off = M.numStates();
                             auto offsetDelta = subM.offset_states(off);
 
-                            for (int i = 0; i < subM.states(); i++) {
-                                // Add states
+                            for (int i = 0; i < subM.numStates(); i++) {
+                                // Add numStates
                                 M.new_state();
                             }
                             // Apply offset delta
@@ -307,10 +307,10 @@ namespace RegularEncoding {
                         int qF = M.new_state();
                         M.add_final_state(qF);
                         for (int oqf: oldQfs) {
-                            M.add_transition(oqf, "", qF);
+                            M.add_transition(oqf, ctx.getEpsilon(), qF);
                         }
                         for (int oq0: oldq0s) {
-                            M.add_transition(q0, "", oq0);
+                            M.add_transition(q0, ctx.getEpsilon(), oq0);
                         }
                         return M;
                         break;

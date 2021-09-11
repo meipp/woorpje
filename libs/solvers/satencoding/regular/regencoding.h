@@ -21,16 +21,28 @@ namespace RegularEncoding {
             std::set<int> epsilonClosure(int);
 
             int nQ = 0;
-            std::map<int, std::set<std::pair<std::string, int>>> delta;
+            std::map<int, std::set<std::pair<Words::Terminal*, int>>> delta;
             int initState = -1;
             std::set<int> final_states{};
 
         public:
             NFA() {};
 
-            ~NFA(){};
+            /**
+             * Direct instantiation.
+             * @param nQ the number of numStates {0, ..., nQ-1}
+             * @param delta the transition function
+             * @param initState the initial state
+             * @param final_states the final numStates
+             */
+            NFA(int nQ, std::map<int, std::set<std::pair<Words::Terminal*, int>>> delta, int initState,
+                std::set<int> final_states) : nQ(nQ), delta(delta), initState(initState), final_states(final_states) {};
 
-            bool accept(std::string);
+
+
+            ~NFA() {};
+
+            bool accept(Words::Word);
 
             void removeEpsilonTransitions();
 
@@ -54,19 +66,31 @@ namespace RegularEncoding {
 
             void add_final_state(int);
 
-            void add_transition(int, std::string, int);
+            void add_transition(int, Words::Terminal*, int);
 
-            void remove_transition(int, std::string, int);
-
-            int states() {
+            int numStates() {
                 return nQ;
             }
 
+            int numTransitions() {
+                int c = 0;
+                for (auto trans: delta) {
+                    c+= trans.second.size();
+                }
+                return  c;
+            }
+
+            std::map<int, std::set<std::pair<Words::Terminal*, int>>> getDelta() {
+                return std::map<int, std::set<std::pair<Words::Terminal*, int>>>(delta);
+            }
+
+
+
             /*
              * Returns a transition function for this automaton, where all states are offset by a specific number.
-             * Required for merging NFAs without having states clash.
+             * Required for merging NFAs without having numStates clash.
              */
-            std::map<int, std::vector<std::pair<std::string, int>>> offset_states(int of);
+            std::map<int, std::vector<std::pair<Words::Terminal*, int>>> offset_states(int of);
         };
 
         /**
@@ -75,7 +99,7 @@ namespace RegularEncoding {
          * @param regExpr  the expression
          * @return an instance of an NFA, accepting the same language as the expression
          */
-        NFA regex_to_nfa(Words::RegularConstraints::RegNode& regExpr);
+        NFA regexToNfa(Words::RegularConstraints::RegNode&, Words::Context&);
 
     } // namespace Automaton
 
