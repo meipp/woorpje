@@ -1707,9 +1707,19 @@ template<bool newencode = true>
         }
 
 
+
+
         //Handle regular constraints
         cout << "Current bound: " << bound << "\n";
         for (auto recon: input_options.recons) {
+
+            RegularEncoding::Automaton::NFA M = RegularEncoding::Automaton::regex_to_nfa(*recon->expr);
+            cout << "e-NFA: " << M.toString() << "\n";
+            M.removeEpsilonTransitions();
+            cout << "NFA: " << M.toString() << "\n";
+            M = M.reduceToReachableState();
+            cout << "NFA: " << M.toString() << "\n";
+
             RegularEncoding::InductiveEncoder inductiveEncoder(*recon, context, S, sigmaSize,
                                                                &vIndices,
                                                                &maxPadding, &tIndices, &variableVars, &constantsVars);

@@ -18,25 +18,37 @@ namespace RegularEncoding {
 
         class NFA {
         private:
-            std::vector<int> epsilon_closure(int);
+            std::set<int> epsilonClosure(int);
 
-            std::vector<int> states;
-            std::map<int, std::tuple<std::string, int>> delta;
-            int q0;
-            std::vector<int> final_states;
+            int nQ = 0;
+            std::map<int, std::set<std::pair<std::string, int>>> delta;
+            int initState = -1;
+            std::set<int> final_states{};
 
         public:
-            NFA(/* args */);
+            NFA() {};
 
-            ~NFA();
+            ~NFA(){};
 
             bool accept(std::string);
 
-            void remove_epsilon_transitions();
+            void removeEpsilonTransitions();
 
             void get_reachable_states();
 
+            NFA reduceToReachableState();
+
+            std::set<int> getFinalStates() {
+                return final_states;
+            }
+
+            int getInitialState() {
+                return initState;
+            }
+
             int new_state();
+
+            std::string toString();
 
             void set_initial_state(int);
 
@@ -46,10 +58,24 @@ namespace RegularEncoding {
 
             void remove_transition(int, std::string, int);
 
-            std::map<int, int> merge_automaton(NFA);
+            int states() {
+                return nQ;
+            }
+
+            /*
+             * Returns a transition function for this automaton, where all states are offset by a specific number.
+             * Required for merging NFAs without having states clash.
+             */
+            std::map<int, std::vector<std::pair<std::string, int>>> offset_states(int of);
         };
 
-        NFA regex_to_nfa(std::string);
+        /**
+         * Builds an NFA out of regular expression.
+         *
+         * @param regExpr  the expression
+         * @return an instance of an NFA, accepting the same language as the expression
+         */
+        NFA regex_to_nfa(Words::RegularConstraints::RegNode& regExpr);
 
     } // namespace Automaton
 
