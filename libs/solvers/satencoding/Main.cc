@@ -1707,17 +1707,26 @@ template<bool newencode = true>
         }
 
 
-
+        bool AUTOMATON = true;
 
         //Handle regular constraints
         cout << "Current bound: " << bound << "\n";
         for (auto recon: input_options.recons) {
 
 
-            RegularEncoding::AutomatonEncoder regEncoder(*recon, context, S, sigmaSize,
-                                                         &vIndices,
-                                                         &maxPadding, &tIndices, &variableVars, &constantsVars);
-            set<set<int>> clauses = regEncoder.encode();
+            set<set<int>> clauses;
+            if (AUTOMATON) {
+                RegularEncoding::AutomatonEncoder regEncoder(*recon, context, S, sigmaSize,
+                                                             &vIndices,
+                                                             &maxPadding, &tIndices, &variableVars, &constantsVars);
+                clauses = regEncoder.encode();
+            }else {
+                RegularEncoding::InductiveEncoder regEncoder(*recon, context, S, sigmaSize,
+                                                             &vIndices,
+                                                             &maxPadding, &tIndices, &variableVars, &constantsVars);
+                clauses = regEncoder.encode();
+            }
+
             // Convert clasues and add to solver
             for (set<int> cl: clauses) {
                 vec<Lit> clvec;

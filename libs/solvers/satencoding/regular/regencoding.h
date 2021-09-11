@@ -135,7 +135,9 @@ namespace RegularEncoding {
 
             int depth();
 
-            void make_binary();
+            int size();
+
+            void makeBinary();
 
             int max_var();
 

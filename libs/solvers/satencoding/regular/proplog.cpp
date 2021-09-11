@@ -94,7 +94,7 @@ namespace RegularEncoding {
         }
 
         // TODO: Use pointers instread of copying
-        void PLFormula::make_binary() {
+        void PLFormula::makeBinary() {
             if (junctor == Junctor::AND || junctor == Junctor::OR) {
                 if (subformulae.size() > 2) {
                     PLFormula left = subformulae[0];
@@ -113,7 +113,7 @@ namespace RegularEncoding {
                 }
             }
             for (int i = 0; i < subformulae.size(); i++) {
-                subformulae[i].make_binary();
+                subformulae[i].makeBinary();
             }
         }
 
@@ -129,6 +129,19 @@ namespace RegularEncoding {
                     }
                 }
                 return max + 1;
+            }
+        }
+
+        int PLFormula::size() {
+            if (junctor == Junctor::LIT) {
+                return 1;
+            } else {
+                int sz = 1;
+                for (int i = 0; i < subformulae.size(); i++) {
+                    int d = subformulae[i].size();
+                    sz+=d;
+                }
+                return sz;
             }
         }
 
@@ -165,80 +178,65 @@ namespace RegularEncoding {
 
 
         namespace {
-            tuple<PLFormula, int>
-            defstep(Junctor, PLFormula &, PLFormula &, vector<tuple<int, PLFormula>> &, int, Glucose::Solver &solver);
+            unique_ptr<PLFormula>
+            defstep(Junctor, PLFormula &, PLFormula &, list<tuple<int, PLFormula>> &, Glucose::Solver &solver);
 
-            tuple<PLFormula, int>
-            maincnf(PLFormula &f, vector<tuple<int, PLFormula>> &defs, int n, Glucose::Solver &solver) {
+            unique_ptr<PLFormula>
+            maincnf(PLFormula &f, list<tuple<int, PLFormula>> &defs, Glucose::Solver &solver) {
 
                 if (f.getJunctor() == Junctor::AND) {
 
-                    return defstep(Junctor::AND, f.getSubformulae()[0], f.getSubformulae()[1], defs, n, solver);
+                    return defstep(Junctor::AND, f.getSubformulae()[0], f.getSubformulae()[1], defs, solver);
                 } else if (f.getJunctor() == Junctor::OR) {
-                    if (f.getSubformulae().size() != 2) {
-                        cout << "Error: OR must have two operands but has " << f.getSubformulae().size() << "\n";
-                        cout << "Formula: " << f.getSubformulae()[0].toString();
-                        exit(-1);
-                    }
-                    return defstep(Junctor::OR, f.getSubformulae()[0], f.getSubformulae()[1], defs, n, solver);
+                    return defstep(Junctor::OR, f.getSubformulae()[0], f.getSubformulae()[1], defs, solver);
                 } else if (f.getJunctor() == Junctor::NOT) {
                     int lit = -f.getSubformulae()[0].getLiteral();
                     PLFormula ff = PLFormula::lit(lit);
-                    return make_tuple(ff, n);
+                    return make_unique<PLFormula>(ff);
                 } else {
                     // Literal
-                    return make_tuple(f, n);
+                    return make_unique<PLFormula>(f);
                 }
 
             }
 
-            tuple<PLFormula, int>
-            defstep(Junctor junctor, PLFormula &f1, PLFormula &f2, vector<tuple<int, PLFormula>> &defs, int n,
+            unique_ptr<PLFormula>
+            defstep(Junctor junctor, PLFormula &f1, PLFormula &f2, list<tuple<int, PLFormula>> &defs,
                     Glucose::Solver &solver) {
 
 
-                tuple<PLFormula, int> left = maincnf(f1, defs, n, solver);
-                tuple<PLFormula, int> right = maincnf(f2, defs, n, solver);
-                // get<1>(left)
+                unique_ptr<PLFormula> left = maincnf(f1, defs, solver);
+                unique_ptr<PLFormula> right = maincnf(f2, defs, solver);
 
                 int n2 = solver.newVar();
                 PLFormula phi = (junctor == Junctor::AND) ? PLFormula::land(
-                        vector<PLFormula>{get<0>(left), get<0>(right)})
+                        vector<PLFormula>{*left, *right})
                                                           : PLFormula::lor(
-                                vector<PLFormula>{get<0>(left), get<0>(right)});
+                                vector<PLFormula>{*left, *right});
                 tuple<int, PLFormula> newDef = make_tuple(n2, phi);
                 defs.push_back(newDef);
-                return make_tuple(PLFormula::lit(n2), n2 + 1);
+                auto res = PLFormula::lit(n2);
+                return make_unique<PLFormula>(res);
             }
         }
 
         set<set<int>> tseytin_cnf(PLFormula &formula, Glucose::Solver &solver) {
 
-            /*if (!formula.is_nenf()) {
-                throw invalid_argument("Formula must be in NENF");
-            }*/
-
-            int max_var = formula.max_var();
-
-            formula.make_binary();
+            formula.makeBinary();
 
 
             cout.flush();
-            vector<tuple<int, PLFormula>> tmp{};
-            tuple<PLFormula, int> tseytin_conf = maincnf(formula,
-                                                         tmp,
-                                                         max_var + 1, solver);
+            list<tuple<int, PLFormula>> tmp{};
 
-            PLFormula phi = get<0>(tseytin_conf);
+            PLFormula phi = *maincnf(formula, tmp, solver);
 
             set<set<int>> cnf{};
             cnf.insert(set<int>{phi.getLiteral()});
 
-            cout << "HIER\n";
-            for (int i = 0; i < tmp.size(); i++) {
+            for (auto def: tmp) {
 
-                int l = get<0>(tmp[i]);
-                PLFormula fl = get<1>(tmp[i]);
+                int l = get<0>(def);
+                PLFormula fl = get<1>(def);
 
 
                 if (fl.getJunctor() == Junctor::AND) {

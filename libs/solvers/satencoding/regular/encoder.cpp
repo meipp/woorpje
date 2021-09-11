@@ -499,7 +499,8 @@ namespace RegularEncoding {
         PLFormula predecessor = encodePredecessor(Mxi, filledPat);
         stop = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<milliseconds>(stop - start);
-        cout << "\t - Created [Predecessor] constraint . Took " << duration.count() << "ms\n";
+        cout << "\t - Created [Predecessor] constraint (depth: " << predecessor.depth() << ", size: "
+             << predecessor.size() << "). Took " << duration.count() << "ms\n";
 
         set<set<int>> predecessorCnf = tseytin_cnf(predecessor, solver);
         for (auto clause: predecessorCnf) {
@@ -615,11 +616,11 @@ namespace RegularEncoding {
                         } else {
                             k = tIndices->at(q_pred.first);
                         }
-                        if (filledPat[i-1].isTerminal()) {
-                            int ci = filledPat[i-1].getTerminalIndex();
+                        if (filledPat[i - 1].isTerminal()) {
+                            int ci = filledPat[i - 1].getTerminalIndex();
                             word = constantsVars->at(make_pair(ci, k));
                         } else {
-                            pair<int, int> xij = filledPat[i-1].getVarIndex();
+                            pair<int, int> xij = filledPat[i - 1].getVarIndex();
                             word = variableVars->at(make_pair(xij, k));
                         }
                         conj.push_back(sqip);
