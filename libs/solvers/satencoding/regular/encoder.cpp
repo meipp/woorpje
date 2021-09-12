@@ -428,18 +428,21 @@ namespace RegularEncoding {
      *********************************************************************/
 
     set<set<int>> AutomatonEncoder::encode() {
+
+        auto total_start = high_resolution_clock::now();
         cout << "\n[*] Encoding ";
         constraint.toString(cout);
         cout << "\n";
+
 
         Words::Word pattern = constraint.pattern;
         shared_ptr<Words::RegularConstraints::RegNode> expr = constraint.expr;
 
         vector<FilledPos> filledPat = filledPattern(pattern);
 
+
+
         auto start = high_resolution_clock::now();
-
-
         Automaton::NFA M = Automaton::regexToNfa(*expr, ctx);
         M.removeEpsilonTransitions();
         M = M.reduceToReachableState();
@@ -450,6 +453,18 @@ namespace RegularEncoding {
         cout << "\t - Built filled NFA with " << Mxi.numStates() << " states and " << Mxi.numTransitions()
              << " transitions. Took " << duration.count() << "ms\n";
 
+        start = high_resolution_clock::now();
+        LengthAbstraction::UNFALengthAbstractionBuilder labuilder(M);
+        for (int q = 0; q < M.numStates(); q ++) {
+            LengthAbstraction::ArithmeticProgressions qrabs = labuilder.forState(q);
+            satewiseLengthAbstraction[q] = qrabs;
+        }
+        stop = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<milliseconds>(stop - start);
+
+        cout << "\t - Built length abstraction for each state. Took " << duration.count() << "ms\n";
+
+        start = high_resolution_clock::now();
 
         // Initiate State vars
         for (int q = 0; q < Mxi.numStates(); q++) {
@@ -481,6 +496,7 @@ namespace RegularEncoding {
         duration = chrono::duration_cast<milliseconds>(stop - start);
         cout << "\t - Created [Final] and [Initial] constraints. Took " << duration.count() << "ms\n";
 
+        start = high_resolution_clock::now();
         // Transition constraint, is in cnf
         PLFormula transitionCnf = encodeTransition(Mxi, filledPat);
         for (auto disj: transitionCnf.getSubformulae()) {
@@ -495,6 +511,7 @@ namespace RegularEncoding {
         duration = chrono::duration_cast<milliseconds>(stop - start);
         cout << "\t - Created [Transition] constraint. Took " << duration.count() << "ms\n";
 
+        start = high_resolution_clock::now();
         // Predecessor constraint
         PLFormula predecessor = encodePredecessor(Mxi, filledPat);
         stop = chrono::high_resolution_clock::now();
@@ -502,6 +519,7 @@ namespace RegularEncoding {
         cout << "\t - Created [Predecessor] constraint (depth: " << predecessor.depth() << ", size: "
              << predecessor.size() << "). Took " << duration.count() << "ms\n";
 
+        start = high_resolution_clock::now();
         set<set<int>> predecessorCnf = tseytin_cnf(predecessor, solver);
         for (auto clause: predecessorCnf) {
             cnf.insert(clause);
@@ -511,9 +529,8 @@ namespace RegularEncoding {
         cout << "\t - Created CNF. Took " << duration.count() << "ms\n";
 
 
-        stop = high_resolution_clock::now();
-        duration = duration_cast<milliseconds>(stop - start);
-        cout << "[*] Encoding done. Took " << duration.count() << "ms" << endl;
+        duration = duration_cast<milliseconds>(high_resolution_clock::now() - total_start);
+        cout << "[*] Encoding done. Took " << duration.count() << "ms in total" << endl;
         return cnf;
 
     }
@@ -545,7 +562,18 @@ namespace RegularEncoding {
         for (auto &trans: Mxi.getDelta()) {
             for (auto &target: trans.second) {
                 for (int i = 0; i < filledPat.size(); i++) {
-                    // TODO: Check length abstraction
+
+
+                    bool lengthOk = false;
+                    for (int lb = numTerminals(filledPat); lb <= filledPat.size(); lb++) {
+                        if (satewiseLengthAbstraction[trans.first].contains(lb - i)) {
+                            lengthOk = true;
+                        }
+                    }
+                    if (!lengthOk) {
+                        continue;
+                    }
+
                     vector<PLFormula> clause;
 
                     int k;
@@ -606,7 +634,23 @@ namespace RegularEncoding {
                 if (pred.count(q) == 1) {
                     // Has predecessor(s)
                     for (auto q_pred: pred[q]) {
-                        // TODO: Check length abstraction
+
+                        bool lengthOk = false;
+                        for (int lb = numTerminals(filledPat); lb <= filledPat.size(); lb++) {
+                            if (satewiseLengthAbstraction[q_pred.second].contains(lb - (i - 1))) {
+
+                                lengthOk = true;
+                                break;
+                            } else {
+
+                            }
+                        }
+                        if (!lengthOk) {
+                            cout << "Pruned pred\n";
+                            continue;
+                        }
+
+
                         PLFormula sqip = PLFormula::lit(stateVars[make_pair(q_pred.second, i - 1)]);
                         vector<PLFormula> conj;
                         int word;
@@ -637,7 +681,7 @@ namespace RegularEncoding {
 
         if (disj.empty()) {
             // TODO: FALSE or TRUE?
-            return ffalse;
+            return ftrue;
         } else if (disj.size() == 1) {
             return disj[0];
         } else {

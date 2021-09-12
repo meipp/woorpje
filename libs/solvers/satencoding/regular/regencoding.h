@@ -12,6 +12,7 @@
 #include "core/Solver.h"
 
 
+
 namespace RegularEncoding {
 
     namespace Automaton {
@@ -21,7 +22,7 @@ namespace RegularEncoding {
             std::set<int> epsilonClosure(int);
 
             int nQ = 0;
-            std::map<int, std::set<std::pair<Words::Terminal*, int>>> delta;
+            std::map<int, std::set<std::pair<Words::Terminal *, int>>> delta;
             int initState = -1;
             std::set<int> final_states{};
 
@@ -35,9 +36,8 @@ namespace RegularEncoding {
              * @param initState the initial state
              * @param final_states the final numStates
              */
-            NFA(int nQ, std::map<int, std::set<std::pair<Words::Terminal*, int>>> delta, int initState,
+            NFA(int nQ, std::map<int, std::set<std::pair<Words::Terminal *, int>>> delta, int initState,
                 std::set<int> final_states) : nQ(nQ), delta(delta), initState(initState), final_states(final_states) {};
-
 
 
             ~NFA() {};
@@ -66,7 +66,7 @@ namespace RegularEncoding {
 
             void add_final_state(int);
 
-            void add_transition(int, Words::Terminal*, int);
+            void add_transition(int, Words::Terminal *, int);
 
             int numStates() {
                 return nQ;
@@ -75,22 +75,21 @@ namespace RegularEncoding {
             int numTransitions() {
                 int c = 0;
                 for (auto trans: delta) {
-                    c+= trans.second.size();
+                    c += trans.second.size();
                 }
-                return  c;
+                return c;
             }
 
-            std::map<int, std::set<std::pair<Words::Terminal*, int>>> getDelta() {
-                return std::map<int, std::set<std::pair<Words::Terminal*, int>>>(delta);
+            std::map<int, std::set<std::pair<Words::Terminal *, int>>> getDelta() {
+                return std::map<int, std::set<std::pair<Words::Terminal *, int>>>(delta);
             }
-
 
 
             /*
              * Returns a transition function for this automaton, where all states are offset by a specific number.
              * Required for merging NFAs without having numStates clash.
              */
-            std::map<int, std::vector<std::pair<Words::Terminal*, int>>> offset_states(int of);
+            std::map<int, std::vector<std::pair<Words::Terminal *, int>>> offset_states(int of);
         };
 
         /**
@@ -99,7 +98,7 @@ namespace RegularEncoding {
          * @param regExpr  the expression
          * @return an instance of an NFA, accepting the same language as the expression
          */
-        NFA regexToNfa(Words::RegularConstraints::RegNode&, Words::Context&);
+        NFA regexToNfa(Words::RegularConstraints::RegNode &, Words::Context &);
 
     } // namespace Automaton
 
@@ -219,15 +218,44 @@ namespace RegularEncoding {
                 return false;
             }
 
-            ArithmeticProgressions intersection(ArithmeticProgressions other);
 
         private:
             std::set<std::pair<int, int>> progressions;
 
         };
 
-        // Todo: return unique_ptr for performance!
         ArithmeticProgressions fromExpression(Words::RegularConstraints::RegNode &);
+
+        class UNFALengthAbstractionBuilder {
+        public:
+            UNFALengthAbstractionBuilder(Automaton::NFA);
+
+            ~UNFALengthAbstractionBuilder(){};
+
+            ArithmeticProgressions forState(int q);
+
+        private:
+            Automaton::NFA nfa;
+            int N;
+            std::vector<std::vector<bool>> adjm;
+            std::vector<std::set<int>> sccs;
+
+            std::vector<std::vector<bool>> buildAdjacencyMatrix();
+
+            std::shared_ptr<std::set<int>> succ(std::shared_ptr<std::set<int>>&);
+
+            std::shared_ptr<std::set<int>> pre(std::shared_ptr<std::set<int>>&);
+            std::vector<std::shared_ptr<std::set<int>>> T;
+            std::map<std::set<int>, std::shared_ptr<std::set<int>>> successorsCache{};
+            /**
+             * Shortest loop from q to q in the graph
+             * Ignored can be a set of nodes to ignore during the search.
+             * This is useful if the SCC of q is known, because then ignored should contain all nodes not in the SCC of q.
+             * Nodes not in the SCC can not be within in a loop starting and ending in q.
+             */
+            int sl(int q, std::set<int> ignore);
+
+        };
 
     }
 
@@ -373,6 +401,8 @@ namespace RegularEncoding {
         Automaton::NFA filledAutomaton(Automaton::NFA &nfa);
 
         std::map<std::pair<int, int>, int> stateVars{};
+
+        std::map<int, LengthAbstraction::ArithmeticProgressions> satewiseLengthAbstraction{};
     };
 
 } // namespace RegularEncoding
