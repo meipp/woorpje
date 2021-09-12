@@ -7,7 +7,7 @@
 
 
 
-(assert (str.in_re "ftp://e.o:X"
+(assert (str.in_re A
 
     (re.++ 
         (re.union (str.to_re "ht") (str.to_re "f"))

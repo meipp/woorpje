@@ -424,7 +424,7 @@ namespace RegularEncoding {
 
 
     /*********************************************************************
-     ************************* Inductive Encoder *************************
+     ************************* Automaton Encoder *************************
      *********************************************************************/
 
     set<set<int>> AutomatonEncoder::encode() {
@@ -454,9 +454,13 @@ namespace RegularEncoding {
         }
 
 
-        if(pattern.noVariableWord() && M.accept(pattern)) {
+        if(pattern.noVariableWord()) {
             Glucose::Var v = solver.newVar();
-            return set<set<int>>{set<int>{v, -v}};
+            if (M.accept(pattern)) {
+                return set<set<int>>{set<int>{v, -v}};
+            } else {
+                return set<set<int>>{set<int>{v}, set<int>{-v}};
+            }
         }
 
         M = M.reduceToReachableState();
@@ -471,6 +475,19 @@ namespace RegularEncoding {
 
         LengthAbstraction::UNFALengthAbstractionBuilder labuilder(M);
 
+        LengthAbstraction::ArithmeticProgressions rAbs = labuilder.forState(M.getInitialState());
+        bool lenghtOk = false;
+        for (int l = numTerminals(filledPat); l < filledPat.size(); l++) {
+            if (rAbs.contains(l)) {
+                lenghtOk = true;
+                break;
+            }
+        }
+        if (!lenghtOk) {
+            // Can't be satisfied
+            Glucose::Var v = solver.newVar();
+            return set<set<int>>{set<int>{v}, set<int>{-v}};
+        }
 
         for (int q = 0; q < M.numStates(); q ++) {
 
@@ -581,7 +598,7 @@ namespace RegularEncoding {
             for (auto &target: trans.second) {
                 for (int i = 0; i < filledPat.size(); i++) {
 
-                    /*
+
                     bool lengthOk = false;
                     for (int lb = numTerminals(filledPat); lb <= filledPat.size(); lb++) {
                         if (satewiseLengthAbstraction[trans.first].contains(lb - i)) {
@@ -590,9 +607,8 @@ namespace RegularEncoding {
                         }
                     }
                     if (!lengthOk) {
-                        cout << "Prune transition\n";
                         continue;
-                    }*/
+                    }
 
                     vector<PLFormula> clause;
 
@@ -647,10 +663,6 @@ namespace RegularEncoding {
         for (int i = 1; i <= filledPat.size(); i++) {
             for (int q = 0; q < Mxi.numStates(); q++) {
 
-
-
-
-                /*
                 bool lengthOk = false;
                 vector<FilledPos> suff(filledPat.begin()+i, filledPat.end());
 
@@ -664,9 +676,8 @@ namespace RegularEncoding {
                     }
                 }
                 if (!lengthOk) {
-                    cout << "Pruned pred: " << suff.size() << " - " << q  << endl;
-                    //continue;
-                }*/
+                    continue;
+                }
 
                 vector<PLFormula> pred_q_disj; // S_q^i -> (\/ {(S_pr^i /\ w)})
                 PLFormula sqi = PLFormula::lit(-stateVars[make_pair(q, i)]); // S_q^i

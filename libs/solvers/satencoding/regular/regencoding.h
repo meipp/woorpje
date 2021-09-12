@@ -20,7 +20,6 @@ namespace RegularEncoding {
         class NFA {
         private:
             std::set<int> epsilonClosure(int);
-            std::set<int> deltaHat(std::set<int>, Words::Word);
 
             int nQ = 0;
             std::map<int, std::set<std::pair<Words::Terminal *, int>>> delta;
@@ -211,7 +210,8 @@ namespace RegularEncoding {
                         }
                     } else {
                         int n = (k - a) / b;
-                        if (k == a + n * b) {
+                        if (n>=0 && k == a + n * b) {
+                            std::cout << a << " + " << n << "*" << b << " = " << k << std::endl;
                             return true;
                         }
                     }
