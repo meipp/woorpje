@@ -180,19 +180,34 @@ namespace RegularEncoding {
 
         UNFALengthAbstractionBuilder::UNFALengthAbstractionBuilder(Automaton::NFA nfa) : nfa(nfa) {
             adjm = buildAdjacencyMatrix();
-            N = adjm.size();
-            sccs = commons::scc(adjm);
+            if (!nfa.getDelta().empty()) {
+                N = adjm.size();
+                sccs = commons::scc(adjm);
 
-            T = vector<shared_ptr<set<int>>>((int) pow(N, 2) - N - 1 + 1);
-            set<int> F(nfa.getFinalStates());
-            T[0] = make_unique<set<int>>(F);
-            for (int i = 1; i < pow(N, 2) - N - 1 + 1; i++) {
-                T[i] = pre(T[i - 1]);
+
+                T = vector<shared_ptr<set<int>>>((int) pow(N, 2) - N - 1 + 1);
+                set<int> F(nfa.getFinalStates());
+                T[0] = make_unique<set<int>>(F);
+
+                for (int i = 1; i < pow(N, 2) - N - 1 + 1; i++) {
+                    T[i] = pre(T[i - 1]);
+                }
             }
         }
 
 
         ArithmeticProgressions UNFALengthAbstractionBuilder::forState(int q) {
+
+            if (nfa.getDelta().empty()) {
+                if (nfa.getFinalStates().count(nfa.getInitialState()) > 0) {
+                    ArithmeticProgressions aps;
+                    aps.add(make_pair(0,0));
+                    return aps;
+                } else {
+                    return {};
+                }
+
+            }
 
             vector<shared_ptr<set<int>>> S((int) pow(N, 2));
 

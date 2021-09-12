@@ -18,7 +18,7 @@ namespace RegularEncoding {
 
         void NFA::add_final_state(int qf) {
             if (qf < 0 || qf >= nQ) {
-                throw new runtime_error("Unknown state");
+                throw runtime_error("Unknown state");
             }
             final_states.insert(qf);
         }
@@ -43,10 +43,12 @@ namespace RegularEncoding {
 
         void NFA::add_transition(int src_q, Terminal* label, int target_q) {
             if (src_q < 0 || src_q >= nQ) {
-                throw new runtime_error("Invalid source state");
+                throw runtime_error("Invalid source state");
             }
             if (target_q < 0 || target_q >= nQ) {
-                throw new runtime_error("Invalid target state");
+                stringstream ss;
+                ss << "Invalid target state " << target_q << ", nQ is " << nQ << endl;
+                throw runtime_error(ss.str());
             }
             if (delta.count(src_q) == 1) {
                 delta[src_q].insert(make_pair(label, target_q));
@@ -72,6 +74,9 @@ namespace RegularEncoding {
         }
 
         void NFA::removeEpsilonTransitions() {
+            if (delta.empty()) {
+                return;
+            }
             // Add direct transitions, skipping e-transitions
             for (int q=0; q < nQ; q++) {
                 set<int> eclosure = epsilonClosure(q);
@@ -142,6 +147,43 @@ namespace RegularEncoding {
 
         }
 
+
+        bool NFA::accept(Words::Word w) {
+            set<int> s{initState};
+            for (int q: epsilonClosure(initState)) {
+                s.insert(q);
+            }
+
+            for (auto e: w) {
+                if (e->isVariable()) {
+                    return false;
+                }
+                set<int> preds;
+                for (int q: s) {
+
+                    if (delta.count(q) > 0) {
+                        for (auto trans: delta[q]) {
+                            if (trans.first->getChar() == (e->getTerminal()->getChar()) || trans.first->isEpsilon()) {
+
+                                preds.insert(trans.second);
+                            }
+                        }
+                    } else{
+
+                    }
+                }
+                s = preds;
+            }
+
+
+            for (int qf: getFinalStates()) {
+                if (s.count(qf) > 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         string NFA::toString() {
             stringstream ss;
             ss << "Q = {";
@@ -186,6 +228,8 @@ namespace RegularEncoding {
 
                     q_src = q_target;
                 }
+
+
                 M.add_final_state(q_src);
                 return M;
 
@@ -234,15 +278,17 @@ namespace RegularEncoding {
                         break;
                     }
                     case RegularOperator::STAR: {
+
                         // Star
                         NFA M;
                         int q0 = M.new_state();
                         M.set_initial_state(q0);
 
                         set<int> oldFs{};
-                        int oldQ0;
+                        int oldQ0 = 0;
                         auto sub = opr.getChildren()[0];
                         NFA subM = regexToNfa(*sub, ctx);
+
                         int off = M.numStates();
                         auto offsetDelta = subM.offset_states(off);
                         for (int i = 0; i < subM.numStates(); i++) {
@@ -257,19 +303,25 @@ namespace RegularEncoding {
                                     oldFs.insert(target.second);
                                 }
                                 if (subM.getInitialState() == trans.first - off) {
+
                                     oldQ0 = trans.first;
                                 }
                             }
                         }
 
                         M.add_transition(q0, ctx.getEpsilon(), oldQ0);
+
+
                         int qf = M.new_state();
-                        M.add_transition(q0, ctx.getEpsilon(), qf);
+
+
+
                         M.add_final_state(qf);
                         for (int q: oldFs) {
                             M.add_transition(q, ctx.getEpsilon(), qf);
                             M.add_transition(q, ctx.getEpsilon(), oldQ0);
                         }
+                        M.add_transition(q0, ctx.getEpsilon(), qf);
                         return M;
                         break;
                     }
@@ -295,15 +347,17 @@ namespace RegularEncoding {
                             for (auto trans: offsetDelta) {
                                 for (auto target: trans.second) {
                                     M.add_transition(trans.first, target.first, target.second);
-                                    if (subM.getFinalStates().count(target.second - off) == 1) {
-                                        oldQfs.push_back(target.second);
-                                    }
-                                    if (subM.getInitialState() == trans.first - off) {
-                                        oldq0s.push_back(trans.first);
-                                    }
                                 }
                             }
+
+                            oldq0s.push_back(subM.getInitialState()+off);
+                            for (int oldf: subM.getFinalStates()) {
+                                oldQfs.push_back(oldf+off);
+                            }
                         }
+
+
+
                         int qF = M.new_state();
                         M.add_final_state(qF);
                         for (int oqf: oldQfs) {
@@ -320,7 +374,6 @@ namespace RegularEncoding {
 
             try {
                 RegEmpty &empty = dynamic_cast<RegEmpty &>(regExpr);
-                // Return automaton with single state that does not accept anything
                 NFA M;
                 M.set_initial_state(M.new_state());
                 return M;

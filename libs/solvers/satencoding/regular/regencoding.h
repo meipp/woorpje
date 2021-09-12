@@ -20,6 +20,7 @@ namespace RegularEncoding {
         class NFA {
         private:
             std::set<int> epsilonClosure(int);
+            std::set<int> deltaHat(std::set<int>, Words::Word);
 
             int nQ = 0;
             std::map<int, std::set<std::pair<Words::Terminal *, int>>> delta;

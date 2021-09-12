@@ -7,7 +7,7 @@
 
 
 
-(assert (str.in_re (str.++ "21-12:aa")
+(assert (str.in_re (str.++ "21-121564651451:aioshdouihasuidhasuia")
     (re.++ 
         (re.union  (str.to_re "1") (str.to_re "2") (str.to_re "3") (str.to_re "4") (str.to_re "5") (str.to_re "6") (str.to_re "7") (str.to_re "8") (str.to_re "9"))
         (re.union (str.to_re "0") (str.to_re "1") (str.to_re "2") (str.to_re "3") (str.to_re "4") (str.to_re "5") (str.to_re "6") (str.to_re "7") (str.to_re "8") (str.to_re "9"))

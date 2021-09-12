@@ -100,7 +100,7 @@ namespace RegularEncoding {
                 if (s->isTerminal()) {
                     expressionIdx.push_back(tIndices->at(s->getTerminal()));
                 } else {
-                    throw new Words::WordException("Only constant regular expressions allowed");
+                    throw Words::WordException("Only constant regular expressions allowed");
                 }
             }
             PLFormula result = encodeWord(filledPat, expressionIdx);
@@ -123,7 +123,7 @@ namespace RegularEncoding {
         } else if (emps != nullptr) {
             return encodeNone(filledPat, emps);
         } else {
-            throw new Words::WordException("Invalid type");
+            throw Words::WordException("Invalid type");
         }
 
         return PLFormula::lit(0);
@@ -444,7 +444,21 @@ namespace RegularEncoding {
 
         auto start = high_resolution_clock::now();
         Automaton::NFA M = Automaton::regexToNfa(*expr, ctx);
+
         M.removeEpsilonTransitions();
+
+        if (M.getFinalStates().empty()) {
+            // Does not accept anything
+            Glucose::Var v = solver.newVar();
+            return set<set<int>>{set<int>{v}, set<int>{-v}};
+        }
+
+
+        if(pattern.noVariableWord() && M.accept(pattern)) {
+            Glucose::Var v = solver.newVar();
+            return set<set<int>>{set<int>{v, -v}};
+        }
+
         M = M.reduceToReachableState();
         Automaton::NFA Mxi = filledAutomaton(M);
 
@@ -454,8 +468,12 @@ namespace RegularEncoding {
              << " transitions. Took " << duration.count() << "ms\n";
 
         start = high_resolution_clock::now();
+
         LengthAbstraction::UNFALengthAbstractionBuilder labuilder(M);
+
+
         for (int q = 0; q < M.numStates(); q ++) {
+
             LengthAbstraction::ArithmeticProgressions qrabs = labuilder.forState(q);
             satewiseLengthAbstraction[q] = qrabs;
         }
@@ -563,16 +581,18 @@ namespace RegularEncoding {
             for (auto &target: trans.second) {
                 for (int i = 0; i < filledPat.size(); i++) {
 
-
+                    /*
                     bool lengthOk = false;
                     for (int lb = numTerminals(filledPat); lb <= filledPat.size(); lb++) {
                         if (satewiseLengthAbstraction[trans.first].contains(lb - i)) {
                             lengthOk = true;
+                            break;
                         }
                     }
                     if (!lengthOk) {
+                        cout << "Prune transition\n";
                         continue;
-                    }
+                    }*/
 
                     vector<PLFormula> clause;
 
@@ -627,31 +647,36 @@ namespace RegularEncoding {
         for (int i = 1; i <= filledPat.size(); i++) {
             for (int q = 0; q < Mxi.numStates(); q++) {
 
-                vector<PLFormula> lits;
-                PLFormula sqi = PLFormula::lit(-stateVars[make_pair(q, i)]);
 
-                lits.push_back(sqi);
+
+
+                /*
+                bool lengthOk = false;
+                vector<FilledPos> suff(filledPat.begin()+i, filledPat.end());
+
+
+                for (int lb = numTerminals(suff); lb <= suff.size(); lb++) {
+                    if (satewiseLengthAbstraction[q].contains(lb)) {
+                        lengthOk = true;
+                        break;
+                    } else {
+
+                    }
+                }
+                if (!lengthOk) {
+                    cout << "Pruned pred: " << suff.size() << " - " << q  << endl;
+                    //continue;
+                }*/
+
+                vector<PLFormula> pred_q_disj; // S_q^i -> (\/ {(S_pr^i /\ w)})
+                PLFormula sqi = PLFormula::lit(-stateVars[make_pair(q, i)]); // S_q^i
+
+                pred_q_disj.push_back(sqi);
                 if (pred.count(q) == 1) {
                     // Has predecessor(s)
                     for (auto q_pred: pred[q]) {
 
-                        bool lengthOk = false;
-                        for (int lb = numTerminals(filledPat); lb <= filledPat.size(); lb++) {
-                            if (satewiseLengthAbstraction[q_pred.second].contains(lb - (i - 1))) {
-
-                                lengthOk = true;
-                                break;
-                            } else {
-
-                            }
-                        }
-                        if (!lengthOk) {
-                            cout << "Pruned pred\n";
-                            continue;
-                        }
-
-
-                        PLFormula sqip = PLFormula::lit(stateVars[make_pair(q_pred.second, i - 1)]);
+                        PLFormula sqip = PLFormula::lit(stateVars[make_pair(q_pred.second, i - 1)]); // S_q'^i
                         vector<PLFormula> conj;
                         int word;
                         int k;
@@ -662,6 +687,10 @@ namespace RegularEncoding {
                         }
                         if (filledPat[i - 1].isTerminal()) {
                             int ci = filledPat[i - 1].getTerminalIndex();
+                            if (ci != k) {
+                                // UNSAT!
+                                continue;
+                            }
                             word = constantsVars->at(make_pair(ci, k));
                         } else {
                             pair<int, int> xij = filledPat[i - 1].getVarIndex();
@@ -670,9 +699,9 @@ namespace RegularEncoding {
                         conj.push_back(sqip);
                         conj.push_back(PLFormula::lit(word));
 
-                        lits.push_back(PLFormula::land(conj));
+                        pred_q_disj.push_back(PLFormula::land(conj));
                     }
-                    disj.push_back(PLFormula::lor(lits));
+                    disj.push_back(PLFormula::lor(pred_q_disj));
                 } else {
                     disj.push_back(sqi);
                 }
@@ -681,7 +710,7 @@ namespace RegularEncoding {
 
         if (disj.empty()) {
             // TODO: FALSE or TRUE?
-            return ftrue;
+            return ffalse;
         } else if (disj.size() == 1) {
             return disj[0];
         } else {
