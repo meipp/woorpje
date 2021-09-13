@@ -227,21 +227,17 @@ namespace RegularEncoding {
             S[0] = make_unique<set<int>>(set<int>{q});
 
 
-            auto start = chrono::high_resolution_clock::now();
             // O(n²) * succ = O(n²)*O(n+m) = O(n⁴)
             for (int i = 1; i < pow(N, 2); i++) {
                 S[i] = succ(S[i - 1]);
-                //cout << "|S[" << i << "]| = " << S[i]->size() << "\n";
             }
-            auto duration = chrono::duration_cast<milliseconds>(chrono::high_resolution_clock::now() - start);
 
-            cout << "S in " << duration.count() << "ms" << endl;
 
 
             set<int> imp;
             map<int, int> sls;
 
-            for (set<int> scc: sccs) {
+            for (const set<int>& scc: sccs) {
 
                 if (scc.size() == 1) {
                     sls[*scc.begin()] = 0;
@@ -298,7 +294,7 @@ namespace RegularEncoding {
 
 
             for (int c = (int) (pow(N, 2)) - 2 * N; c < (int) (pow(N, 2)) - N; c++) {
-                for (auto impstate: qImp) {
+                for (const auto& impstate: qImp) {
                     int d = impstate.first;
                     set<int> qs = impstate.second;
                     if (c >= (int) (pow(N, 2)) - N - d && c <= (int) (pow(N, 2)) - N) {
@@ -325,7 +321,6 @@ namespace RegularEncoding {
         shared_ptr<set<int>> UNFALengthAbstractionBuilder::succ(shared_ptr<set<int>> &S) {
 
             if (successorsCache.count(*S) == 1) {
-                //cout << "HIT!\n";
                 return successorsCache[*S];
             }
             set<int> Sn;

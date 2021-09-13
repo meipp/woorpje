@@ -1707,7 +1707,7 @@ template<bool newencode = true>
         }
 
 
-        bool AUTOMATON = true;
+        bool AUTOMATON = false;
 
         //Handle regular constraints
         cout << "Current bound: " << bound << "\n";
@@ -1728,7 +1728,7 @@ template<bool newencode = true>
             }
 
             // Convert clasues and add to solver
-            for (set<int> cl: clauses) {
+            for (const set<int>& cl: clauses) {
                 vec<Lit> clvec;
                 for (int l: cl) {
                     int isneg = l < 0;
@@ -1757,8 +1757,6 @@ template<bool newencode = true>
             }
         }
     }
-
-    // HIER
 
     if (!S.simplify()) {
         // if (S.certifiedOutput != NULL) fprintf(S.certifiedOutput, "0\n"),
