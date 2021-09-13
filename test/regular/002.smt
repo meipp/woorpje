@@ -4,10 +4,7 @@
 
 (assert (= A A))
 
-
-
-
-(assert (str.in_re (str.++ A ".de:8080")
+(assert (str.in_re (str.++ A "example.de:808" A)
 
     (re.++ 
         (re.union (str.to_re "ht") (str.to_re "f"))
@@ -31,10 +28,7 @@
                 )
             )
         )
-        
-        
-        
     )
 ))
 
-        
+(check-sat)

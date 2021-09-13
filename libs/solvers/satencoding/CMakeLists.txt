@@ -1,4 +1,4 @@
-add_library (satsolver solver.cpp Main.cc regular/commons.h regular/encoder.cpp regular/proplog.cpp regular/rAbs.cpp regular/automaton.cpp)
+add_library (satsolver solver.cpp Main.cc regular/commons.h regular/encoder.cpp regular/proplog.cpp regular/rAbs.cpp regular/automaton.cpp regular/partition.cpp)
 
 target_include_directories(satsolver PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../pubinclude
 									 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/regular

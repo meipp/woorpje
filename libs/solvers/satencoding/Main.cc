@@ -1709,10 +1709,23 @@ template<bool newencode = true>
 
         bool AUTOMATON = false;
 
+
+
+
         //Handle regular constraints
         cout << "Current bound: " << bound << "\n";
         for (auto recon: input_options.recons) {
 
+            auto partitions = RegularEncoding::partitioning(recon->expr, context);
+            cout << "Partitions = {";
+            for (auto part: partitions) {
+                cout << "<";
+                part[0]->toString(cout);
+                cout << ", ";
+                part[1]->toString(cout);
+                cout << ">, ";
+            }
+            cout << "}\n";
 
             set<set<int>> clauses;
             if (AUTOMATON) {

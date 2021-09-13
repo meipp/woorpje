@@ -1,5 +1,6 @@
 #include <map>
 #include <set>
+#include <unordered_set>
 #include <list>
 #include <string>
 #include <tuple>
@@ -14,6 +15,11 @@
 
 
 namespace RegularEncoding {
+
+
+    std::set<std::vector<std::shared_ptr<Words::RegularConstraints::RegNode>>> partitioning(const std::shared_ptr<Words::RegularConstraints::RegNode>& expression, Words::Context ctx);
+
+    std::shared_ptr<Words::RegularConstraints::RegOperation>   makeNodeBinary(std::shared_ptr<Words::RegularConstraints::RegOperation> concat);
 
     namespace Automaton {
 

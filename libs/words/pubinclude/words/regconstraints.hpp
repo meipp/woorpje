@@ -2,6 +2,7 @@
 #include<vector>
 #include "smtparser/ast.hpp"
 #include "words/words.hpp"
+#include <boost/functional/hash.hpp>
 
 
 namespace Words {
@@ -12,10 +13,28 @@ namespace Words {
         class RegNode {
         public:
             //virtual RegNode deepCopy();
+            RegNode(){};
             virtual ~RegNode() {}
             virtual void toString(std::ostream& os) = 0;
+            std::string toString() {
+                if (str == "-") {
+                    std::stringstream ss;
+                    toString(ss);
+                    str = ss.str();
+                }
+                return str;
+            };
+
+            size_t hash() {
+                boost::hash<std::string> strhash;
+                return strhash(toString());
+            }
+
             virtual bool isLeaf() {return false;}
             virtual void getAlphabet(Words::WordBuilder wb) = 0;
+
+        private:
+            std::string str = "-";
         };
 
         /**
@@ -97,6 +116,8 @@ namespace Words {
                 for (auto c: word) 
                     os << c->getTerminal()->getChar();
             }
+
+
 
             virtual bool isLeaf() { return true; }
             void getAlphabet(Words::WordBuilder wb) {

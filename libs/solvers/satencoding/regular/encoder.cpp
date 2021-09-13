@@ -71,7 +71,7 @@ namespace RegularEncoding {
         auto start = high_resolution_clock::now();
         PLFormula f = doEncode(filledPat, expr);
 
-        cout << "\t - Built formula with depth " << f.depth() << ", creating CNF\n";
+        cout << "\t - Built formula (depth: " << f.depth() << ", size:" <<  f.size() << ") creating CNF\n";
 
         set<set<int>> cnf = tseytin_cnf(f, solver);
         auto stop = high_resolution_clock::now();

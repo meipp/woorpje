@@ -532,6 +532,10 @@ namespace Words {
             return words;
         }
 
+        std::vector<IEntry *> getWord() {
+            return word;
+        }
+
         bool operator==(Word const &rhs) const { return word == rhs.word; }
 
         bool operator!=(Word const &rhs) const { return !(*this == rhs); }
