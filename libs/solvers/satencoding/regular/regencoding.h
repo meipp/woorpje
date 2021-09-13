@@ -211,7 +211,6 @@ namespace RegularEncoding {
                     } else {
                         int n = (k - a) / b;
                         if (n>=0 && k == a + n * b) {
-                            std::cout << a << " + " << n << "*" << b << " = " << k << std::endl;
                             return true;
                         }
                     }

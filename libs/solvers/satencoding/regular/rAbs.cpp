@@ -1,12 +1,13 @@
 
 #include <algorithm>
 #include <unordered_map>
+#include <map>
 #include "regencoding.h"
 #include "commons.h"
 #include <chrono>
 #include <boost/math/common_factor.hpp>
 
-using namespace std::chrono;
+using namespace chrono;
 
 
 using namespace Words::RegularConstraints;
@@ -17,6 +18,8 @@ namespace RegularEncoding {
     namespace LengthAbstraction {
 
         unordered_map<string, ArithmeticProgressions> cache{};
+        map<pair<string, int>, ArithmeticProgressions> statewiseCache{};
+        unordered_map<string, vector<shared_ptr<set<int>>>> nfaTcache{};
 
         namespace {
             ArithmeticProgressions concat(ArithmeticProgressions &lhs, ArithmeticProgressions &rhs) {
@@ -104,7 +107,7 @@ namespace RegularEncoding {
                 cache[restr] = ap;
 
                 return ap;
-            } catch (std::bad_cast &) {}
+            } catch (bad_cast &) {}
 
             try {
                 RegOperation &opr = dynamic_cast<Words::RegularConstraints::RegOperation &>(expression);
@@ -163,12 +166,12 @@ namespace RegularEncoding {
                         return first;
                     }
                 }
-            } catch (std::bad_cast &) {}
+            } catch (bad_cast &) {}
 
             try {
                 RegEmpty &emps = dynamic_cast<Words::RegularConstraints::RegEmpty &>(expression);
                 return {};
-            } catch (std::bad_cast &) {}
+            } catch (bad_cast &) {}
 
         };
 
@@ -184,15 +187,20 @@ namespace RegularEncoding {
                 N = adjm.size();
                 sccs = commons::scc(adjm);
 
+                if (nfaTcache.count(nfa.toString()) > 0) {
+                    T = nfaTcache[nfa.toString()];
+                } else {
+                    T = vector<shared_ptr<set<int>>>((int) pow(N, 2) - N - 1 + 1);
+                    set<int> F(nfa.getFinalStates());
+                    T[0] = make_unique<set<int>>(F);
 
-                T = vector<shared_ptr<set<int>>>((int) pow(N, 2) - N - 1 + 1);
-                set<int> F(nfa.getFinalStates());
-                T[0] = make_unique<set<int>>(F);
-
-                for (int i = 1; i < pow(N, 2) - N - 1 + 1; i++) {
-                    T[i] = pre(T[i - 1]);
+                    for (int i = 1; i < pow(N, 2) - N - 1 + 1; i++) {
+                        T[i] = pre(T[i - 1]);
+                    }
+                    nfaTcache[nfa.toString()] = T;
                 }
             }
+
         }
 
 
@@ -201,12 +209,17 @@ namespace RegularEncoding {
             if (nfa.getDelta().empty()) {
                 if (nfa.getFinalStates().count(nfa.getInitialState()) > 0) {
                     ArithmeticProgressions aps;
-                    aps.add(make_pair(0,0));
+                    aps.add(make_pair(0, 0));
                     return aps;
                 } else {
                     return {};
                 }
 
+            }
+
+            const string nfastr = nfa.toString();
+            if (statewiseCache.count(make_pair(nfastr, q)) > 0) {
+                return statewiseCache[make_pair(nfastr, q)];
             }
 
             vector<shared_ptr<set<int>>> S((int) pow(N, 2));
@@ -215,13 +228,14 @@ namespace RegularEncoding {
 
 
             auto start = chrono::high_resolution_clock::now();
+            // O(n²) * succ = O(n²)*O(n+m) = O(n⁴)
             for (int i = 1; i < pow(N, 2); i++) {
                 S[i] = succ(S[i - 1]);
                 //cout << "|S[" << i << "]| = " << S[i]->size() << "\n";
             }
             auto duration = chrono::duration_cast<milliseconds>(chrono::high_resolution_clock::now() - start);
 
-            //cout << "S in " << duration.count() << "ms" << endl;
+            cout << "S in " << duration.count() << "ms" << endl;
 
 
             set<int> imp;
@@ -299,7 +313,7 @@ namespace RegularEncoding {
                 }
             }
 
-
+            statewiseCache[make_pair(nfastr, q)] = aps;
             return aps;
         }
 
@@ -308,15 +322,15 @@ namespace RegularEncoding {
          * @param S a set of states
          * @return a set containing all successors to states in S
          */
-        std::shared_ptr<std::set<int>> UNFALengthAbstractionBuilder::succ(std::shared_ptr<std::set<int>> &S) {
+        shared_ptr<set<int>> UNFALengthAbstractionBuilder::succ(shared_ptr<set<int>> &S) {
 
             if (successorsCache.count(*S) == 1) {
                 //cout << "HIT!\n";
                 return successorsCache[*S];
             }
             set<int> Sn;
-            for (int s: *S) {
-                for (int r = 0; r < N; r++) {
+            for (int s: *S) { // O(n)
+                for (int r = 0; r < N; r++) { // O(n)
                     if (adjm[s][r]) {
                         Sn.insert(r);
                     }
@@ -333,7 +347,7 @@ namespace RegularEncoding {
          * @param P a set of states
          * @return a set containing all predecessors to states in P
          */
-        shared_ptr<set<int>> UNFALengthAbstractionBuilder::pre(std::shared_ptr<std::set<int>> &P) {
+        shared_ptr<set<int>> UNFALengthAbstractionBuilder::pre(shared_ptr<set<int>> &P) {
 
 
             set<int> Pn;
