@@ -6,3 +6,5 @@ target_include_directories(satsolver PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../pubin
 									 PUBLIC $<TARGET_PROPERTY:glucose,INTERFACE_INCLUDE_DIRECTORIES>
 )
 
+add_definitions(-O)
+
