@@ -710,6 +710,12 @@ namespace RegularEncoding {
                     for (auto q_pred: pred[q]) {
 
                         PLFormula sqip = PLFormula::lit(stateVars[make_pair(q_pred.second, i - 1)]); // S_q'^i
+
+                        if (reachable[i-1]->count(q_pred.second) == 0) {
+                            continue;
+                        }
+
+
                         vector<PLFormula> conj;
                         int word;
                         int k;
