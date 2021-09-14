@@ -473,11 +473,11 @@ namespace RegularEncoding {
 
         start = high_resolution_clock::now();
 
-        LengthAbstraction::UNFALengthAbstractionBuilder labuilder(M);
+        LengthAbstraction::UNFALengthAbstractionBuilder builder(M);
 
-        LengthAbstraction::ArithmeticProgressions rAbs = labuilder.forState(M.getInitialState());
+        LengthAbstraction::ArithmeticProgressions rAbs = builder.forState(M.getInitialState());
         bool lenghtOk = false;
-        for (int l = numTerminals(filledPat); l < filledPat.size(); l++) {
+        for (int l = numTerminals(filledPat); l <= filledPat.size(); l++) {
             if (rAbs.contains(l)) {
                 lenghtOk = true;
                 break;
@@ -485,15 +485,26 @@ namespace RegularEncoding {
         }
         if (!lenghtOk) {
             // Can't be satisfied
+            cout << "\t - Length abstraction not satisfied\n";
             Glucose::Var v = solver.newVar();
             return set<set<int>>{set<int>{v}, set<int>{-v}};
         }
 
+
+        reachable = map<int, shared_ptr<set<int>>>{};
         for (int q = 0; q < M.numStates(); q ++) {
 
-            LengthAbstraction::ArithmeticProgressions qrabs = labuilder.forState(q);
+            LengthAbstraction::ArithmeticProgressions qrabs = builder.forState(q);
             satewiseLengthAbstraction[q] = qrabs;
+
         }
+
+        // Save reachability on Mxi for any prefix
+        auto tmp = LengthAbstraction::UNFALengthAbstractionBuilder(Mxi);
+        for (int i = 0; i<=filledPat.size(); i++) {
+            reachable[i] = tmp.reachableAfter(i);
+        }
+
         stop = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<milliseconds>(stop - start);
 
@@ -566,6 +577,8 @@ namespace RegularEncoding {
 
         duration = duration_cast<milliseconds>(high_resolution_clock::now() - total_start);
         cout << "[*] Encoding done. Took " << duration.count() << "ms in total" << endl;
+
+
         return cnf;
 
     }
@@ -659,9 +672,14 @@ namespace RegularEncoding {
             }
         }
 
+
         vector<PLFormula> disj;
         for (int i = 1; i <= filledPat.size(); i++) {
             for (int q = 0; q < Mxi.numStates(); q++) {
+
+
+
+
 
                 bool lengthOk = false;
                 vector<FilledPos> suff(filledPat.begin()+i, filledPat.end());
@@ -682,8 +700,12 @@ namespace RegularEncoding {
                 vector<PLFormula> pred_q_disj; // S_q^i -> (\/ {(S_pr^i /\ w)})
                 PLFormula sqi = PLFormula::lit(-stateVars[make_pair(q, i)]); // S_q^i
 
+                // Only encode q that can be reached in Mxi with i transitions
+                assert(reachable[0]->count(0) == 1);
+
+
                 pred_q_disj.push_back(sqi);
-                if (pred.count(q) == 1) {
+                if (pred.count(q) == 1 && reachable[i]->count(q) == 1) {
                     // Has predecessor(s)
                     for (auto q_pred: pred[q]) {
 

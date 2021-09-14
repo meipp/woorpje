@@ -276,6 +276,8 @@ namespace RegularEncoding {
 
             ArithmeticProgressions forState(int q);
 
+            std::shared_ptr<std::set<int>> reachableAfter(int transitions);
+
         private:
             Automaton::NFA nfa;
             int N;
@@ -286,8 +288,11 @@ namespace RegularEncoding {
 
             std::shared_ptr<std::set<int>> succ(std::shared_ptr<std::set<int>>&);
 
+
+
             std::shared_ptr<std::set<int>> pre(std::shared_ptr<std::set<int>>&);
             std::vector<std::shared_ptr<std::set<int>>> T;
+            std::vector<std::shared_ptr<std::set<int>>> S0;
             std::map<std::set<int>, std::shared_ptr<std::set<int>>> successorsCache{};
             /**
              * Shortest loop from q to q in the graph
@@ -445,6 +450,9 @@ namespace RegularEncoding {
         std::map<std::pair<int, int>, int> stateVars{};
 
         std::map<int, LengthAbstraction::ArithmeticProgressions> satewiseLengthAbstraction{};
+
+        std::map<int ,std::shared_ptr<std::set<int>>> reachable;
+
     };
 
 } // namespace RegularEncoding
