@@ -155,6 +155,42 @@ namespace RegularEncoding {
             int getLiteral() const { return literal; }
         };
 
+        class PLFormulaPtd {
+        private:
+            PLFormulaPtd(Junctor, std::vector<std::shared_ptr<PLFormulaPtd>>);
+
+            explicit PLFormulaPtd(int); // Literal formula
+            //~PLFormula();
+
+            Junctor junctor;
+            int literal;
+            std::vector<std::shared_ptr<PLFormulaPtd>> subformulae;
+
+        public:
+            static std::shared_ptr<PLFormulaPtd> land(std::vector<std::shared_ptr<PLFormulaPtd>>);
+
+            static std::shared_ptr<PLFormulaPtd> lor(std::vector<std::shared_ptr<PLFormulaPtd>>);
+
+            static std::shared_ptr<PLFormulaPtd> lnot(std::shared_ptr<PLFormulaPtd>);
+
+            static std::shared_ptr<PLFormulaPtd> lit(int);
+
+            void makeBinary();
+
+            static std::shared_ptr<PLFormulaPtd> fromPLF(PLFormula& f);
+
+
+            int size();
+
+            std::string toString();
+
+            Junctor getJunctor() { return junctor; }
+
+            std::vector<std::shared_ptr<PLFormulaPtd>> getSubformulae() { return subformulae; }
+
+            int getLiteral() const { return literal; }
+        };
+
         std::set<std::set<int>> tseytin_cnf(PLFormula &, Glucose::Solver &s);
 
     } // namespace PropositionalLogic

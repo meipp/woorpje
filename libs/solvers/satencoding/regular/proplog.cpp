@@ -13,6 +13,7 @@ namespace RegularEncoding {
                                                                                     subformulae(subformulae),
                                                                                     literal(0) {}
 
+
         PLFormula::PLFormula(int literal) : junctor(Junctor::LIT), literal(literal), subformulae(vector<PLFormula>{}) {}
 
         bool PLFormula::valid() {
@@ -177,46 +178,136 @@ namespace RegularEncoding {
         }
 
 
+        PLFormulaPtd::PLFormulaPtd(int lit): junctor(Junctor::LIT), literal(lit), subformulae(vector<shared_ptr<PLFormulaPtd>>{}) {};
+
+        PLFormulaPtd::PLFormulaPtd(Junctor junctor, std::vector<std::shared_ptr<PLFormulaPtd>> subformulae) : junctor(junctor),
+                                                                                    subformulae(subformulae),
+                                                                                    literal(0) {}
+
+        shared_ptr<PLFormulaPtd> PLFormulaPtd::lor(std::vector<std::shared_ptr<PLFormulaPtd>> f) { return make_shared<PLFormulaPtd>(PLFormulaPtd(Junctor::OR, f));}
+        shared_ptr<PLFormulaPtd> PLFormulaPtd::land(std::vector<std::shared_ptr<PLFormulaPtd>> f) { return make_shared<PLFormulaPtd>(PLFormulaPtd(Junctor::AND, f));}
+        shared_ptr<PLFormulaPtd> PLFormulaPtd::lit(int f) { return make_shared<PLFormulaPtd>(PLFormulaPtd(f));}
+        shared_ptr<PLFormulaPtd> PLFormulaPtd::lnot(std::shared_ptr<PLFormulaPtd> f) {
+            vector<shared_ptr<PLFormulaPtd>> n;
+            n.push_back(f);
+            return make_shared<PLFormulaPtd>(PLFormulaPtd(Junctor::NOT, n));
+        }
+
+        string PLFormulaPtd::toString() {
+            stringstream ss;
+
+            switch (junctor) {
+
+                case Junctor::LIT:
+                    ss << literal;
+                    break;
+                case Junctor::AND:
+                    ss << "AND (";
+                    for (auto s: subformulae) {
+                        ss << s->toString();
+                        ss << " ";
+                    }
+                    ss << ") ";
+                    break;
+                case Junctor::OR:
+                    ss << "OR(";
+                    for (auto s: subformulae) {
+                        ss << s->toString();
+                        ss << " ";
+                    }
+                    ss << ") ";
+                    break;
+                case Junctor::NOT:
+                    ss << "-(";
+                    for (auto s: subformulae) {
+                        ss << s->toString();
+                        ss << " ";
+                    }
+                    ss << ") ";
+                    break;
+            }
+
+            return ss.str();
+        }
+
+        int PLFormulaPtd::size() {
+            if (junctor == Junctor::LIT) {
+                return 1;
+            } else {
+                int sz = 1;
+                for (int i = 0; i < subformulae.size(); i++) {
+                    int d = subformulae[i]->size();
+                    sz+=d;
+                }
+                return sz;
+            }
+        }
+
+        std::shared_ptr<PLFormulaPtd> PLFormulaPtd::fromPLF(PLFormula &f) {
+            if (f.getJunctor() == Junctor::LIT) {
+                auto x = PLFormulaPtd::lit(f.getLiteral());
+                return x;
+            }
+            if (f.getJunctor() == Junctor::AND) {
+                vector<shared_ptr<PLFormulaPtd>> chldn;
+                for (auto c: f.getSubformulae()) {
+                    chldn.push_back(PLFormulaPtd::fromPLF(c));
+                }
+                return PLFormulaPtd::land(chldn);
+            }
+            if (f.getJunctor() == Junctor::OR) {
+                vector<shared_ptr<PLFormulaPtd>> chldn;
+                for (auto c: f.getSubformulae()) {
+                    chldn.push_back(PLFormulaPtd::fromPLF(c));
+                }
+                return PLFormulaPtd::lor(chldn);
+            }
+            if (f.getJunctor() == Junctor::NOT) {
+                shared_ptr<PLFormulaPtd> ch = PLFormulaPtd::fromPLF(f.getSubformulae()[0]);
+                return PLFormulaPtd::lnot(ch);
+            }
+
+        }
+
+
+
         namespace {
-            unique_ptr<PLFormula>
-            defstep(Junctor, PLFormula &, PLFormula &, list<tuple<int, PLFormula>> &, Glucose::Solver &solver);
+            shared_ptr<PLFormulaPtd>
+            defstep(Junctor, shared_ptr<PLFormulaPtd> , shared_ptr<PLFormulaPtd> , list<tuple<int, shared_ptr<PLFormulaPtd>>> &, Glucose::Solver &solver);
 
-            unique_ptr<PLFormula>
-            maincnf(PLFormula &f, list<tuple<int, PLFormula>> &defs, Glucose::Solver &solver) {
+            shared_ptr<PLFormulaPtd>
+            maincnf(shared_ptr<PLFormulaPtd> &f, list<tuple<int, shared_ptr<PLFormulaPtd>>> &defs, Glucose::Solver &solver) {
 
-                if (f.getJunctor() == Junctor::AND) {
-
-                    return defstep(Junctor::AND, f.getSubformulae()[0], f.getSubformulae()[1], defs, solver);
-                } else if (f.getJunctor() == Junctor::OR) {
-                    return defstep(Junctor::OR, f.getSubformulae()[0], f.getSubformulae()[1], defs, solver);
-                } else if (f.getJunctor() == Junctor::NOT) {
-                    int lit = -f.getSubformulae()[0].getLiteral();
-                    PLFormula ff = PLFormula::lit(lit);
-                    return make_unique<PLFormula>(ff);
+                if (f->getJunctor() == Junctor::AND) {
+                    return defstep(Junctor::AND, f->getSubformulae()[0], f->getSubformulae()[1], defs, solver);
+                } else if (f->getJunctor() == Junctor::OR) {
+                    return defstep(Junctor::OR, f->getSubformulae()[0], f->getSubformulae()[1], defs, solver);
+                } else if (f->getJunctor() == Junctor::NOT) {
+                    int lit = -f->getSubformulae()[0]->getLiteral();
+                    return PLFormulaPtd::lit(lit);
                 } else {
                     // Literal
-                    return make_unique<PLFormula>(f);
+                    return PLFormulaPtd::lit(f->getLiteral());
                 }
 
             }
+            int c = 0;
+            shared_ptr<PLFormulaPtd>
+            defstep(Junctor junctor, shared_ptr<PLFormulaPtd> f1, shared_ptr<PLFormulaPtd> f2, list<tuple<int, shared_ptr<PLFormulaPtd>>> &defs, Glucose::Solver &solver) {
 
-            unique_ptr<PLFormula>
-            defstep(Junctor junctor, PLFormula &f1, PLFormula &f2, list<tuple<int, PLFormula>> &defs,
-                    Glucose::Solver &solver) {
+
+                shared_ptr<PLFormulaPtd> left = maincnf(f1, defs, solver);
+                shared_ptr<PLFormulaPtd> right = maincnf(f2, defs, solver);
+                vector<shared_ptr<PLFormulaPtd>> chld{left, right};
 
 
-                unique_ptr<PLFormula> left = maincnf(f1, defs, solver);
-                unique_ptr<PLFormula> right = maincnf(f2, defs, solver);
+                shared_ptr<PLFormulaPtd> phi = (junctor == Junctor::AND) ? PLFormulaPtd::land(chld)
+                                                          : PLFormulaPtd::lor(chld);
 
                 int n2 = solver.newVar();
-                PLFormula phi = (junctor == Junctor::AND) ? PLFormula::land(
-                        vector<PLFormula>{*left, *right})
-                                                          : PLFormula::lor(
-                                vector<PLFormula>{*left, *right});
-                tuple<int, PLFormula> newDef = make_tuple(n2, phi);
+                tuple<int, shared_ptr<PLFormulaPtd>> newDef = make_tuple(n2, phi);
                 defs.push_back(newDef);
-                auto res = PLFormula::lit(n2);
-                return make_unique<PLFormula>(res);
+                return PLFormulaPtd::lit(n2);
             }
         }
 
@@ -224,11 +315,13 @@ namespace RegularEncoding {
 
             formula.makeBinary();
 
-
             cout.flush();
-            list<tuple<int, PLFormula>> tmp{};
+            list<tuple<int, shared_ptr<PLFormulaPtd>>> tmp{};
 
-            PLFormula phi = *maincnf(formula, tmp, solver);
+            shared_ptr<PLFormulaPtd> plfp = PLFormulaPtd::fromPLF(formula);
+
+
+            PLFormulaPtd phi = *maincnf(plfp, tmp, solver);
 
             set<set<int>> cnf{};
             cnf.insert(set<int>{phi.getLiteral()});
@@ -236,16 +329,16 @@ namespace RegularEncoding {
             for (auto def: tmp) {
 
                 int l = get<0>(def);
-                PLFormula fl = get<1>(def);
+                PLFormulaPtd fl = *get<1>(def);
 
 
                 if (fl.getJunctor() == Junctor::AND) {
                     // l <-> fl1 /\ ... /\ fln <==> (-l \/ fl1) /\ ... /\ (-l \/ fln) /\ (-fl1 \/ ... \/ -fln \/ l)
                     set<int> rtl = set<int>{l};
                     for (int n = 0; n < fl.getSubformulae().size(); n++) {
-                        PLFormula fln = fl.getSubformulae()[n];
-                        rtl.insert(-fln.getLiteral());
-                        set<int> lrtn{-l, fln.getLiteral()};
+                        shared_ptr<PLFormulaPtd> fln = fl.getSubformulae()[n];
+                        rtl.insert(-fln->getLiteral());
+                        set<int> lrtn{-l, fln->getLiteral()};
                         cnf.insert(lrtn);
                     }
                     cnf.insert(rtl);
@@ -253,9 +346,9 @@ namespace RegularEncoding {
                     // l <-> fl1 \/ ... \/ fln <==> (-l \/ fl1 \/ ... \/ fln) /\ (l \/ -fl1) ... /\ (l \/ -fln)
                     set<int> ltr = set<int>{-l};
                     for (int n = 0; n < fl.getSubformulae().size(); n++) {
-                        PLFormula fln = fl.getSubformulae()[n];
-                        ltr.insert(fln.getLiteral());
-                        set<int> rtln{l, -fln.getLiteral()};
+                        shared_ptr<PLFormulaPtd> fln = fl.getSubformulae()[n];
+                        ltr.insert(fln->getLiteral());
+                        set<int> rtln{l, -fln->getLiteral()};
                         cnf.insert(rtln);
                     }
                     cnf.insert(ltr);
