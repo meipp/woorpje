@@ -276,6 +276,10 @@ namespace RegularEncoding {
 
             ArithmeticProgressions forState(int q);
 
+            void calcForAll();
+
+            ArithmeticProgressions forStateComplete(int q);
+
             std::shared_ptr<std::set<int>> reachableAfter(int transitions);
 
         private:
@@ -287,13 +291,11 @@ namespace RegularEncoding {
             std::vector<std::vector<bool>> buildAdjacencyMatrix();
 
             std::shared_ptr<std::set<int>> succ(std::shared_ptr<std::set<int>>&);
-
-
-
             std::shared_ptr<std::set<int>> pre(std::shared_ptr<std::set<int>>&);
             std::vector<std::shared_ptr<std::set<int>>> T;
             std::vector<std::shared_ptr<std::set<int>>> S0;
             std::map<std::set<int>, std::shared_ptr<std::set<int>>> successorsCache{};
+            std::map<int, std::shared_ptr<ArithmeticProgressions>> statewiserAbs;
             /**
              * Shortest loop from q to q in the graph
              * Ignored can be a set of nodes to ignore during the search.

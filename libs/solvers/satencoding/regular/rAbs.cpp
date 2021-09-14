@@ -183,6 +183,7 @@ namespace RegularEncoding {
 
         UNFALengthAbstractionBuilder::UNFALengthAbstractionBuilder(Automaton::NFA nfa) : nfa(nfa) {
             adjm = buildAdjacencyMatrix();
+            statewiserAbs = std::map<int, std::shared_ptr<ArithmeticProgressions>>{};
             if (!nfa.getDelta().empty()) {
                 N = adjm.size();
                 sccs = commons::scc(adjm);
@@ -213,13 +214,16 @@ namespace RegularEncoding {
                     S0[i] = succ(S0[i - 1]);
                 }
             }
-            auto w= S0[transitions];
-            return  w;
+            auto w = S0[transitions];
+            return w;
 
         }
 
-        ArithmeticProgressions UNFALengthAbstractionBuilder::forState(int q) {
 
+        ArithmeticProgressions UNFALengthAbstractionBuilder::forStateComplete(int q) {
+            vector<shared_ptr<set<int>>> S((int) pow(N, 2));
+
+            // No transitions, length abstraction is (0,0) if q0 in F, and {} otherwise
             if (nfa.getDelta().empty()) {
                 if (nfa.getFinalStates().count(nfa.getInitialState()) > 0) {
                     ArithmeticProgressions aps;
@@ -231,12 +235,7 @@ namespace RegularEncoding {
 
             }
 
-            const string nfastr = nfa.toString();
-            if (statewiseCache.count(make_pair(nfastr, q)) > 0) {
-                return statewiseCache[make_pair(nfastr, q)];
-            }
 
-            vector<shared_ptr<set<int>>> S((int) pow(N, 2));
 
             S[0] = make_unique<set<int>>(set<int>{q});
 
@@ -253,7 +252,7 @@ namespace RegularEncoding {
             set<int> imp;
             map<int, int> sls;
 
-            for (const set<int>& scc: sccs) {
+            for (const set<int> &scc: sccs) {
 
                 if (scc.size() == 1) {
                     sls[*scc.begin()] = 0;
@@ -310,7 +309,7 @@ namespace RegularEncoding {
 
 
             for (int c = (int) (pow(N, 2)) - 2 * N; c < (int) (pow(N, 2)) - N; c++) {
-                for (const auto& impstate: qImp) {
+                for (const auto &impstate: qImp) {
                     int d = impstate.first;
                     set<int> qs = impstate.second;
                     if (c >= (int) (pow(N, 2)) - N - d && c <= (int) (pow(N, 2)) - N) {
@@ -325,8 +324,77 @@ namespace RegularEncoding {
                 }
             }
 
+            const string nfastr = nfa.toString();
             statewiseCache[make_pair(nfastr, q)] = aps;
+            statewiserAbs[q] = make_shared<ArithmeticProgressions>(aps);
+
             return aps;
+        }
+
+
+
+        ArithmeticProgressions UNFALengthAbstractionBuilder::forState(int q) {
+
+            // Check predecessors;
+            if (statewiserAbs.count(q) > 0) {
+                return *statewiserAbs[q];
+            }
+            const string nfastr = nfa.toString();
+            if (statewiseCache.count(make_pair(nfastr, q)) > 0) {
+                return statewiseCache[make_pair(nfastr, q)];
+            }
+
+            bool haspred = false;
+            ArithmeticProgressions aps;
+            //cout << "Hier für " << q << "\n";
+            for (int v = 0; v < N; v++) {
+                if (adjm[v][q]) {
+                    haspred = true;
+                    // Same scc?
+                    bool sameScc = false;
+                    for (auto &scc: sccs) {
+                        if (scc.count(v) == 1 && scc.count(q) == 1) {
+                            sameScc = true;
+                            break;
+                        }
+                    }
+                    ArithmeticProgressions apsV;
+                    if (statewiserAbs.count(v)) {
+                        apsV = *statewiserAbs[v];
+                    } else {
+                        if (!sameScc) {
+                            apsV = forState(v);
+                        } else {
+                            // v and q in same scc, prevent infite recursion
+                            //cout << q << "==" << v << endl;
+                            apsV = forStateComplete(v);
+                            //cout << "OK\n";
+                        }
+                    }
+
+                    for (pair<int, int> ap: apsV.getProgressions()) {
+                        //cout << "Building...\n";
+                        if (sameScc && ap.second > 0) {
+
+                            aps.add(make_pair((ap.first - 1) % ap.second, ap.second));
+
+                        } else {
+                            if ((ap.first - 1) >= 0) {
+                                aps.add(make_pair((ap.first - 1), ap.second));
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!haspred) {
+                return forStateComplete(q);
+            } else {
+                //cout << "Return für " << q << "\n";
+                statewiserAbs[q] = make_shared<ArithmeticProgressions>(aps);
+                return aps;
+            }
+
         }
 
         /**

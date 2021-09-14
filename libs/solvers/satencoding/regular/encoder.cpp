@@ -491,15 +491,29 @@ namespace RegularEncoding {
         }
 
 
-        reachable = map<int, shared_ptr<set<int>>>{};
-        for (int q = 0; q < M.numStates(); q ++) {
 
+        auto delta = M.getDelta();
+        set<int> visited{M.getInitialState()};
+        list<int> queue;
+        for (auto t: delta[M.getInitialState()]) {
+            queue.push_back(t.second);
+        }
+        while(!queue.empty()) {
+            int q = queue.front();
+            queue.pop_front();
+            visited.insert(q);
             LengthAbstraction::ArithmeticProgressions qrabs = builder.forState(q);
             satewiseLengthAbstraction[q] = qrabs;
-
+            for (auto t: delta[q]) {
+                if (visited.count(t.second) == 0) {
+                    queue.push_back(t.second);
+                }
+            }
         }
 
+
         // Save reachability on Mxi for any prefix
+        reachable = map<int, shared_ptr<set<int>>>{};
         auto tmp = LengthAbstraction::UNFALengthAbstractionBuilder(Mxi);
         for (int i = 0; i<=filledPat.size(); i++) {
             reachable[i] = tmp.reachableAfter(i);
@@ -507,8 +521,10 @@ namespace RegularEncoding {
 
         stop = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<milliseconds>(stop - start);
-
         cout << "\t - Built length abstraction for each state. Took " << duration.count() << "ms\n";
+
+
+
 
         start = high_resolution_clock::now();
 
@@ -714,7 +730,6 @@ namespace RegularEncoding {
                         if (reachable[i-1]->count(q_pred.second) == 0) {
                             continue;
                         }
-
 
                         vector<PLFormula> conj;
                         int word;

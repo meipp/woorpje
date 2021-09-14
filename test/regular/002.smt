@@ -4,7 +4,7 @@
 
 (assert (= A A))
 
-(assert (str.in_re (str.++ A "example.de:808" A)
+(assert (str.in_re (str.++ A "example.de:808")
 
     (re.++ 
         (re.union (str.to_re "ht") (str.to_re "f"))
