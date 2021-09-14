@@ -1707,7 +1707,7 @@ template<bool newencode = true>
         }
 
 
-        bool AUTOMATON = true;
+        bool AUTOMATON = false;
 
         //Handle regular constraints
         cout << "Current bound: " << bound << "\n";
@@ -1718,12 +1718,12 @@ template<bool newencode = true>
             if (AUTOMATON) {
                 RegularEncoding::AutomatonEncoder regEncoder(*recon, context, S, sigmaSize,
                                                              &vIndices,
-                                                             &maxPadding, &tIndices, &variableVars, &constantsVars);
+                                                             &maxPadding, &tIndices, &variableVars, &constantsVars, index2t);
                 clauses = regEncoder.encode();
             }else {
                 RegularEncoding::InductiveEncoder regEncoder(*recon, context, S, sigmaSize,
                                                              &vIndices,
-                                                             &maxPadding, &tIndices, &variableVars, &constantsVars);
+                                                             &maxPadding, &tIndices, &variableVars, &constantsVars, index2t);
                 clauses = regEncoder.encode();
             }
 

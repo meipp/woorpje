@@ -348,8 +348,10 @@ namespace RegularEncoding {
                 std::map<int, int> *maxPadding,
                 std::map<Words::Terminal *, int> *tIndices,
                 std::map<std::pair<std::pair<int, int>, int>, Glucose::Var> *variableVars,
-                std::map<std::pair<int, int>, Glucose::Var> *constantsVars) :
+                std::map<std::pair<int, int>, Glucose::Var> *constantsVars,
+                std::map<int, Words::Terminal *>& index2t) :
                 constraint(std::move(constraint)), ctx(ctx), vIndices(vIndices), tIndices(tIndices),
+                index2t(index2t),
                 maxPadding(maxPadding),
                 variableVars(variableVars), constantsVars(constantsVars), solver(solver), sigmaSize(sigmaSize),
                 ffalse(PropositionalLogic::PLFormula::lit(0)), ftrue(PropositionalLogic::PLFormula::lit(0)) {
@@ -381,6 +383,7 @@ namespace RegularEncoding {
         std::map<std::pair<int, int>, Glucose::Var> *constantsVars;
         Glucose::Solver &solver;
         int sigmaSize;
+        std::map<int, Words::Terminal *>& index2t;
 
         PropositionalLogic::PLFormula ffalse;
         PropositionalLogic::PLFormula ftrue;
@@ -397,9 +400,10 @@ namespace RegularEncoding {
                          std::map<int, int> *maxPadding,
                          std::map<Words::Terminal *, int> *tIndices,
                          std::map<std::pair<std::pair<int, int>, int>, Glucose::Var> *variableVars,
-                         std::map<std::pair<int, int>, Glucose::Var> *constantsVars)
+                         std::map<std::pair<int, int>, Glucose::Var> *constantsVars,
+                         std::map<int, Words::Terminal *>& index2t)
                 : Encoder(constraint, ctx, solver, sigmaSize, vIndices, maxPadding, tIndices, variableVars,
-                          constantsVars) /*, *ccache(std::unordered_map<size_t, PropositionalLogic::PLFormula*>())*/ {
+                          constantsVars, index2t) /*, *ccache(std::unordered_map<size_t, PropositionalLogic::PLFormula*>())*/ {
 
         };
 

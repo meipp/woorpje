@@ -93,6 +93,28 @@ namespace RegularEncoding {
         shared_ptr<Words::RegularConstraints::RegEmpty> emps = dynamic_pointer_cast<Words::RegularConstraints::RegEmpty>(
                 expression);
 
+        bool isConst = true;
+        for (auto fp: filledPat) {
+            if (fp.isVariable()) {
+                isConst = false;
+                break;
+            }
+        }
+        if (isConst) {
+            auto nfa = Automaton::regexToNfa(*expression, ctx);
+            Words::Word constW;
+            unique_ptr<Words::WordBuilder> wb = ctx.makeWordBuilder(constW);
+            for (auto fp: filledPat) {
+                *wb << index2t[fp.getTerminalIndex()]->getChar();
+            }
+            wb->flush();
+            if (nfa.accept(constW)) {
+                return ftrue;
+            } else {
+                return ffalse;
+            }
+        }
+
         if (word != nullptr) {
 
             vector<int> expressionIdx{};
