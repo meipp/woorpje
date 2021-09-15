@@ -205,16 +205,17 @@ namespace RegularEncoding {
         }
 
         shared_ptr<set<int>> UNFALengthAbstractionBuilder::reachableAfter(int transitions) {
-            if (S0.empty()) {
-                S0 = std::vector<std::shared_ptr<std::set<int>>>(nfa.numStates());
-                S0[0] = make_unique<set<int>>(set<int>{nfa.getInitialState()});
-
-                // O(n²) * succ = O(n²)*O(n+m) = O(n⁴)
-                for (int i = 1; i < nfa.numStates(); i++) {
-                    S0[i] = succ(S0[i - 1]);
-                }
+            if (transitions < S0.size()) {
+                return  S0[transitions];
             }
-            auto w = S0[transitions];
+            std::vector<std::shared_ptr<std::set<int>>> S(transitions+1) ;
+            S[0] = make_unique<set<int>>(set<int>{nfa.getInitialState()});
+            // O(n²) * succ = O(n²)*O(n+m) = O(n⁴)
+            for (int i = 1; i <= transitions; i++) {
+                S[i] = succ(S[i - 1]);
+            }
+
+            auto w = S[transitions];
             return w;
 
         }
