@@ -750,7 +750,7 @@ namespace RegularEncoding {
         int currentPos = i - 1;
         // TODO: use ptr to avoid copying
         set<pair<Words::Terminal *, int>> preds{};
-
+        set<pair<int, int>> unreachable{};
         for (auto t: pred[q]) {
             if (filledPat.at(currentPos).isTerminal()) {
                 if (!t.first->isEpsilon() && tIndices->at(t.first) == filledPat[currentPos].getTerminalIndex()) {
@@ -762,6 +762,21 @@ namespace RegularEncoding {
         }
 
 
+        while (currentPos - 1 >= 0 && filledPat[currentPos-1].isTerminal()) {
+            set<pair<Words::Terminal *, int>> predPreds{};
+            for (auto p: preds) {
+                for (auto pp: pred[p.second]) {
+                    if (!pp.first->isEpsilon() &&
+                        tIndices->at(pp.first) == filledPat.at(currentPos - 1).getTerminalIndex()) {
+                        predPreds.insert(pp);
+
+                    }
+                }
+                visited.insert(make_pair(p.second, currentPos));
+            }
+            preds = predPreds;
+            currentPos--;
+        }
 
 
         // If preds is empty, we now that Sqi has no valid predecessor and we'll encode -Sqi.
