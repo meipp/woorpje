@@ -497,6 +497,10 @@ namespace RegularEncoding {
         LengthAbstraction::UNFALengthAbstractionBuilder builder(M);
 
         LengthAbstraction::ArithmeticProgressions rAbs = builder.forState(M.getInitialState());
+
+
+        satewiseLengthAbstraction[M.getInitialState()] = rAbs;
+
         bool lenghtOk = false;
         for (int l = numTerminals(filledPat); l <= filledPat.size(); l++) {
             if (rAbs.contains(l)) {
@@ -514,11 +518,11 @@ namespace RegularEncoding {
 
         auto delta = M.getDelta();
 
-        /*
+
         set<int> visited{M.getInitialState()};
         list<int> queue;
         for (auto t: delta[M.getInitialState()]) {
-            //queue.push_back(t.second);
+            queue.push_back(t.second);
         }
         while (!queue.empty()) {
             int q = queue.front();
@@ -531,12 +535,8 @@ namespace RegularEncoding {
                     queue.push_back(t.second);
                 }
             }
-        }*/
+        }
 
-        LengthAbstraction::ArithmeticProgressions p;
-        p.add(make_pair(0, 1));
-        for (int q = 0; q < M.numStates(); q++)
-            satewiseLengthAbstraction[q] = p;
 
 
         // Save reachability on Mxi for any prefix
@@ -616,23 +616,41 @@ namespace RegularEncoding {
             }
         }
 
+
         set<pair<int, int>> tmpv{};
         vector<PLFormula> predFormulae;
         for (auto qf: Mxi.getFinalStates()) {
             PLFormula predPart = encodePredNew(Mxi, filledPat, qf, (int) filledPat.size(), tmpv, pred);
+
+
             predFormulae.push_back(predPart);
+            //set<set<int>> predecessorCnf = tseytin_cnf(predPart, solver);
+            //for (const auto &clause: predecessorCnf) {
+                //cnf.insert(clause);
+            //}
         }
+
         PLFormula predecessor = PLFormula::land(predFormulae);
-        stop = chrono::high_resolution_clock::now();
-        duration = chrono::duration_cast<milliseconds>(stop - start);
-        cout << "\t - Created [Predecessor] constraint (depth: " << predecessor.depth() << ", size: "
-             << predecessor.size() << "). Took " << duration.count() << "ms\n";
+        if (predFormulae.size() == 1) {
+            predecessor = predFormulae[0];
+        }
+
         set<set<int>> predecessorCnf = tseytin_cnf(predecessor, solver);
         for (const auto &clause: predecessorCnf) {
             cnf.insert(clause);
         }
+        stop = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<milliseconds>(stop - start);
+        cout << "\t - Created [Predecessor] constraint (depth: " << predecessor.depth() << ", size: "
+             << predecessor.size() << "). Took " << duration.count() << "ms\n";
 
-        //PLFormula predecessor = encodePredecessor(Mxi, filledPat);
+
+        /* OLD ITERATIVE APPROACH
+        PLFormula predecessor = encodePredecessor(Mxi, filledPat);
+        set<set<int>> predecessorCnf = tseytin_cnf(predecessor, solver);
+        for (const auto &clause: predecessorCnf) {
+            cnf.insert(clause);
+        }*/
         start = high_resolution_clock::now();
         stop = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<milliseconds>(stop - start);
@@ -756,10 +774,6 @@ namespace RegularEncoding {
         disj.push_back(PLFormula::lit(succVar));
         for (auto qh: preds) {
 
-            if (reachable.at(currentPos)->count(qh.second) == 0) {
-                // not reachable at all
-                continue;
-            }
             int predVar = stateVars[make_pair(qh.second, currentPos)];
             // word
             int k;
@@ -836,18 +850,19 @@ namespace RegularEncoding {
 
 
                 bool lengthOk = false;
-                vector<FilledPos> suff(filledPat.begin() + i, filledPat.end());
+                vector<FilledPos> suff(filledPat.begin(), filledPat.end());
                 for (int lb = numTerminals(suff); lb <= suff.size(); lb++) {
                     if (satewiseLengthAbstraction[q].contains(lb)) {
                         lengthOk = true;
                         break;
                     } else {
-
+                        cout << lb << " not in rabs for " << q << "\n";
                     }
                 }
                 if (!lengthOk) {
                     continue;
                 }
+
 
                 vector<PLFormula> pred_q_disj; // S_q^i -> (\/ {(S_pr^i /\ w)})
                 PLFormula sqi = PLFormula::lit(-stateVars[make_pair(q, i)]); // S_q^i
