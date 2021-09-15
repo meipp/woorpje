@@ -71,7 +71,7 @@ namespace RegularEncoding {
         auto start = high_resolution_clock::now();
         PLFormula f = doEncode(filledPat, expr);
 
-        cout << "\t - Built formula (depth: " << f.depth() << ", size:" <<  f.size() << ") creating CNF\n";
+        cout << "\t - Built formula (depth: " << f.depth() << ", size:" << f.size() << ") creating CNF\n";
 
         set<set<int>> cnf = tseytin_cnf(f, solver);
         auto stop = high_resolution_clock::now();
@@ -463,7 +463,6 @@ namespace RegularEncoding {
         vector<FilledPos> filledPat = filledPattern(pattern);
 
 
-
         auto start = high_resolution_clock::now();
         Automaton::NFA M = Automaton::regexToNfa(*expr, ctx);
 
@@ -476,7 +475,7 @@ namespace RegularEncoding {
         }
 
 
-        if(pattern.noVariableWord()) {
+        if (pattern.noVariableWord()) {
             Glucose::Var v = solver.newVar();
             if (M.accept(pattern)) {
                 return set<set<int>>{set<int>{v, -v}};
@@ -513,14 +512,15 @@ namespace RegularEncoding {
         }
 
 
-
         auto delta = M.getDelta();
+
+        /*
         set<int> visited{M.getInitialState()};
         list<int> queue;
         for (auto t: delta[M.getInitialState()]) {
-            queue.push_back(t.second);
+            //queue.push_back(t.second);
         }
-        while(!queue.empty()) {
+        while (!queue.empty()) {
             int q = queue.front();
             queue.pop_front();
             visited.insert(q);
@@ -531,21 +531,24 @@ namespace RegularEncoding {
                     queue.push_back(t.second);
                 }
             }
-        }
+        }*/
+
+        LengthAbstraction::ArithmeticProgressions p;
+        p.add(make_pair(0, 1));
+        for (int q = 0; q < M.numStates(); q++)
+            satewiseLengthAbstraction[q] = p;
 
 
         // Save reachability on Mxi for any prefix
         reachable = map<int, shared_ptr<set<int>>>{};
         auto tmp = LengthAbstraction::UNFALengthAbstractionBuilder(Mxi);
-        for (int i = 0; i<=filledPat.size(); i++) {
+        for (int i = 0; i <= filledPat.size(); i++) {
             reachable[i] = tmp.reachableAfter(i);
         }
 
         stop = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<milliseconds>(stop - start);
         cout << "\t - Built length abstraction for each state. Took " << duration.count() << "ms\n";
-
-
 
 
         start = high_resolution_clock::now();
@@ -597,17 +600,40 @@ namespace RegularEncoding {
 
         start = high_resolution_clock::now();
         // Predecessor constraint
-        PLFormula predecessor = encodePredecessor(Mxi, filledPat);
+
+
+        map<int, set<pair<Words::Terminal *, int>>> pred;
+        for (auto &trans: Mxi.getDelta()) {
+            int qsrc = trans.first;
+            for (auto &target: trans.second) {
+                Words::Terminal *label = target.first;
+                int qdst = target.second;
+                if (pred.count(qdst) == 1) {
+                    pred[qdst].insert(make_pair(label, qsrc));
+                } else {
+                    pred[qdst] = set<pair<Words::Terminal *, int>>{make_pair(label, qsrc)};
+                }
+            }
+        }
+
+        set<pair<int, int>> tmpv{};
+        vector<PLFormula> predFormulae;
+        for (auto qf: Mxi.getFinalStates()) {
+            PLFormula predPart = encodePredNew(Mxi, filledPat, qf, (int) filledPat.size(), tmpv, pred);
+            predFormulae.push_back(predPart);
+        }
+        PLFormula predecessor = PLFormula::land(predFormulae);
         stop = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<milliseconds>(stop - start);
         cout << "\t - Created [Predecessor] constraint (depth: " << predecessor.depth() << ", size: "
              << predecessor.size() << "). Took " << duration.count() << "ms\n";
-
-        start = high_resolution_clock::now();
         set<set<int>> predecessorCnf = tseytin_cnf(predecessor, solver);
-        for (auto clause: predecessorCnf) {
+        for (const auto &clause: predecessorCnf) {
             cnf.insert(clause);
         }
+
+        //PLFormula predecessor = encodePredecessor(Mxi, filledPat);
+        start = high_resolution_clock::now();
         stop = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<milliseconds>(stop - start);
         cout << "\t - Created CNF. Took " << duration.count() << "ms\n";
@@ -694,6 +720,99 @@ namespace RegularEncoding {
         return PLFormula::land(vector<PLFormula>{ffalse});
     }
 
+
+    PLFormula AutomatonEncoder::encodePredNew(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat, int q, int i,
+                                              set<pair<int, int>> &visited,
+                                              map<int, set<pair<Words::Terminal *, int>>> &pred) {
+
+
+        visited.insert(make_pair(q, i));
+        vector<PLFormula> f{};
+
+        int currentPos = i - 1;
+        // TODO: use ptr to avoid copying
+        set<pair<Words::Terminal *, int>> preds{};
+
+        for (auto t: pred[q]) {
+            if (filledPat.at(currentPos).isTerminal()) {
+                if (!t.first->isEpsilon() && tIndices->at(t.first) == filledPat[currentPos].getTerminalIndex()) {
+                    preds.insert(t);
+                }
+            } else {
+                preds.insert(t);
+            }
+        }
+
+
+
+
+        // If preds is empty, we now that Sqi has no valid predecessor and we'll encode -Sqi.
+        vector<PLFormula> disj;
+        // For all reachable states q' in succ, encode that q is the predecessor after reading i symbols
+        auto delta = Mxi.getDelta();
+        vector<PLFormula> conj;
+        // Predecessor Sq^i
+        int succVar = -stateVars[make_pair(q, i)];
+        disj.push_back(PLFormula::lit(succVar));
+        for (auto qh: preds) {
+
+            if (reachable.at(currentPos)->count(qh.second) == 0) {
+                // not reachable at all
+                continue;
+            }
+            int predVar = stateVars[make_pair(qh.second, currentPos)];
+            // word
+            int k;
+            if (qh.first->isEpsilon()) {
+                k = sigmaSize;
+            } else {
+                k = tIndices->at(qh.first);
+            }
+            int word;
+            if (filledPat.at(currentPos).isTerminal()) {
+                int ci = filledPat[currentPos].getTerminalIndex();
+                word = constantsVars->at(make_pair(ci, k));
+            } else {
+                pair<int, int> xij = filledPat[currentPos].getVarIndex();
+                word = variableVars->at(make_pair(xij, k));
+            }
+
+
+            auto predF = PLFormula::land(vector<PLFormula>{PLFormula::lit(word), PLFormula::lit(predVar)});
+            conj.push_back(predF);
+
+
+        }
+        if (!conj.empty()) {
+            disj.push_back(PLFormula::lor(conj));
+        }
+
+        if (disj.size() == 1) {
+            // -S
+            f.push_back(disj[0]);
+        } else {
+            // -S \/ (... /\ ...) ...
+            f.push_back(PLFormula::lor(disj));
+        }
+
+        if (currentPos > 0) {
+            for (auto qh: preds) {
+                if (visited.count(make_pair(qh.second, currentPos)) == 0) {
+                    //Call recursively for preds
+                    f.push_back(encodePredNew(Mxi, filledPat, qh.second, currentPos, visited, pred));
+                }
+            }
+        }
+
+
+        if (f.empty()) {
+            return ffalse;
+        } else if (f.size() == 1) {
+            return f[0];
+        }
+        return PLFormula::land(f);
+    }
+
     PLFormula AutomatonEncoder::encodePredecessor(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat) {
         // calc pred
         map<int, set<pair<Words::Terminal *, int>>> pred;
@@ -716,13 +835,8 @@ namespace RegularEncoding {
             for (int q = 0; q < Mxi.numStates(); q++) {
 
 
-
-
-
                 bool lengthOk = false;
-                vector<FilledPos> suff(filledPat.begin()+i, filledPat.end());
-
-
+                vector<FilledPos> suff(filledPat.begin() + i, filledPat.end());
                 for (int lb = numTerminals(suff); lb <= suff.size(); lb++) {
                     if (satewiseLengthAbstraction[q].contains(lb)) {
                         lengthOk = true;
@@ -749,7 +863,7 @@ namespace RegularEncoding {
 
                         PLFormula sqip = PLFormula::lit(stateVars[make_pair(q_pred.second, i - 1)]); // S_q'^i
 
-                        if (reachable[i-1]->count(q_pred.second) == 0) {
+                        if (reachable[i - 1]->count(q_pred.second) == 0) {
                             continue;
                         }
 
