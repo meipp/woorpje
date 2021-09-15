@@ -622,27 +622,28 @@ namespace RegularEncoding {
         for (auto qf: Mxi.getFinalStates()) {
             PLFormula predPart = encodePredNew(Mxi, filledPat, qf, (int) filledPat.size(), tmpv, pred);
 
-
             predFormulae.push_back(predPart);
-            //set<set<int>> predecessorCnf = tseytin_cnf(predPart, solver);
-            //for (const auto &clause: predecessorCnf) {
-                //cnf.insert(clause);
-            //}
+
         }
 
         PLFormula predecessor = PLFormula::land(predFormulae);
         if (predFormulae.size() == 1) {
             predecessor = predFormulae[0];
         }
-
-        set<set<int>> predecessorCnf = tseytin_cnf(predecessor, solver);
-        for (const auto &clause: predecessorCnf) {
-            cnf.insert(clause);
-        }
         stop = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<milliseconds>(stop - start);
         cout << "\t - Created [Predecessor] constraint (depth: " << predecessor.depth() << ", size: "
              << predecessor.size() << "). Took " << duration.count() << "ms\n";
+
+        start = high_resolution_clock::now();
+        stop = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<milliseconds>(stop - start);
+        set<set<int>> predecessorCnf = tseytin_cnf(predecessor, solver);
+        for (const auto &clause: predecessorCnf) {
+            cnf.insert(clause);
+        }
+        cout << "\t - Created CNF. Took " << duration.count() << "ms\n";
+
 
 
         /* OLD ITERATIVE APPROACH
@@ -651,10 +652,7 @@ namespace RegularEncoding {
         for (const auto &clause: predecessorCnf) {
             cnf.insert(clause);
         }*/
-        start = high_resolution_clock::now();
-        stop = chrono::high_resolution_clock::now();
-        duration = chrono::duration_cast<milliseconds>(stop - start);
-        cout << "\t - Created CNF. Took " << duration.count() << "ms\n";
+
 
 
         duration = duration_cast<milliseconds>(high_resolution_clock::now() - total_start);
