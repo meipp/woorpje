@@ -17,7 +17,8 @@
 namespace RegularEncoding {
 
 
-    std::set<std::vector<std::shared_ptr<Words::RegularConstraints::RegNode>>> partitioning(const std::shared_ptr<Words::RegularConstraints::RegNode>& expression, Words::Context ctx);
+    Words::RegularConstraints::RegConstraint stripPrefix(Words::RegularConstraints::RegConstraint);
+    Words::RegularConstraints::RegConstraint stripSuffix(Words::RegularConstraints::RegConstraint);
 
     std::shared_ptr<Words::RegularConstraints::RegOperation>   makeNodeBinary(std::shared_ptr<Words::RegularConstraints::RegOperation> concat);
 
@@ -33,7 +34,7 @@ namespace RegularEncoding {
             std::set<int> final_states{};
 
         public:
-            NFA() {};
+            NFA() : final_states(std::set<int>{}), initState(-1) {};
 
             /**
              * Direct instantiation.

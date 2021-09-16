@@ -99,9 +99,6 @@ namespace RegularEncoding {
             try {
                 RegWord &word = dynamic_cast<Words::RegularConstraints::RegWord &>(expression);
                 // Single word w, return {(|w|, 0)}
-                if (!word.word.noVariableWord()) {
-                    throw new logic_error("Regular expression can't have variables");
-                }
                 ArithmeticProgressions ap;
                 ap.add(make_pair(word.word.characters(), 0));
                 cache[restr] = ap;

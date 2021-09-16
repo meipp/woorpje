@@ -1707,21 +1707,22 @@ template<bool newencode = true>
         }
 
 
-        bool AUTOMATON = true;
+        bool AUTOMATON = false;
 
         //Handle regular constraints
         cout << "Current bound: " << bound << "\n";
         for (auto recon: input_options.recons) {
 
+            auto strippedRecon = RegularEncoding::stripSuffix(RegularEncoding::stripPrefix(*recon));
 
             set<set<int>> clauses;
             if (AUTOMATON) {
-                RegularEncoding::AutomatonEncoder regEncoder(*recon, context, S, sigmaSize,
+                RegularEncoding::AutomatonEncoder regEncoder(strippedRecon, context, S, sigmaSize,
                                                              &vIndices,
                                                              &maxPadding, &tIndices, &variableVars, &constantsVars, index2t);
                 clauses = regEncoder.encode();
             }else {
-                RegularEncoding::InductiveEncoder regEncoder(*recon, context, S, sigmaSize,
+                RegularEncoding::InductiveEncoder regEncoder(strippedRecon, context, S, sigmaSize,
                                                              &vIndices,
                                                              &maxPadding, &tIndices, &variableVars, &constantsVars, index2t);
                 clauses = regEncoder.encode();

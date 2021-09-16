@@ -13,9 +13,12 @@ namespace Words {
         class RegNode {
         public:
             //virtual RegNode deepCopy();
-            RegNode(){};
+            RegNode() {};
+
             virtual ~RegNode() {}
-            virtual void toString(std::ostream& os) = 0;
+
+            virtual void toString(std::ostream &os) = 0;
+
             std::string toString() {
                 if (str == "-") {
                     std::stringstream ss;
@@ -25,6 +28,10 @@ namespace Words {
                 return str;
             };
 
+            virtual std::shared_ptr<RegNode> reverse() = 0;
+
+            virtual std::shared_ptr<RegNode> derivative(std::string d) = 0;
+
             virtual size_t characters() = 0;
 
             size_t hash() {
@@ -32,17 +39,125 @@ namespace Words {
                 return strhash(toString());
             }
 
-            virtual bool isLeaf() {return false;}
+            virtual bool isLeaf() { return false; }
+
             virtual void getAlphabet(Words::WordBuilder wb) = 0;
+
+            virtual bool acceptsEpsilon() = 0;
+
 
         private:
             std::string str = "-";
+
+
         };
+
+
 
         /**
          * Current supported regular operators.
          */
-        enum class RegularOperator { UNION, CONCAT, STAR };
+        enum class RegularOperator {
+            UNION, CONCAT, STAR
+        };
+
+        class RegEmpty : public RegNode {
+        public:
+            RegEmpty() {};
+
+            bool acceptsEpsilon() {
+                return false;
+            }
+
+            virtual bool isLeaf() { return true; }
+
+            void toString(std::ostream &os) {
+                os << "</>";
+            }
+
+            void getAlphabet(Words::WordBuilder wb) {}
+
+            size_t characters() override {
+                return 0;
+            }
+
+            std::shared_ptr<RegNode> derivative(std::string d) {
+                return std::make_shared<RegEmpty>(RegEmpty());
+            }
+
+            std::shared_ptr<RegNode> reverse() {
+                return std::make_shared<RegEmpty>(RegEmpty());
+            }
+
+        };
+
+        class RegWord : public RegNode {
+        public:
+            //RegWord(std::string word) : word(word){};
+            RegWord(Words::Word word) : word(word) {};
+
+            void toString(std::ostream &os) {
+
+                for (auto c: word)
+                    os << c->getTerminal()->getChar();
+            }
+
+            size_t characters() override {
+                return word.characters();
+            }
+
+            bool acceptsEpsilon() {
+                return word.characters() == 0;
+            }
+
+            std::shared_ptr<RegNode> derivative(std::string d) {
+                if (d.empty()) {
+                    return std::make_shared<RegWord>(RegWord(word));
+                }
+                if (d.size() > word.characters()) {
+                    return std::make_shared<RegEmpty>(RegEmpty());
+                }
+                std::vector<IEntry *> deriv;
+                for (auto w: word) {
+                    if (!d.empty()) {
+                        if (w->getTerminal()->getChar() == d.front()) {
+                            d.erase(0, 1);
+                        } else {
+                            return std::make_shared<RegEmpty>(RegEmpty());
+                        }
+                    } else {
+                        deriv.push_back(w);
+                    }
+                }
+                Word derivWord(std::move(deriv));
+                return std::make_shared<RegWord>(RegWord(derivWord));
+            }
+
+            std::shared_ptr<RegNode> reverse() {
+
+                std::vector<IEntry *> revEntries;
+                for (auto it = word.rebegin(); it != word.reend(); it++) {
+                    revEntries.push_back(*it);
+                }
+                Word ww(std::move(revEntries));
+
+                auto res = std::make_shared<RegWord>(RegWord(ww));
+                return res;
+            }
+
+            virtual bool isLeaf() { return true; }
+
+            void getAlphabet(Words::WordBuilder wb) {
+
+                for (auto e: word) {
+                    if (e->isTerminal()) {
+                        wb << e->getTerminal()->getChar();
+                    }
+                }
+            }
+
+            Words::Word word;
+        };
 
         /**
          * Node representing a regular operation.
@@ -51,29 +166,151 @@ namespace Words {
         class RegOperation : public RegNode {
         public:
             RegOperation(RegularOperator regOperator)
-                : RegOperation(regOperator, std::vector<std::shared_ptr<RegNode>> {}){};
+                    : RegOperation(regOperator, std::vector<std::shared_ptr<RegNode>>{}) {};
+
             RegOperation(RegularOperator regOperator, std::vector<std::shared_ptr<RegNode>> children)
-                : op(regOperator), children(children){};
+                    : op(regOperator), children(children) {};
 
             /**
              * Adds a child (i.e. operand) to this node.
              */
-            void addChild(std::shared_ptr<RegNode> node){
+            void addChild(std::shared_ptr<RegNode> node) {
                 children.push_back(node);
             };
+
             virtual bool isLeaf() { return false; }
 
-            RegularOperator getOperator() { return op;};
+            std::shared_ptr<RegNode> reverse() {
+                switch (op) {
+                    case RegularOperator::UNION: {
+                        std::vector<std::shared_ptr<RegNode>> chdRev{};
+                        for (auto ch: getChildren()) {
+                            chdRev.push_back(ch->reverse());
+                        }
+                        return std::make_shared<RegOperation>(RegOperation(RegularOperator::UNION, chdRev));
+                        break;
+                    }
+                    case RegularOperator::CONCAT: {
+                        std::vector<std::shared_ptr<RegNode>> chdRev{};
+                        for (auto ch: getChildren()) {
+                            chdRev.push_back(ch->reverse());
+                        }
+                        std::reverse(chdRev.begin(), chdRev.end());
+                        return std::make_shared<RegOperation>(RegOperation(RegularOperator::CONCAT, chdRev));
+                    }
+                    case RegularOperator::STAR: {
+                        std::vector<std::shared_ptr<RegNode>> chdRev{getChildren()[0]->reverse()};
+                        return std::make_shared<RegOperation>(RegOperation(RegularOperator::STAR, chdRev));
+                        break;
+                    }
+                }
+            };
 
-            void toString(std::ostream& os) {
-                switch(op) {
+            std::shared_ptr<RegNode> derivative(std::string d) {
+                if (d.empty()) {
+                    return std::make_shared<RegOperation>(op, children);
+                }
+                switch (op) {
+                    case RegularOperator::UNION: {
+                        std::vector<std::shared_ptr<RegNode>> chdDerivs{};
+                        for (const auto &ch: getChildren()) {
+                            std::shared_ptr<RegNode> deriv = ch->derivative(d);
+                            if (std::dynamic_pointer_cast<RegEmpty>(deriv) == nullptr) {
+                                chdDerivs.push_back(deriv);
+                            }
+                        }
+                        if (chdDerivs.empty()) {
+                            return std::make_shared<RegEmpty>(RegEmpty());
+                        } else if (chdDerivs.size() == 1) {
+                            return chdDerivs[0];
+                        }
+                        return std::make_shared<RegOperation>(RegOperation(RegularOperator::UNION, chdDerivs));
+                        break;
+                    }
+                    case RegularOperator::CONCAT: {
+
+                        if (children.size() > 2) {
+                            std::vector<std::shared_ptr<RegNode>> lhsChild{};
+                            for (int i = 1; i < children.size(); i++) {
+                                lhsChild.push_back(children[i]);
+                            }
+                            RegOperation lhs(RegularOperator::CONCAT, lhsChild);
+
+                            std::vector<std::shared_ptr<RegNode>> binaryCh{children[0], std::make_shared<RegOperation>(lhs)};
+                            RegOperation binary(RegularOperator::CONCAT, binaryCh);
+                            return binary.derivative(d);
+                        }
+
+                        std::vector<std::shared_ptr<RegNode>> chdRev{};
+                        auto lhs = getChildren()[0];
+                        auto rhs = getChildren()[1];
+                        auto newLhs = lhs->derivative(d);
+
+                        // Check if newLhs is epsilon, then we're done here
+                        auto asword = std::dynamic_pointer_cast<RegWord>(newLhs);
+                        if (asword != nullptr && asword->word.characters() == 0) {
+                                return rhs;
+                        }
+                        if (lhs->acceptsEpsilon()) {
+                            auto newRhs = rhs->derivative(d);
+                            std::vector<std::shared_ptr<RegNode>> conc1Vect{newLhs, rhs};
+                            std::vector<std::shared_ptr<RegNode>> conc2Vect;
+
+                            auto newRhsAsWord = std::dynamic_pointer_cast<RegWord>(newRhs);
+                            if (newRhs == nullptr || newRhs->characters() > 0) {
+                                conc2Vect.push_back(newRhs);
+                            }
+
+                            if(std::dynamic_pointer_cast<RegEmpty>(newLhs) != nullptr) {
+                                return newRhs;
+                            }
+
+                            std::shared_ptr<RegNode> conc = std::make_shared<RegOperation>(RegularOperator::CONCAT, conc1Vect);
+                            if(std::dynamic_pointer_cast<RegEmpty>(newRhs) != nullptr) {
+                                return conc;
+                            }
+                            auto unionVec = std::vector<std::shared_ptr<RegNode>>{conc, newRhs};
+                            return std::make_shared<RegOperation>(RegularOperator::UNION, unionVec);
+                        } else {
+                            std::vector<std::shared_ptr<RegNode>> chd{newLhs, rhs};
+                            if(std::dynamic_pointer_cast<RegEmpty>(newLhs) != nullptr) {
+                                return newLhs;
+                            }
+                            return std::make_shared<RegOperation>(RegOperation(RegularOperator::CONCAT, chd));
+                        }
+                        break;
+                    }
+                    case RegularOperator::STAR: {
+                        auto cpy = std::make_shared<RegOperation>(RegOperation(RegularOperator::STAR, children));
+                        auto chdderiv = getChildren()[0]->derivative(d);
+
+                        if (std::dynamic_pointer_cast<RegEmpty>(chdderiv)) {
+                            return std::make_shared<RegEmpty>();
+                        }
+
+                        auto asWord = std::dynamic_pointer_cast<RegEmpty>(chdderiv) ;
+                        if (asWord != nullptr && asWord->characters() == 0) {
+                            return cpy;
+                        }
+
+                        std::vector<std::shared_ptr<RegNode>> chd{chdderiv, cpy};
+                        return std::make_shared<RegOperation>(RegOperation(RegularOperator::CONCAT, chd));
+                        break;
+                    }
+                }
+            }
+
+            RegularOperator getOperator() { return op; };
+
+            void toString(std::ostream &os) {
+                switch (op) {
                     case RegularOperator::UNION:
                         os << "(";
-                        for (int i = 0; i < children.size()-1; i++) {
+                        for (int i = 0; i < children.size() - 1; i++) {
                             children[i]->toString(os);
                             os << "|";
                         }
-                        children[children.size()-1]->toString(os);
+                        children[children.size() - 1]->toString(os);
                         os << ")";
                         break;
                     case RegularOperator::CONCAT:
@@ -106,72 +343,59 @@ namespace Words {
                     c->getAlphabet(wb);
                 }
             }
+
             /**
              * Returns a vector of the operand nodes.
              */
             std::vector<std::shared_ptr<RegNode>> getChildren() {
                 return children;
             };
+
+            bool acceptsEpsilon() {
+                switch (op) {
+                    case RegularOperator::UNION: {
+
+                        for (auto ch: getChildren()) {
+                            if (ch->acceptsEpsilon()) {
+                                return true;
+                            }
+                        }
+                        return false;
+                        break;
+                    }
+                    case RegularOperator::CONCAT: {
+                        for (auto ch: getChildren()) {
+                            if (!ch->acceptsEpsilon()) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                    case RegularOperator::STAR: {
+                        return true;
+                    }
+                }
+            }
+
         private:
             RegularOperator op;
             std::vector<std::shared_ptr<RegNode>> children;
         };
 
-        class RegWord : public RegNode {
-        public:
-            //RegWord(std::string word) : word(word){};
-            RegWord(Words::Word word): word(word){};
-
-            void toString(std::ostream& os) {
-                for (auto c: word) 
-                    os << c->getTerminal()->getChar();
-            }
-
-            size_t characters() override {
-                return word.characters();
-            }
 
 
-            virtual bool isLeaf() { return true; }
-            void getAlphabet(Words::WordBuilder wb) {
-
-                for (auto e: word) {
-                    if (e->isTerminal()) {
-                        wb << e->getTerminal()->getChar();
-                    }
-                }
-            }
-
-            Words::Word word;
-        };
-
-        class RegEmpty : public RegNode {
-        public:
-            RegEmpty(){};
-            virtual bool isLeaf() { return true; }
-
-            void toString(std::ostream& os) {
-                os << "</>";
-            }
-            void getAlphabet(Words::WordBuilder wb) {}
-
-            size_t characters() override {
-                return 0;
-            }
-
-        };
 
         struct RegConstraint {
         public:
-            RegConstraint(Words::Word pattern, std::shared_ptr<RegNode> expr): pattern(pattern), expr(expr) {};
+            RegConstraint(Words::Word pattern, std::shared_ptr<RegNode> expr) : pattern(pattern), expr(expr) {};
 
-            void toString(std::ostream& os) {
+            void toString(std::ostream &os) {
                 os << pattern;
                 os << "⋵ ";
                 expr->toString(os);
             }
 
-            Words::Word  pattern;
+            Words::Word pattern;
             std::shared_ptr<RegNode> expr;
         };
 
