@@ -2,6 +2,7 @@
 #include <words/exceptions.hpp>
 #include "regencoding.h"
 #include <chrono>
+#include <solvers/solvers.hpp>
 
 
 using namespace std;

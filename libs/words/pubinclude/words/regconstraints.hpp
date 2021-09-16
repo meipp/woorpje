@@ -25,6 +25,8 @@ namespace Words {
                 return str;
             };
 
+            virtual size_t characters() = 0;
+
             size_t hash() {
                 boost::hash<std::string> strhash;
                 return strhash(toString());
@@ -91,6 +93,14 @@ namespace Words {
                 }
             }
 
+            size_t characters() override {
+                int sum = 0;
+                for (auto c: children) {
+                    sum += c->characters();
+                }
+                return sum;
+            }
+
             void getAlphabet(Words::WordBuilder wb) {
                 for (auto c: children) {
                     c->getAlphabet(wb);
@@ -117,6 +127,9 @@ namespace Words {
                     os << c->getTerminal()->getChar();
             }
 
+            size_t characters() override {
+                return word.characters();
+            }
 
 
             virtual bool isLeaf() { return true; }
@@ -141,6 +154,10 @@ namespace Words {
                 os << "</>";
             }
             void getAlphabet(Words::WordBuilder wb) {}
+
+            size_t characters() override {
+                return 0;
+            }
 
         };
 
