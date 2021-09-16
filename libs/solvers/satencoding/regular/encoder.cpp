@@ -469,11 +469,6 @@ namespace RegularEncoding {
 
         M.removeEpsilonTransitions();
 
-        if (M.getFinalStates().empty()) {
-            // Does not accept anything
-            Glucose::Var v = solver.newVar();
-            return set<set<int>>{set<int>{v}, set<int>{-v}};
-        }
 
 
         if (pattern.noVariableWord()) {
@@ -486,6 +481,14 @@ namespace RegularEncoding {
         }
 
         M = M.reduceToReachableState();
+
+        if (M.getFinalStates().empty()) {
+            // Does not accept anything
+            Glucose::Var v = solver.newVar();
+            return set<set<int>>{set<int>{v}, set<int>{-v}};
+        }
+
+
         Automaton::NFA Mxi = filledAutomaton(M);
 
         auto stop = chrono::high_resolution_clock::now();
@@ -500,7 +503,10 @@ namespace RegularEncoding {
         LengthAbstraction::ArithmeticProgressions rAbs = builder.forState(M.getInitialState());
 
 
+
         satewiseLengthAbstraction[M.getInitialState()] = rAbs;
+
+
 
         bool lenghtOk = false;
         for (int l = numTerminals(filledPat); l <= filledPat.size(); l++) {
@@ -515,6 +521,8 @@ namespace RegularEncoding {
             Glucose::Var v = solver.newVar();
             return set<set<int>>{set<int>{v}, set<int>{-v}};
         }
+
+
 
 
         auto delta = M.getDelta();
@@ -539,13 +547,6 @@ namespace RegularEncoding {
         }
 
 
-
-        // Save reachability on Mxi for any prefix
-        reachable = map<int, shared_ptr<set<int>>>{};
-        auto tmp = LengthAbstraction::UNFALengthAbstractionBuilder(Mxi);
-        for (int i = 0; i <= filledPat.size(); i++) {
-            reachable[i] = tmp.reachableAfter(i);
-        }
 
         stop = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<milliseconds>(stop - start);

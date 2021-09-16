@@ -184,8 +184,9 @@ namespace RegularEncoding {
         UNFALengthAbstractionBuilder::UNFALengthAbstractionBuilder(Automaton::NFA nfa) : nfa(nfa) {
             adjm = buildAdjacencyMatrix();
             statewiserAbs = std::map<int, std::shared_ptr<ArithmeticProgressions>>{};
+            N = int(adjm.size());
             if (!nfa.getDelta().empty()) {
-                N = adjm.size();
+
                 sccs = commons::scc(adjm);
 
                 if (nfaTcache.count(nfa.toString()) > 0) {
@@ -199,6 +200,16 @@ namespace RegularEncoding {
                         T[i] = pre(T[i - 1]);
                     }
                     nfaTcache[nfa.toString()] = T;
+                }
+            } else {
+
+                for (int q = 0; q < N; q++) {
+                    ArithmeticProgressions empty;
+                    if (nfa.getFinalStates().count(q) > 0) {
+                        empty.add(make_pair(0,0));
+                    }
+                    cout << "Setting " << q << endl;
+                    statewiserAbs[q] = make_shared<ArithmeticProgressions>(empty);
                 }
             }
 
@@ -389,6 +400,7 @@ namespace RegularEncoding {
             }
 
             if (!haspred) {
+                cout << "hier";
                 return forStateComplete(q);
             } else {
                 //cout << "Return für " << q << "\n";
