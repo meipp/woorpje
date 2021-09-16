@@ -246,6 +246,11 @@ namespace RegularEncoding {
                         set<int> qFs{q0};
                         for (auto sub: opr.getChildren()) {
                             NFA subM = regexToNfa(*sub, ctx);
+
+                            if (subM.getDelta().empty()) {
+                                continue;
+                            }
+
                             int off = M.numStates();
                             auto offsetDelta = subM.offset_states(off);
                             for (int i = 0; i < subM.numStates(); i++) {
