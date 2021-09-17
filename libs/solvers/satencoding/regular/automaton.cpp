@@ -23,6 +23,9 @@ namespace RegularEncoding {
             final_states.insert(qf);
         }
 
+
+
+
         map<int, vector<pair<Terminal*, int>>> NFA::offset_states(int of) {
             map<int, vector<pair<Terminal*, int>>> newDelta{};
             for (auto trans: delta) {

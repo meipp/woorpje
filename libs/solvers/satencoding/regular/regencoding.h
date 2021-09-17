@@ -13,14 +13,15 @@
 #include "core/Solver.h"
 
 
-
 namespace RegularEncoding {
 
 
     Words::RegularConstraints::RegConstraint stripPrefix(Words::RegularConstraints::RegConstraint);
+
     Words::RegularConstraints::RegConstraint stripSuffix(Words::RegularConstraints::RegConstraint);
 
-    std::shared_ptr<Words::RegularConstraints::RegOperation>   makeNodeBinary(std::shared_ptr<Words::RegularConstraints::RegOperation> concat);
+    std::shared_ptr<Words::RegularConstraints::RegOperation>
+    makeNodeBinary(std::shared_ptr<Words::RegularConstraints::RegOperation> concat);
 
     namespace Automaton {
 
@@ -178,7 +179,7 @@ namespace RegularEncoding {
 
             void makeBinary();
 
-            static std::shared_ptr<PLFormulaPtd> fromPLF(PLFormula& f);
+            static std::shared_ptr<PLFormulaPtd> fromPLF(PLFormula &f);
 
 
             int size();
@@ -253,7 +254,7 @@ namespace RegularEncoding {
                         }
                     } else {
                         int n = (k - a) / b;
-                        if (n>=0 && k == a + n * b) {
+                        if (n >= 0 && k == a + n * b) {
                             return true;
                         }
                     }
@@ -273,15 +274,13 @@ namespace RegularEncoding {
         public:
             UNFALengthAbstractionBuilder(Automaton::NFA);
 
-            ~UNFALengthAbstractionBuilder(){};
+            ~UNFALengthAbstractionBuilder() {};
 
             ArithmeticProgressions forState(int q);
 
-            void calcForAll();
-
             ArithmeticProgressions forStateComplete(int q);
 
-            std::shared_ptr<std::set<int>> reachableAfter(int transitions);
+
 
         private:
             Automaton::NFA nfa;
@@ -291,19 +290,23 @@ namespace RegularEncoding {
 
             std::vector<std::vector<bool>> buildAdjacencyMatrix();
 
-            std::shared_ptr<std::set<int>> succ(std::shared_ptr<std::set<int>>&);
-            std::shared_ptr<std::set<int>> pre(std::shared_ptr<std::set<int>>&);
+            std::shared_ptr<std::set<int>> succ(std::shared_ptr<std::set<int>> &);
+
+            std::shared_ptr<std::set<int>> pre(std::shared_ptr<std::set<int>> &);
+
             std::vector<std::shared_ptr<std::set<int>>> T;
-            std::vector<std::shared_ptr<std::set<int>>> S0;
+            std::vector<std::vector<std::set<int>>> Sq;
             std::map<std::set<int>, std::shared_ptr<std::set<int>>> successorsCache{};
+            std::map<std::set<int>, std::shared_ptr<std::set<int>>> predecessorCache{};
             std::map<int, std::shared_ptr<ArithmeticProgressions>> statewiserAbs;
+
             /**
              * Shortest loop from q to q in the graph
              * Ignored can be a set of nodes to ignore during the search.
              * This is useful if the SCC of q is known, because then ignored should contain all nodes not in the SCC of q.
              * Nodes not in the SCC can not be within in a loop starting and ending in q.
              */
-            int sl(int q, std::set<int> ignore);
+            int sl(int q, const std::set<int>& ignore);
 
         };
 
@@ -350,7 +353,7 @@ namespace RegularEncoding {
                 std::map<Words::Terminal *, int> *tIndices,
                 std::map<std::pair<std::pair<int, int>, int>, Glucose::Var> *variableVars,
                 std::map<std::pair<int, int>, Glucose::Var> *constantsVars,
-                std::map<int, Words::Terminal *>& index2t) :
+                std::map<int, Words::Terminal *> &index2t) :
                 constraint(std::move(constraint)), ctx(ctx), vIndices(vIndices), tIndices(tIndices),
                 index2t(index2t),
                 maxPadding(maxPadding),
@@ -384,7 +387,7 @@ namespace RegularEncoding {
         std::map<std::pair<int, int>, Glucose::Var> *constantsVars;
         Glucose::Solver &solver;
         int sigmaSize;
-        std::map<int, Words::Terminal *>& index2t;
+        std::map<int, Words::Terminal *> &index2t;
 
         PropositionalLogic::PLFormula ffalse;
         PropositionalLogic::PLFormula ftrue;
@@ -402,9 +405,10 @@ namespace RegularEncoding {
                          std::map<Words::Terminal *, int> *tIndices,
                          std::map<std::pair<std::pair<int, int>, int>, Glucose::Var> *variableVars,
                          std::map<std::pair<int, int>, Glucose::Var> *constantsVars,
-                         std::map<int, Words::Terminal *>& index2t)
+                         std::map<int, Words::Terminal *> &index2t)
                 : Encoder(constraint, ctx, solver, sigmaSize, vIndices, maxPadding, tIndices, variableVars,
-                          constantsVars, index2t) /*, *ccache(std::unordered_map<size_t, PropositionalLogic::PLFormula*>())*/ {
+                          constantsVars,
+                          index2t) /*, *ccache(std::unordered_map<size_t, PropositionalLogic::PLFormula*>())*/ {
 
         };
 
@@ -452,7 +456,9 @@ namespace RegularEncoding {
 
         PropositionalLogic::PLFormula encodeInitial(Automaton::NFA &nfa);
 
-        PropositionalLogic::PLFormula encodePredNew(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat, int q, int i, std::set<std::pair<int, int>>&, std::map<int, std::set<std::pair<Words::Terminal *, int>>>&);
+        PropositionalLogic::PLFormula encodePredNew(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat, int q, int i,
+                                                    std::set<std::pair<int, int>> &,
+                                                    std::map<int, std::set<std::pair<Words::Terminal *, int>>> &);
 
         Automaton::NFA filledAutomaton(Automaton::NFA &nfa);
 
@@ -460,7 +466,7 @@ namespace RegularEncoding {
 
         std::map<int, LengthAbstraction::ArithmeticProgressions> satewiseLengthAbstraction{};
 
-        std::map<int ,std::shared_ptr<std::set<int>>> reachable;
+        std::map<int, std::shared_ptr<std::set<int>>> reachable;
 
     };
 

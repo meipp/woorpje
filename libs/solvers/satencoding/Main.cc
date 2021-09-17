@@ -1718,7 +1718,7 @@ template<bool newencode = true>
         }
 
 
-        bool AUTOMATON = false;
+        bool AUTOMATON = true;
 
         //Handle regular constraints
         cout << "Current bound: " << bound << "\n";

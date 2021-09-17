@@ -5,6 +5,7 @@
 #include "regencoding.h"
 #include "commons.h"
 #include <chrono>
+#include <omp.h>
 #include <boost/math/common_factor.hpp>
 
 using namespace chrono;
@@ -18,7 +19,7 @@ namespace RegularEncoding {
     namespace LengthAbstraction {
 
         unordered_map<string, ArithmeticProgressions> cache{};
-        map<pair<string, int>, ArithmeticProgressions> statewiseCache{};
+        map<pair<string, int>, shared_ptr<ArithmeticProgressions>> nfaCache{};
         unordered_map<string, vector<shared_ptr<set<int>>>> nfaTcache{};
 
         namespace {
@@ -177,11 +178,49 @@ namespace RegularEncoding {
          * UNFALengthAbstractionBuilder
          */
 
+        // i = transtitions done, N = max transtitions
+        vector<vector<set<int>>> buildS(int N, map<int, set<pair<Words::Terminal *, int>>> &delta) {
+            auto start = chrono::high_resolution_clock::now();
+
+            vector<vector<set<int>>> Sq(N);
+            omp_set_num_threads(omp_get_num_procs());
+            for (int q = 0; q < N; q++) {
+                Sq[q] = vector<set<int>>((int) pow(N, 2));
+                Sq[q][0] = set<int>{q};
+                for (int i = 1; i < pow(N, 2); i++) {
+                    Sq[q][i] = set<int>{};
+                }
+            }
+
+            int p = pow(N, 2);
+
+
+            for (int i = 1; i < p; i++) {
+#pragma omp parallel for schedule(dynamic)
+                for (int q = 0; q < N; q++) {
+                    for (int pre: Sq[q][i - 1]) {
+                        for (auto &tr: delta[pre]) {
+                            Sq[q][i].insert(tr.second);
+                            //cout << "inserted " << tr.second << "\n";
+                        }
+                    }
+                }
+            }
+
+            auto stop = chrono::high_resolution_clock::now();
+            auto duration = duration_cast<milliseconds>(stop - start);
+            cout << "####### buildS took " << duration.count() << "ms\n";
+            cout.flush();
+            return Sq;
+        }
 
         UNFALengthAbstractionBuilder::UNFALengthAbstractionBuilder(Automaton::NFA nfa) : nfa(nfa) {
             adjm = buildAdjacencyMatrix();
             statewiserAbs = std::map<int, std::shared_ptr<ArithmeticProgressions>>{};
             N = int(adjm.size());
+            auto delta = nfa.getDelta();
+            Sq = buildS(N, delta);
+
             if (!nfa.getDelta().empty()) {
 
                 sccs = commons::scc(adjm);
@@ -197,13 +236,15 @@ namespace RegularEncoding {
                         T[i] = pre(T[i - 1]);
                     }
                     nfaTcache[nfa.toString()] = T;
+
+
                 }
             } else {
 
                 for (int q = 0; q < N; q++) {
                     ArithmeticProgressions empty;
                     if (nfa.getFinalStates().count(q) > 0) {
-                        empty.add(make_pair(0,0));
+                        empty.add(make_pair(0, 0));
                     }
                     cout << "Setting " << q << endl;
                     statewiserAbs[q] = make_shared<ArithmeticProgressions>(empty);
@@ -212,25 +253,11 @@ namespace RegularEncoding {
 
         }
 
-        shared_ptr<set<int>> UNFALengthAbstractionBuilder::reachableAfter(int transitions) {
-            if (transitions < S0.size()) {
-                return  S0[transitions];
-            }
-            std::vector<std::shared_ptr<std::set<int>>> S(transitions+1) ;
-            S[0] = make_unique<set<int>>(set<int>{nfa.getInitialState()});
-            // O(n²) * succ = O(n²)*O(n+m) = O(n⁴)
-            for (int i = 1; i <= transitions; i++) {
-                S[i] = succ(S[i - 1]);
-            }
-
-            auto w = S[transitions];
-            return w;
-
-        }
-
 
         ArithmeticProgressions UNFALengthAbstractionBuilder::forStateComplete(int q) {
-            vector<shared_ptr<set<int>>> S((int) pow(N, 2));
+
+
+
 
             // No transitions, length abstraction is (0,0) if q0 in F, and {} otherwise
             if (nfa.getDelta().empty()) {
@@ -245,18 +272,8 @@ namespace RegularEncoding {
             }
 
 
+            vector<set<int>> &S = Sq[q];
 
-            S[0] = make_unique<set<int>>(set<int>{q});
-
-
-            // O(n²) * succ = O(n²)*O(n+m) = O(n⁴)
-            for (int i = 1; i < pow(N, 2); i++) {
-                S[i] = succ(S[i - 1]);
-            }
-
-            if (q == nfa.getInitialState()) {
-                S0 = S;
-            }
 
             set<int> imp;
             map<int, int> sls;
@@ -294,7 +311,7 @@ namespace RegularEncoding {
 
             // Define Qimp: sl(q) -> Q
             map<int, set<int>> qImp;
-            for (int v: *S[N - 1]) {
+            for (int v: S[N - 1]) {
                 if (imp.count(v) > 0) {
                     if (qImp.count(sls[v]) > 0) {
                         qImp[sls[v]].insert(v);
@@ -309,7 +326,7 @@ namespace RegularEncoding {
 
             // R1
             for (int i = 0; i < pow(N, 2); i++) {
-                for (int v: *S[i]) {
+                for (int v: S[i]) {
                     if (T[0]->count(v) > 0) {
                         aps.add(make_pair(i, 0));
                     }
@@ -334,24 +351,30 @@ namespace RegularEncoding {
             }
 
             const string nfastr = nfa.toString();
-            statewiseCache[make_pair(nfastr, q)] = aps;
+            nfaCache[make_pair(nfastr, q)] = make_shared<ArithmeticProgressions>(aps);
             statewiserAbs[q] = make_shared<ArithmeticProgressions>(aps);
 
             return aps;
         }
 
 
-
         ArithmeticProgressions UNFALengthAbstractionBuilder::forState(int q) {
 
             // Check predecessors;
-            if (statewiserAbs.count(q) > 0) {
-                return *statewiserAbs[q];
-            }
             const string nfastr = nfa.toString();
-            if (statewiseCache.count(make_pair(nfastr, q)) > 0) {
-                return statewiseCache[make_pair(nfastr, q)];
+            //cout << "hier\n";
+            if (nfaCache.count(make_pair(nfastr, q)) > 0) {
+
+                //cout<< "other\n";
+                return *nfaCache[make_pair(nfastr, q)];
             }
+            if (statewiserAbs.count(q) > 0) {
+                auto aps = *statewiserAbs[q];
+                nfaCache[make_pair(nfastr, q)] = make_shared<ArithmeticProgressions>(aps);
+                cout << "statewise\n";
+                return aps;
+            }
+
 
             bool haspred = false;
             ArithmeticProgressions aps;
@@ -370,6 +393,8 @@ namespace RegularEncoding {
                     ArithmeticProgressions apsV;
                     if (statewiserAbs.count(v)) {
                         apsV = *statewiserAbs[v];
+                    } else if (nfaCache.count(make_pair(nfastr, v)) > 0) {
+                        apsV = *nfaCache[make_pair(nfastr, v)];
                     } else {
                         if (!sameScc) {
                             apsV = forState(v);
@@ -378,6 +403,10 @@ namespace RegularEncoding {
                             //cout << q << "==" << v << endl;
                             apsV = forStateComplete(v);
                             //cout << "OK\n";
+                            auto shr = make_shared<ArithmeticProgressions>(apsV);
+                            nfaCache[make_pair(nfastr, v)] = shr;
+                            statewiserAbs[v] = shr;
+
                         }
                     }
 
@@ -397,13 +426,13 @@ namespace RegularEncoding {
             }
 
             if (!haspred) {
-                cout << "hier";
-                return forStateComplete(q);
+                aps = forStateComplete(q);
             } else {
                 //cout << "Return für " << q << "\n";
                 statewiserAbs[q] = make_shared<ArithmeticProgressions>(aps);
-                return aps;
             }
+            nfaCache[make_pair(nfastr, q)] = make_shared<ArithmeticProgressions>(aps);
+            return aps;
 
         }
 
@@ -438,7 +467,9 @@ namespace RegularEncoding {
          */
         shared_ptr<set<int>> UNFALengthAbstractionBuilder::pre(shared_ptr<set<int>> &P) {
 
-
+            if (predecessorCache.count(*P) == 1) {
+                return predecessorCache[*P];
+            }
             set<int> Pn;
             for (int p: *P) {
                 for (int r = 0; r < N; r++) {
@@ -447,10 +478,12 @@ namespace RegularEncoding {
                     }
                 }
             }
-            return make_shared<set<int>>(Pn);
+            auto res = make_shared<set<int>>(Pn);
+            predecessorCache[*P] = res;
+            return res;
         }
 
-        int UNFALengthAbstractionBuilder::sl(int q, set<int> ignore) {
+        int UNFALengthAbstractionBuilder::sl(int q, const set<int> &ignore) {
             list<int> queue;
             set<int> visited;
             map<int, int> lengths;

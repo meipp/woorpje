@@ -5,7 +5,7 @@
 
 (assert (= A A))
 
-(assert (str.in_re (str.++  "htt" A)
+(assert (str.in_re (str.++  B "esa" A)
 
     (re.++ 
         (re.union (str.to_re "ht") (str.to_re "f"))

@@ -3,6 +3,7 @@
 #include "regencoding.h"
 #include <chrono>
 #include <solvers/solvers.hpp>
+#include <omp.h>
 
 
 using namespace std;
@@ -14,10 +15,10 @@ namespace RegularEncoding {
 
     namespace {
 
-        int numTerminals(vector<FilledPos> &pat) {
+        int numTerminals(vector<FilledPos> &pat, int from = 0) {
             int ts = 0;
-            for (auto fp: pat) {
-                if (fp.isTerminal()) {
+            for (int i = from; i < pat.size(); i++) {
+                if (pat[i].isTerminal()) {
                     ts++;
                 }
             }
@@ -470,7 +471,6 @@ namespace RegularEncoding {
         M.removeEpsilonTransitions();
 
 
-
         if (pattern.noVariableWord()) {
             Glucose::Var v = solver.newVar();
             if (M.accept(pattern)) {
@@ -496,16 +496,14 @@ namespace RegularEncoding {
         cout << "\t - Built filled NFA with " << Mxi.numStates() << " states and " << Mxi.numTransitions()
              << " transitions. Took " << duration.count() << "ms\n";
 
-        start = high_resolution_clock::now();
+
 
         LengthAbstraction::UNFALengthAbstractionBuilder builder(M);
 
         LengthAbstraction::ArithmeticProgressions rAbs = builder.forState(M.getInitialState());
 
 
-
         satewiseLengthAbstraction[M.getInitialState()] = rAbs;
-
 
 
         bool lenghtOk = false;
@@ -523,11 +521,26 @@ namespace RegularEncoding {
         }
 
 
-
-
         auto delta = M.getDelta();
 
 
+        map<int, set<pair<Words::Terminal *, int>>> pred;
+        for (auto &trans: Mxi.getDelta()) {
+            int qsrc = trans.first;
+            for (auto &target: trans.second) {
+                Words::Terminal *label = target.first;
+                int qdst = target.second;
+                if (pred.count(qdst) == 1) {
+                    pred[qdst].insert(make_pair(label, qsrc));
+                } else {
+                    pred[qdst] = set<pair<Words::Terminal *, int>>{make_pair(label, qsrc)};
+                }
+            }
+        }
+
+
+
+        /**
         set<int> visited{M.getInitialState()};
         list<int> queue;
         for (auto t: delta[M.getInitialState()]) {
@@ -544,7 +557,15 @@ namespace RegularEncoding {
                     queue.push_back(t.second);
                 }
             }
+        }*/
+
+        start = high_resolution_clock::now();
+        omp_set_num_threads(8);
+        for (int q=1; q<M.numStates(); q++) {
+            satewiseLengthAbstraction[q] = builder.forState(q);
         }
+
+
 
 
 
@@ -602,21 +623,6 @@ namespace RegularEncoding {
 
         start = high_resolution_clock::now();
         // Predecessor constraint
-
-
-        map<int, set<pair<Words::Terminal *, int>>> pred;
-        for (auto &trans: Mxi.getDelta()) {
-            int qsrc = trans.first;
-            for (auto &target: trans.second) {
-                Words::Terminal *label = target.first;
-                int qdst = target.second;
-                if (pred.count(qdst) == 1) {
-                    pred[qdst].insert(make_pair(label, qsrc));
-                } else {
-                    pred[qdst] = set<pair<Words::Terminal *, int>>{make_pair(label, qsrc)};
-                }
-            }
-        }
 
 
         set<pair<int, int>> tmpv{};
@@ -695,7 +701,7 @@ namespace RegularEncoding {
 
 
                     bool lengthOk = false;
-                    for (int lb = numTerminals(filledPat); lb <= filledPat.size(); lb++) {
+                    for (int lb = numTerminals(filledPat, i); lb <= filledPat.size()-i; lb++) {
                         if (satewiseLengthAbstraction[trans.first].contains(lb - i)) {
                             lengthOk = true;
                             break;
@@ -761,8 +767,8 @@ namespace RegularEncoding {
             }
         }
 
-
-        while (currentPos - 1 >= 0 && filledPat[currentPos-1].isTerminal()) {
+        // Go back while reading constants in the pattern from right to left
+        while (currentPos - 1 >= 0 && filledPat[currentPos - 1].isTerminal()) {
             set<pair<Words::Terminal *, int>> predPreds{};
             for (auto p: preds) {
                 for (auto pp: pred[p.second]) {
@@ -787,30 +793,42 @@ namespace RegularEncoding {
         // Predecessor Sq^i
         int succVar = -stateVars[make_pair(q, i)];
         disj.push_back(PLFormula::lit(succVar));
-        for (auto qh: preds) {
 
-            int predVar = stateVars[make_pair(qh.second, currentPos)];
-            // word
-            int k;
-            if (qh.first->isEpsilon()) {
-                k = sigmaSize;
-            } else {
-                k = tIndices->at(qh.first);
+        bool lengthOk = false;
+        for (int lb = numTerminals(filledPat, i); lb <= filledPat.size()-i; lb++) {
+            if (satewiseLengthAbstraction[q].contains(lb)) {
+                lengthOk = true;
+                break;
             }
-            int word;
-            if (filledPat.at(currentPos).isTerminal()) {
-                int ci = filledPat[currentPos].getTerminalIndex();
-                word = constantsVars->at(make_pair(ci, k));
-            } else {
-                pair<int, int> xij = filledPat[currentPos].getVarIndex();
-                word = variableVars->at(make_pair(xij, k));
+        }
+
+
+        if (lengthOk) {
+            for (auto qh: preds) {
+
+                int predVar = stateVars[make_pair(qh.second, currentPos)];
+                // word
+                int k;
+                if (qh.first->isEpsilon()) {
+                    k = sigmaSize;
+                } else {
+                    k = tIndices->at(qh.first);
+                }
+                int word;
+                if (filledPat.at(currentPos).isTerminal()) {
+                    int ci = filledPat[currentPos].getTerminalIndex();
+                    word = constantsVars->at(make_pair(ci, k));
+                } else {
+                    pair<int, int> xij = filledPat[currentPos].getVarIndex();
+                    word = variableVars->at(make_pair(xij, k));
+                }
+
+
+                auto predF = PLFormula::land(vector<PLFormula>{PLFormula::lit(word), PLFormula::lit(predVar)});
+                conj.push_back(predF);
+
+
             }
-
-
-            auto predF = PLFormula::land(vector<PLFormula>{PLFormula::lit(word), PLFormula::lit(predVar)});
-            conj.push_back(predF);
-
-
         }
         if (!conj.empty()) {
             disj.push_back(PLFormula::lor(conj));
@@ -893,9 +911,6 @@ namespace RegularEncoding {
 
                         PLFormula sqip = PLFormula::lit(stateVars[make_pair(q_pred.second, i - 1)]); // S_q'^i
 
-                        if (reachable[i - 1]->count(q_pred.second) == 0) {
-                            continue;
-                        }
 
                         vector<PLFormula> conj;
                         int word;
