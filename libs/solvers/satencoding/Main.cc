@@ -1492,6 +1492,14 @@ setupSolverMain(Words::Options &opt) { // std::vector<std::string>& mlhs,
     vector<std::string> input_equations_lhs_tmp;
     vector<std::string> input_equations_rhs_tmp;
 
+    // Preprocess regular constraints
+    std::vector<std::shared_ptr<Words::RegularConstraints::RegConstraint>> preprocessed;
+    for (auto &recon: opt.recons) {
+        auto strippedRecon = RegularEncoding::stripSuffix(RegularEncoding::stripPrefix(*recon));
+        preprocessed.push_back(std::make_shared<Words::RegularConstraints::RegConstraint>(strippedRecon));
+    }
+    opt.recons = preprocessed;
+
     input_options = opt;
 
     std::map<char, std::string> subsitutions;
@@ -1511,6 +1519,9 @@ setupSolverMain(Words::Options &opt) { // std::vector<std::string>& mlhs,
           readSymbols(input_equations_rhs[i]);
 
      }*/
+
+
+
     for (auto &eq: opt.equations) {
         readSymbols(eq.lhs);
         readSymbols(eq.rhs);
@@ -1713,16 +1724,16 @@ template<bool newencode = true>
         cout << "Current bound: " << bound << "\n";
         for (auto recon: input_options.recons) {
 
-            auto strippedRecon = RegularEncoding::stripSuffix(RegularEncoding::stripPrefix(*recon));
+            //auto strippedRecon = RegularEncoding::stripSuffix(RegularEncoding::stripPrefix(*recon));
 
             set<set<int>> clauses;
             if (AUTOMATON) {
-                RegularEncoding::AutomatonEncoder regEncoder(strippedRecon, context, S, sigmaSize,
+                RegularEncoding::AutomatonEncoder regEncoder(*recon, context, S, sigmaSize,
                                                              &vIndices,
                                                              &maxPadding, &tIndices, &variableVars, &constantsVars, index2t);
                 clauses = regEncoder.encode();
             }else {
-                RegularEncoding::InductiveEncoder regEncoder(strippedRecon, context, S, sigmaSize,
+                RegularEncoding::InductiveEncoder regEncoder(*recon, context, S, sigmaSize,
                                                              &vIndices,
                                                              &maxPadding, &tIndices, &variableVars, &constantsVars, index2t);
                 clauses = regEncoder.encode();
