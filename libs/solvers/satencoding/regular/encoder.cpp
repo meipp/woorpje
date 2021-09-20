@@ -158,10 +158,8 @@ namespace RegularEncoding {
                                   shared_ptr<Words::RegularConstraints::RegOperation> expression) {
         vector<PLFormula> disj{};
         LengthAbstraction::ArithmeticProgressions la = LengthAbstraction::fromExpression(*expression);
-        for (auto c: expression->getChildren()) {
-            // TODO: Check length abstraction
+        for (const auto& c: expression->getChildren()) {
             bool lengthOk = false;
-            // < or <= ?? Also, for other cases?
             for (int i = numTerminals(filledPat); i <= filledPat.size(); i++) {
                 if (la.contains(i)) {
                     lengthOk = true;
@@ -253,8 +251,8 @@ namespace RegularEncoding {
                 continue;
             }
             lengthOk = false;
-            for (int i = numTerminals(suffix); i <= suffix.size(); i++) {
-                if (laR.contains(i)) {
+            for (int k = numTerminals(suffix); k <= suffix.size(); k++) {
+                if (laR.contains(k)) {
                     lengthOk = true;
                     break;
                 }
@@ -345,7 +343,7 @@ namespace RegularEncoding {
 
         // Check length abstraction
         int lb = numTerminals(filledPat);
-        if (expressionIdx.size() < lb || filledPat.size() < expressionIdx.size()) {
+        if (filledPat.size() < expressionIdx.size() || expressionIdx.size() < lb ) {
             // Unsat
             //cout << "\t WORD LA not satsified\n";
             return ffalse;
@@ -364,9 +362,6 @@ namespace RegularEncoding {
                     if (fp.isTerminal()) {
                         // Can't be substituted to lambda
                         return ffalse;
-                        int ci = fp.getTerminalIndex();
-                        auto word = constantsVars->at(make_pair(ci, sigmaSize));
-                        conj.push_back(PLFormula::lit(word));
                     } else {
                         pair<int, int> xij = fp.getVarIndex();
                         auto word = variableVars->at(make_pair(xij, sigmaSize));

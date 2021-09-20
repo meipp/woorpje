@@ -50,7 +50,7 @@ namespace RegularEncoding {
 
             ~NFA() {};
 
-            bool accept(Words::Word);
+            bool accept(const Words::Word&);
 
             void removeEpsilonTransitions();
 

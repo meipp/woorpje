@@ -151,7 +151,7 @@ namespace RegularEncoding {
         }
 
 
-        bool NFA::accept(Words::Word w) {
+        bool NFA::accept(const Words::Word& w) {
             set<int> s{initState};
             for (int q: epsilonClosure(initState)) {
                 s.insert(q);
@@ -161,21 +161,20 @@ namespace RegularEncoding {
                 if (e->isVariable()) {
                     return false;
                 }
-                set<int> preds;
+                set<int> succs;
                 for (int q: s) {
-
                     if (delta.count(q) > 0) {
                         for (auto trans: delta[q]) {
                             if (trans.first->getChar() == (e->getTerminal()->getChar()) || trans.first->isEpsilon()) {
-
-                                preds.insert(trans.second);
+                                succs.insert(trans.second);
+                                for (auto epsq: epsilonClosure(trans.second)) {
+                                    succs.insert(epsq);
+                                }
                             }
                         }
-                    } else{
-
                     }
                 }
-                s = preds;
+                s = succs;
             }
 
 
