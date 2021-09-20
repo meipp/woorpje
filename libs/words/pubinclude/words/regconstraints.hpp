@@ -136,11 +136,11 @@ namespace Words {
             std::shared_ptr<RegNode> reverse() {
 
                 std::vector<IEntry *> revEntries;
-                for (auto it = word.rebegin(); it != word.reend(); it++) {
-                    revEntries.push_back(*it);
+                for (auto w: word) {
+                    revEntries.push_back(w);
                 }
+                std::reverse(revEntries.begin(), revEntries.end());
                 Word ww(std::move(revEntries));
-
                 auto res = std::make_shared<RegWord>(RegWord(ww));
                 return res;
             }
