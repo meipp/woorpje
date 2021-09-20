@@ -375,7 +375,7 @@ namespace RegularEncoding {
 
         virtual std::set<std::set<int>> encode() {};
 
-        std::vector<FilledPos> filledPattern(Words::Word);
+        std::vector<FilledPos> filledPattern(const Words::Word&);
 
     protected:
         Words::RegularConstraints::RegConstraint constraint;
@@ -416,26 +416,26 @@ namespace RegularEncoding {
 
     private:
         PropositionalLogic::PLFormula
-        doEncode(std::vector<FilledPos>, std::shared_ptr<Words::RegularConstraints::RegNode> expression);
+        doEncode(const std::vector<FilledPos>&, const std::shared_ptr<Words::RegularConstraints::RegNode>& expression);
 
         PropositionalLogic::PLFormula
         encodeWord(std::vector<FilledPos> filledPat, std::vector<int> expressionIdx);
 
         PropositionalLogic::PLFormula
         encodeUnion(std::vector<FilledPos> filledPat,
-                    std::shared_ptr<Words::RegularConstraints::RegOperation> expression);
+                    const std::shared_ptr<Words::RegularConstraints::RegOperation>& expression);
 
         PropositionalLogic::PLFormula
         encodeConcat(std::vector<FilledPos> filledPat,
-                     std::shared_ptr<Words::RegularConstraints::RegOperation> expression);
+                     const std::shared_ptr<Words::RegularConstraints::RegOperation>& expression);
 
         PropositionalLogic::PLFormula
         encodeStar(std::vector<FilledPos> filledPat,
-                   std::shared_ptr<Words::RegularConstraints::RegOperation> expression);
+                   const std::shared_ptr<Words::RegularConstraints::RegOperation>& expression);
 
         PropositionalLogic::PLFormula
-        encodeNone(std::vector<FilledPos> filledPat,
-                   std::shared_ptr<Words::RegularConstraints::RegEmpty> empty);
+        encodeNone(const std::vector<FilledPos>& filledPat,
+                   const std::shared_ptr<Words::RegularConstraints::RegEmpty>& empty);
 
         //std::unordered_map<size_t, PropositionalLogic::PLFormula*> ccache;
 
@@ -452,7 +452,7 @@ namespace RegularEncoding {
 
         PropositionalLogic::PLFormula encodePredecessor(Automaton::NFA &nfa, std::vector<FilledPos> filledPat);
 
-        PropositionalLogic::PLFormula encodeFinal(Automaton::NFA &nfa, std::vector<FilledPos> filledPat);
+        PropositionalLogic::PLFormula encodeFinal(Automaton::NFA &nfa, const std::vector<FilledPos>& filledPat);
 
         PropositionalLogic::PLFormula encodeInitial(Automaton::NFA &nfa);
 
