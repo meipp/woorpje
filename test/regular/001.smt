@@ -7,7 +7,7 @@
 
 
 
-(assert (str.in_re (str.++ "ab" A)
+(assert (str.in_re (str.++ "aasdb:" A "1")
     (re.++
 
         (re.*

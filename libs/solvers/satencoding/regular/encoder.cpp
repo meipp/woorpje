@@ -58,9 +58,9 @@ namespace RegularEncoding {
     /*********************************************************************
      ************************* Inductive Encoder *************************
      *********************************************************************/
-
+    int skipped = 0;
     set<set<int>> InductiveEncoder::encode() {
-
+        skipped = 0;
         cout << "\n[*] Encoding ";
         constraint.toString(cout);
         cout << "\n";
@@ -74,6 +74,7 @@ namespace RegularEncoding {
         PLFormula f = doEncode(filledPat, expr);
 
         cout << "\t - Built formula (depth: " << f.depth() << ", size:" << f.size() << ") creating CNF\n";
+        cout << "\t\t - Skipped " << skipped << " encodings due to length abstraction\n";
 
         set<set<int>> cnf = tseytin_cnf(f, solver);
         auto stop = high_resolution_clock::now();
@@ -165,6 +166,7 @@ namespace RegularEncoding {
                     lengthOk = true;
                     break;
                 }
+                skipped++;
             }
             if (lengthOk) {
                 PLFormula f = doEncode(filledPat, c);
@@ -248,6 +250,7 @@ namespace RegularEncoding {
             }
 
             if (!lengthOk) {
+                skipped++;
                 continue;
             }
             lengthOk = false;
@@ -296,6 +299,7 @@ namespace RegularEncoding {
         }
 
         if (!lengthOk) {
+            skipped++;
             return ffalse;
         }
 
@@ -346,6 +350,7 @@ namespace RegularEncoding {
         if (filledPat.size() < expressionIdx.size() || expressionIdx.size() < lb ) {
             // Unsat
             //cout << "\t WORD LA not satsified\n";
+            skipped++;
             return ffalse;
         }
 
