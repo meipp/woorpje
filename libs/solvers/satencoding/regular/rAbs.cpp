@@ -18,7 +18,7 @@ using namespace std;
 namespace RegularEncoding {
     namespace LengthAbstraction {
 
-        unordered_map<string, ArithmeticProgressions> cache{};
+        unordered_map<string, shared_ptr<ArithmeticProgressions>> cache{};
         map<pair<string, int>, shared_ptr<ArithmeticProgressions>> nfaCache{};
         unordered_map<string, vector<shared_ptr<set<int>>>> nfaTcache{};
 
@@ -29,25 +29,27 @@ namespace RegularEncoding {
                     int a1 = ab1.first;
                     int b1 = ab1.second;
                     for (pair<int, int> ab2: rhs.getProgressions()) {
+
+
                         int a2 = ab2.first;
                         int b2 = ab2.second;
 
-                        int d = __gcd(b1, b2);
-                        int b = max(b1, b2);
-                        int m = 0;
-
-                        while (d * m < pow(b, 2) && d != 0) {
-                            m++;
+                        if (b1 == 0 && b2 == 0) {
+                            result.add(make_pair(a1 + a2, 0));
+                            break;
                         }
-                        int nu = d * m;
+
+                        int d = __gcd(b1, b2);
+
+                        int nu = ((b1 - d) * (b2 - d)) / d + a1 + a2;
 
                         ArithmeticProgressions P;
                         ArithmeticProgressions Q;
-                        P.add(make_pair(a1 + a2 + nu, d));
+                        P.add(make_pair(nu, d));
 
                         int k1 = 0, k2 = 0;
-                        while (b1 * k1 + b2 * k2 < pow(b, 2)) {
-                            while (b1 * k1 + b2 * k2 <= pow(b, 2)) {
+                        while (b1 * k1 + b2 * k2 < nu - (2 * d)) {
+                            while (b1 * k1 + b2 * k2 <= nu - (2 * d)) {
                                 Q.add(make_pair(a1 + a2 + b1 * k1 + b2 * k2, 0));
                                 k2++;
                                 if (b2 * k2 == 0) {
@@ -93,16 +95,15 @@ namespace RegularEncoding {
             expression.toString(ss);
             string restr = ss.str();
 
-
             if (cache.count(restr) > 0) {
-                return cache[restr];
+                return *cache[restr];
             }
             try {
                 RegWord &word = dynamic_cast<Words::RegularConstraints::RegWord &>(expression);
                 // Single word w, return {(|w|, 0)}
                 ArithmeticProgressions ap;
                 ap.add(make_pair(word.word.characters(), 0));
-                cache[restr] = ap;
+                cache[restr] = make_shared<ArithmeticProgressions>(ap);
 
                 return ap;
             } catch (bad_cast &) {}
@@ -121,36 +122,50 @@ namespace RegularEncoding {
                             right = fromExpression(*opr.getChildren()[i]);
                             left = concat(left, right);
                         }
-                        cache[restr] = left;
+                        cache[restr] = make_shared<ArithmeticProgressions>(left);
                         return left;
                         break;
                     }
                     case RegularOperator::STAR: {
                         ArithmeticProgressions sub = fromExpression(*opr.getChildren()[0]);
-                        if (sub.getProgressions().size() == 1) {
+                        ArithmeticProgressions aps;
 
-                            pair<int, int> ab = *(sub.getProgressions().begin());
-                            cache[restr] = star_single(ab);
-                            return cache[restr];
-                        } else {
-                            vector<pair<int, int>> asvec(sub.getProgressions().begin(), sub.getProgressions().end());
-
-                            auto ps = commons::powerset(asvec);
-
-                            ArithmeticProgressions aps;
-                            for (const vector<pair<int, int>> &subset: ps) {
-                                for (pair<int, int> p: subset) {
-                                    if (aps.getProgressions().empty()) {
-                                        aps = star_single(p);
-                                    } else {
-                                        ArithmeticProgressions next = star_single(p);
-                                        aps = concat(aps, next);
+                        vector<int> allconsts;
+                        int n = (int) sub.getProgressions().size();
+                        allconsts.reserve(n * 2);
+                        for (auto ab: sub.getProgressions()) {
+                            allconsts.push_back(ab.first);
+                            allconsts.push_back(ab.second);
+                        }
+                        int d = boost::integer::gcd_range(allconsts.begin(), allconsts.end()).first;
+                        int c = boost::integer::lcm_range(allconsts.begin(), allconsts.end()).first;
+                        //ArithmeticProgressions Q;
+                        aps.add(make_pair(c, d));
+                        for (pair<int, int> ab: sub.getProgressions()) {
+                            int a = ab.first;
+                            int b = ab.second;
+                            int k1 = 0, k2 = 0;
+                            while (a * k1 + b * k2 < c) {
+                                while (a * k1 + b * k2 <= c) {
+                                    aps.add(make_pair(a*k1 + b*k2, 0));
+                                    k2++;
+                                    if (b * k2 == 0) {
+                                        // Already found all k2
+                                        break;
                                     }
                                 }
+                                k2 = 0;
+                                k1++;
+                                if (a * k1 == 0) {
+                                    // Already found all k1
+                                    break;
+                                }
                             }
-                            cache[restr] = aps;
-                            return aps;
                         }
+                        
+                        cache[restr] = make_shared<ArithmeticProgressions>(aps);
+                        return aps;
+
                     }
                     case RegularOperator::UNION: {
                         // Union
@@ -159,7 +174,7 @@ namespace RegularEncoding {
                             ArithmeticProgressions next = fromExpression(*opr.getChildren()[i]);
                             first.mergeOther(next);
                         }
-                        cache[restr] = first;
+                        cache[restr] = make_shared<ArithmeticProgressions>(first);
 
                         return first;
                     }
