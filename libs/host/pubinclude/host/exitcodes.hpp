@@ -19,19 +19,19 @@ namespace Words {
 	inline void Terminate (ExitCode e, std::ostream& os) {
 	  switch (e) {
 	  case ExitCode::GotSolution: 
-		os << "Found a solution" << std::endl;
+		os << "Found a solution" << std::endl << "sat" << std::endl;
 		  break;
 	  case ExitCode::NoSolution:
-		os << "Equation has no solution due to set bounds" << std::endl;
+		os << "Equation has no solution due to set bounds" << std::endl << "unsat" << std::endl;
 		break;
 	  case ExitCode::DefinitelyNoSolution:
-		os << "Equation has no solution" << std::endl;
+		os << "Equation has no solution" << std::endl << "unsat" << std::endl;
 		break;
 	  case ExitCode::NoIdea:
-		os << "Equation might have solution" << std::endl;
+		os << "Equation might have solution" << std::endl << "unknown" << std::endl;
 		break;
 	  case ExitCode::OutOfMemory:
-		os << "Ran out of memory" << std::endl;
+		os << "out of memory" << std::endl;
 		break;
 	  case ExitCode::TimeOut:
 		os << "Timed out" << std::endl;
