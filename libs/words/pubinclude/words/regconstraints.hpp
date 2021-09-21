@@ -28,6 +28,8 @@ namespace Words {
                 return str;
             };
 
+            virtual void flatten(){};
+
             virtual std::shared_ptr<RegNode> reverse() = 0;
 
             virtual std::shared_ptr<RegNode> derivative(std::string d) = 0;
@@ -205,6 +207,62 @@ namespace Words {
                     }
                 }
             };
+
+            virtual void flatten(){
+
+
+                for (const auto& ch:children) {
+                    ch->flatten();
+                }
+
+                if(op == RegularOperator::CONCAT) {
+
+                    std::vector<std::shared_ptr<RegNode>> newChildren;
+                    for (const auto& ch: children) {
+                        std::shared_ptr<RegOperation> asOp = std::dynamic_pointer_cast<RegOperation>(ch);
+
+                        if (asOp != nullptr && asOp->op == RegularOperator::CONCAT) {
+                            for (const auto &chch: asOp->children) {
+                                newChildren.push_back(chch);
+                            }
+                        }else {
+                            newChildren.push_back(ch);
+                        }
+                    }
+                    children = newChildren;
+                    newChildren = std::vector<std::shared_ptr<RegNode>>{};
+                    std::vector<IEntry*> concatted;
+                    for (const auto& ch: children) {
+                        std::shared_ptr<RegWord> asWord = std::dynamic_pointer_cast<RegWord>(ch);
+                        if (asWord != nullptr && asWord->word.characters() > 0) {
+                            for (auto w: asWord->word) {
+                                concatted.push_back(w);
+                            }
+                        } else {
+
+                            if (!concatted.empty()) {
+                                Words::Word cword(std::move(concatted));
+                                newChildren.push_back(std::make_shared<RegWord>(cword));
+                                concatted = std::vector<IEntry*>{};
+                            }
+                            newChildren.push_back(ch);
+                        }
+                    }
+                    if (!concatted.empty()) {
+                        Words::Word cword(std::move(concatted));
+                        newChildren.push_back(std::make_shared<RegWord>(cword));
+                        concatted = std::vector<IEntry*>{};
+                    }
+                    if (newChildren.size() == 1) {
+                        // Concat empty word to keep operation at least binary!
+                        // Otherwise results in segfault
+                        Words::Word emptyW;
+                        RegWord emptyWord(emptyW);
+                        newChildren.push_back(std::make_shared<RegWord>(emptyWord));
+                    }
+                    children = newChildren;
+                }
+            }
 
             std::shared_ptr<RegNode> derivative(std::string d) {
                 if (d.empty()) {

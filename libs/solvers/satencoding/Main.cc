@@ -1495,6 +1495,7 @@ setupSolverMain(Words::Options &opt) { // std::vector<std::string>& mlhs,
     // Preprocess regular constraints
     std::vector<std::shared_ptr<Words::RegularConstraints::RegConstraint>> preprocessed;
     for (auto &recon: opt.recons) {
+        recon->expr->flatten();
         auto strippedRecon = RegularEncoding::stripSuffix(RegularEncoding::stripPrefix(*recon));
         preprocessed.push_back(std::make_shared<Words::RegularConstraints::RegConstraint>(strippedRecon));
     }
