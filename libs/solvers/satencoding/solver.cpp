@@ -107,7 +107,7 @@ namespace Words {
 
                 int actualbre = 0;
                 for (const auto &recon: opt.recons) {
-                    actualbre += recon->expr->characters();
+                    actualbre += ((int) log2(recon->expr->characters()))+1;
                 }
 
 
