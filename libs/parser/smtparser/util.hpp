@@ -148,7 +148,10 @@ namespace Words {
       auto lit = Glucose::mkLit (var);
       assumptions.push(lit);
       solver.addClause (clause);
-      reify_or_bi (solver,lit,clause);
+
+      if (clause.size()) {
+          reify_or_bi(solver, lit, clause);
+      }
 	  
 	  
       return std::move(job);
