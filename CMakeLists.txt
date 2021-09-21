@@ -85,14 +85,7 @@ add_executable (${Translator} woorpje2smt.cpp)
 target_link_libraries (${Translator}  libs ${Boost_LIBRARIES} )
 target_include_directories(${Translator} PRIVATE ${PROJECT_BINARY_DIR})
 
-# Tests
-find_package(Catch2 REQUIRED)
-SET (reg_tests tests/solvers/satencoding/regular)
-add_executable(tests ${reg_tests}/main.cpp ${reg_tests}/commons.cpp ${reg_tests}/proplog.cpp)
-target_link_libraries(tests libs ${Boost_LIBRARIES} Catch2::Catch2WithMain)
-include(CTest)
-include(Catch)
-catch_discover_tests(tests)
+
 
 SET(CPACK_GENERATOR "ZIP")
 SET(CPACK_PACKAGE_FILE_NAME ${ToolName}-${VERSION_MAJOR}_${VERSION_MINOR})

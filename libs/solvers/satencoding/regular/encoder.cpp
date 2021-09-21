@@ -557,9 +557,10 @@ namespace RegularEncoding {
         }*/
 
         start = high_resolution_clock::now();
-        omp_set_num_threads(8);
+        omp_set_num_threads(omp_get_num_procs());
+        #pragma omp parallel for schedule(dynamic)
         for (int q=1; q<M.numStates(); q++) {
-            satewiseLengthAbstraction[q] = builder.forState(q);
+            satewiseLengthAbstraction[q] = builder.forStateComplete(q);
         }
 
 
