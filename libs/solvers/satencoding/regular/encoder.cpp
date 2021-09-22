@@ -78,14 +78,20 @@ namespace RegularEncoding {
         set<set<int>> cnf = tseytin_cnf(f, solver);
         auto stop = high_resolution_clock::now();
         auto duration = duration_cast<milliseconds>(stop - start);
-        cout << "\t - CNF done, " << cnf.size() << " clauses\n";
+
+        int litTotal = 0;
+        for (const auto &cl: cnf) {
+            litTotal += int(cl.size());
+        }
+
+        cout << "\t - CNF done, " << cnf.size() << " clauses and " << litTotal << " literals in total\n";
         cout << "[*] Encoding done. Took " << duration.count() << "ms" << endl;
         return cnf;
     }
 
     PLFormula
-    InductiveEncoder::doEncode(const vector<FilledPos>& filledPat,
-                               const shared_ptr<Words::RegularConstraints::RegNode>& expression) {
+    InductiveEncoder::doEncode(const vector<FilledPos> &filledPat,
+                               const shared_ptr<Words::RegularConstraints::RegNode> &expression) {
 
 
         shared_ptr<Words::RegularConstraints::RegWord> word = dynamic_pointer_cast<Words::RegularConstraints::RegWord>(
@@ -153,10 +159,11 @@ namespace RegularEncoding {
 
     PLFormula
     InductiveEncoder::encodeUnion(vector<FilledPos> filledPat,
-                                  const shared_ptr<Words::RegularConstraints::RegOperation>& expression) {
+                                  const shared_ptr<Words::RegularConstraints::RegOperation> &expression) {
         vector<PLFormula> disj{};
         LengthAbstraction::ArithmeticProgressions la = LengthAbstraction::fromExpression(*expression);
-        for (const auto& c: expression->getChildren()) {
+
+        for (const auto &c: expression->getChildren()) {
             bool lengthOk = false;
             for (int i = numTerminals(filledPat); i <= filledPat.size(); i++) {
                 if (la.contains(i)) {
@@ -212,7 +219,7 @@ namespace RegularEncoding {
 
     PLFormula
     InductiveEncoder::encodeConcat(vector<FilledPos> filledPat,
-                                   const shared_ptr<Words::RegularConstraints::RegOperation>& expression) {
+                                   const shared_ptr<Words::RegularConstraints::RegOperation> &expression) {
 
 
         if (expression->getChildren().size() > 2) {
@@ -224,6 +231,32 @@ namespace RegularEncoding {
         vector<PLFormula> disj{};
         auto L = expression->getChildren()[0];
         auto R = expression->getChildren()[1];
+
+        shared_ptr<Words::RegularConstraints::RegWord> rAsWord = dynamic_pointer_cast<Words::RegularConstraints::RegWord>(
+                R);
+        shared_ptr<Words::RegularConstraints::RegWord> lAsWord = dynamic_pointer_cast<Words::RegularConstraints::RegWord>(
+                L);
+        shared_ptr<Words::RegularConstraints::RegEmpty> rAsEmpty = dynamic_pointer_cast<Words::RegularConstraints::RegEmpty>(
+                R);
+        shared_ptr<Words::RegularConstraints::RegEmpty> lAsEmpty = dynamic_pointer_cast<Words::RegularConstraints::RegEmpty>(
+                L);
+
+
+        if (rAsEmpty != nullptr || lAsEmpty != nullptr) {
+            // concat with emptyset
+            return ffalse;
+        }
+
+
+        if (rAsWord != nullptr && rAsWord->characters() == 0) {
+            // Concat with empty word
+            return doEncode(filledPat, L);
+        }
+        if (lAsWord != nullptr && lAsWord->characters() == 0) {
+            // Concat with empty word
+            return doEncode(filledPat, R);
+        }
+
 
 
         LengthAbstraction::ArithmeticProgressions laL = LengthAbstraction::fromExpression(*L);
@@ -262,7 +295,6 @@ namespace RegularEncoding {
                 continue;
             }
 
-            //cout << "\tSuffix: " << suffix.size() << "\n";
             PLFormula fl = doEncode(prefix, L);
             PLFormula fr = doEncode(suffix, R);
 
@@ -282,7 +314,7 @@ namespace RegularEncoding {
 
     PLFormula
     InductiveEncoder::encodeStar(vector<FilledPos> filledPat,
-                                 const shared_ptr<Words::RegularConstraints::RegOperation>& expression) {
+                                 const shared_ptr<Words::RegularConstraints::RegOperation> &expression) {
 
         LengthAbstraction::ArithmeticProgressions la = LengthAbstraction::fromExpression(*expression);
 
@@ -334,30 +366,30 @@ namespace RegularEncoding {
     }
 
     PLFormula
-    InductiveEncoder::encodeNone(const vector<FilledPos>& filledPat,
-                                 const shared_ptr<Words::RegularConstraints::RegEmpty>& empty) {
+    InductiveEncoder::encodeNone(const vector<FilledPos> &filledPat,
+                                 const shared_ptr<Words::RegularConstraints::RegEmpty> &empty) {
         return ffalse;
     }
 
     PLFormula InductiveEncoder::encodeWord(vector<FilledPos> filledPat,
                                            vector<int> expressionIdx) {
 
+
         // Check length abstraction
         int lb = numTerminals(filledPat);
-        if (filledPat.size() < expressionIdx.size() || expressionIdx.size() < lb ) {
+        if (filledPat.size() < expressionIdx.size() || expressionIdx.size() < lb) {
             // Unsat
-            //cout << "\t WORD LA not satsified\n";
             skipped++;
             return ffalse;
         }
 
         if (expressionIdx.empty()) {
-            //cout << "Empty Expression\n";
+
             if (filledPat.empty()) {
-                //cout << "SAT as both empty\n";
+
                 return ftrue;
             } else {
-                //cout << "Encoding pure lambda substitution\n";
+
                 // All to lambda
                 vector<PLFormula> conj{};
                 for (auto fp: filledPat) {
@@ -494,7 +526,6 @@ namespace RegularEncoding {
              << " transitions. Took " << duration.count() << "ms\n";
 
 
-
         LengthAbstraction::UNFALengthAbstractionBuilder builder(M);
 
         LengthAbstraction::ArithmeticProgressions rAbs = builder.forState(M.getInitialState());
@@ -558,13 +589,10 @@ namespace RegularEncoding {
 
         start = high_resolution_clock::now();
         omp_set_num_threads(omp_get_num_procs());
-        #pragma omp parallel for schedule(dynamic)
-        for (int q=1; q<M.numStates(); q++) {
+#pragma omp parallel for schedule(dynamic) default(none) shared(M, builder)
+        for (int q = 1; q < M.numStates(); q++) {
             satewiseLengthAbstraction[q] = builder.forStateComplete(q);
         }
-
-
-
 
 
         stop = chrono::high_resolution_clock::now();
@@ -588,14 +616,14 @@ namespace RegularEncoding {
         // Initial State, is a conjunction of literals
         PLFormula initialConj = encodeInitial(Mxi);
         // Add each literal as clause to cnf
-        for (const auto& lit: initialConj.getSubformulae()) {
+        for (const auto &lit: initialConj.getSubformulae()) {
             cnf.insert(set<int>{lit.getLiteral()});
         }
         // Final States, is a disjunction of literals
         PLFormula finalDisj = encodeFinal(Mxi, filledPat);
         // Add all literals as single clause to cnf
         set<int> finalClause{};
-        for (const auto& lit: finalDisj.getSubformulae()) {
+        for (const auto &lit: finalDisj.getSubformulae()) {
             finalClause.insert(lit.getLiteral());
         }
         cnf.insert(finalClause);
@@ -609,7 +637,7 @@ namespace RegularEncoding {
         PLFormula transitionCnf = encodeTransition(Mxi, filledPat);
         for (auto disj: transitionCnf.getSubformulae()) {
             set<int> clause{};
-            for (const auto& lit: disj.getSubformulae()) {
+            for (const auto &lit: disj.getSubformulae()) {
                 clause.insert(lit.getLiteral());
             }
             cnf.insert(clause);
@@ -680,7 +708,7 @@ namespace RegularEncoding {
         return PLFormula::land(conj);
     }
 
-    PLFormula AutomatonEncoder::encodeFinal(Automaton::NFA &Mxi, const std::vector<FilledPos>& filledPat) {
+    PLFormula AutomatonEncoder::encodeFinal(Automaton::NFA &Mxi, const std::vector<FilledPos> &filledPat) {
         vector<PLFormula> disj;
         int n = (int) filledPat.size();
         for (int q: Mxi.getFinalStates()) {
@@ -699,7 +727,7 @@ namespace RegularEncoding {
 
 
                     bool lengthOk = false;
-                    for (int lb = numTerminals(filledPat, i); lb <= filledPat.size()-i; lb++) {
+                    for (int lb = numTerminals(filledPat, i); lb <= filledPat.size() - i; lb++) {
                         if (satewiseLengthAbstraction[trans.first].contains(lb - i)) {
                             lengthOk = true;
                             break;
@@ -792,7 +820,7 @@ namespace RegularEncoding {
         disj.push_back(PLFormula::lit(succVar));
 
         bool lengthOk = false;
-        for (int lb = numTerminals(filledPat, i); lb <= filledPat.size()-i; lb++) {
+        for (int lb = numTerminals(filledPat, i); lb <= filledPat.size() - i; lb++) {
             if (satewiseLengthAbstraction[q].contains(lb)) {
                 lengthOk = true;
                 break;
