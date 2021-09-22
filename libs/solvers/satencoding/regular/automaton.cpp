@@ -61,16 +61,21 @@ namespace RegularEncoding {
             }
         }
 
-        set<int> NFA::epsilonClosure(int q) {
+        set<int> NFA::epsilonClosure(int q, set<int> ignoreStates) {
             set<int> closure{};
             if (delta.count(q) == 0) {
+
                 return closure;
+
             }
+            // Don't follow self transitions
+            ignoreStates.insert(q);
             for (auto trans: delta[q]) {
-                if (trans.first->isEpsilon()) {
-                    closure.insert(trans.second);
-                    set<int> rec = epsilonClosure(trans.second);
-                    closure.insert(rec.begin(), rec.end());
+                if (trans.first->isEpsilon() && ignoreStates.count(trans.second) == 0) {
+                        closure.insert(trans.second);
+                        ignoreStates.insert(trans.second);
+                        set<int> rec = epsilonClosure(trans.second, ignoreStates);
+                        closure.insert(rec.begin(), rec.end());
                 }
             }
             return closure;
@@ -82,7 +87,7 @@ namespace RegularEncoding {
             }
             // Add direct transitions, skipping e-transitions
             for (int q=0; q < nQ; q++) {
-                set<int> eclosure = epsilonClosure(q);
+                set<int> eclosure = epsilonClosure(q, set<int>{});
                 for (int qe: eclosure) {
                     if (final_states.count(qe) == 1) {
                         add_final_state(q);
@@ -97,7 +102,7 @@ namespace RegularEncoding {
             }
             // Remove all epsilon transitions
             map<int, set<pair<Terminal*, int>>> deltaWithoutEpsilon;
-            for (auto trans: delta) {
+            for (const auto& trans: delta) {
                 int q_src = trans.first;
                 for (auto target: trans.second) {
                     int q_target = target.second;
@@ -106,8 +111,8 @@ namespace RegularEncoding {
                         if (deltaWithoutEpsilon.count(q_src) == 1) {
                             deltaWithoutEpsilon[q_src].insert(make_pair(label, q_target));
                         } else {
-                            set<pair<Terminal*, int>> trans{make_pair(label, q_target)};
-                            deltaWithoutEpsilon[q_src] = trans;
+                            set<pair<Terminal*, int>> tt{make_pair(label, q_target)};
+                            deltaWithoutEpsilon[q_src] = tt;
                         }
                     }
                 }
@@ -153,7 +158,8 @@ namespace RegularEncoding {
 
         bool NFA::accept(const Words::Word& w) {
             set<int> s{initState};
-            for (int q: epsilonClosure(initState)) {
+
+            for (int q: epsilonClosure(initState, set<int>{})) {
                 s.insert(q);
             }
 
@@ -167,7 +173,7 @@ namespace RegularEncoding {
                         for (auto trans: delta[q]) {
                             if (trans.first->getChar() == (e->getTerminal()->getChar()) || trans.first->isEpsilon()) {
                                 succs.insert(trans.second);
-                                for (auto epsq: epsilonClosure(trans.second)) {
+                                for (auto epsq: epsilonClosure(trans.second, set<int>{})) {
                                     succs.insert(epsq);
                                 }
                             }
