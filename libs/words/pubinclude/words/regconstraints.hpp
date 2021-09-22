@@ -30,6 +30,8 @@ namespace Words {
 
             virtual void flatten(){};
 
+            virtual int longestLiteral(){return 0;};
+
             virtual std::shared_ptr<RegNode> reverse() = 0;
 
             virtual std::shared_ptr<RegNode> derivative(std::string d) = 0;
@@ -73,6 +75,8 @@ namespace Words {
 
             virtual bool isLeaf() { return true; }
 
+            int longestLiteral(){return 0;}
+
             void toString(std::ostream &os) {
                 os << "</>";
             }
@@ -106,6 +110,11 @@ namespace Words {
 
             size_t characters() override {
                 return word.characters();
+            }
+
+            int longestLiteral(){
+                std::cout << word.characters() << std::endl;
+                return characters();
             }
 
             bool acceptsEpsilon() {
@@ -238,12 +247,11 @@ namespace Words {
                     std::vector<IEntry*> concatted;
                     for (const auto& ch: children) {
                         std::shared_ptr<RegWord> asWord = std::dynamic_pointer_cast<RegWord>(ch);
-                        if (asWord != nullptr && asWord->word.characters() > 0) {
+                        if (asWord != nullptr) {
                             for (auto w: asWord->word) {
                                 concatted.push_back(w);
                             }
                         } else {
-
                             if (!concatted.empty()) {
                                 Words::Word cword(std::move(concatted));
                                 newChildren.push_back(std::make_shared<RegWord>(cword));
@@ -390,6 +398,17 @@ namespace Words {
                         os << ")*";
                         break;
                 }
+            }
+
+            int longestLiteral(){
+                int longest = 0;
+                for (const auto& ch: children) {
+                    int chl = ch->longestLiteral();
+                    if (chl > longest) {
+                        longest = chl;
+                    }
+                }
+                return longest;
             }
 
             size_t characters() override {

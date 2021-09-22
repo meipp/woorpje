@@ -107,9 +107,14 @@ namespace Words {
 
                 int actualbre = 0;
                 for (const auto &recon: opt.recons) {
-                    actualbre += ((int) log2(recon->expr->characters()))+1;
+                    recon->expr->flatten();
+                    int maxm = recon->expr->longestLiteral();
+                    if (maxm > actualbre) {
+                        actualbre = maxm;
+                    }
                 }
 
+                actualbre = (int)std::ceil(std::sqrt(actualbre))+1;
 
                 int i = 0;
 

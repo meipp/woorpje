@@ -133,6 +133,17 @@ namespace RegularEncoding {
             }
         }
 
+        bool PLFormula::isFalse() {
+            if (junctor == Junctor::AND){
+                if (subformulae.size() == 2) {
+                    if (subformulae[0].getLiteral() == -subformulae[1].getLiteral()) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         int PLFormula::size() {
             if (junctor == Junctor::LIT) {
                 return 1;
@@ -192,6 +203,8 @@ namespace RegularEncoding {
             n.push_back(f);
             return make_shared<PLFormulaPtd>(PLFormulaPtd(Junctor::NOT, n));
         }
+
+
 
         string PLFormulaPtd::toString() {
             stringstream ss;

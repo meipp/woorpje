@@ -138,6 +138,8 @@ namespace RegularEncoding {
 
             bool valid();
 
+            bool isFalse();
+
             bool is_nenf();
 
             int depth();
