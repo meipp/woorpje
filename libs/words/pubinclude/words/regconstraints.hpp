@@ -113,7 +113,6 @@ namespace Words {
             }
 
             int longestLiteral(){
-                std::cout << word.characters() << std::endl;
                 return characters();
             }
 
@@ -402,6 +401,15 @@ namespace Words {
 
             int longestLiteral(){
                 int longest = 0;
+
+                if (op == RegularOperator::CONCAT) {
+                    // Concatenation of longest literals is longest literal
+                    for (const auto& ch: children) {
+                        longest += ch->longestLiteral();
+                    }
+                    return longest;
+                }
+
                 for (const auto& ch: children) {
                     int chl = ch->longestLiteral();
                     if (chl > longest) {
