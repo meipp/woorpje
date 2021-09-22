@@ -215,22 +215,26 @@ namespace Words {
                     ch->flatten();
                 }
 
-                if(op == RegularOperator::CONCAT) {
 
-                    std::vector<std::shared_ptr<RegNode>> newChildren;
-                    for (const auto& ch: children) {
-                        std::shared_ptr<RegOperation> asOp = std::dynamic_pointer_cast<RegOperation>(ch);
 
-                        if (asOp != nullptr && asOp->op == RegularOperator::CONCAT) {
-                            for (const auto &chch: asOp->children) {
-                                newChildren.push_back(chch);
-                            }
-                        }else {
-                            newChildren.push_back(ch);
+                std::vector<std::shared_ptr<RegNode>> newChildren;
+                for (const auto &ch: children) {
+                    std::shared_ptr<RegOperation> asOp = std::dynamic_pointer_cast<RegOperation>(ch);
+
+                    // Child has same operator, append its children to this layer
+                    if (asOp != nullptr && asOp->op == op) {
+                        for (const auto &chch: asOp->children) {
+                            newChildren.push_back(chch);
                         }
+                    } else {
+                        newChildren.push_back(ch);
                     }
-                    children = newChildren;
-                    newChildren = std::vector<std::shared_ptr<RegNode>>{};
+                }
+                children = newChildren;
+
+
+                if(op == RegularOperator::CONCAT) {
+                    std::vector<std::shared_ptr<RegNode>> newChildren;
                     std::vector<IEntry*> concatted;
                     for (const auto& ch: children) {
                         std::shared_ptr<RegWord> asWord = std::dynamic_pointer_cast<RegWord>(ch);
