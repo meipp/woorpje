@@ -209,7 +209,7 @@ namespace RegularEncoding {
 
             int p = pow(N, 2);
 
-
+            omp_set_num_threads(omp_get_num_procs());
             for (int i = 1; i < p; i++) {
 #pragma omp parallel for schedule(dynamic)
                 for (int q = 0; q < N; q++) {
