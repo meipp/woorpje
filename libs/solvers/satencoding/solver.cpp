@@ -201,7 +201,7 @@ namespace Words {
 
                 
 
-                int i = lowerBound;
+                int i = (int) std::ceil(std::sqrt(lowerBound)) + 1;
 
 
                 Words::Solvers::Result ret = Words::Solvers::Result::NoSolution;
