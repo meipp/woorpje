@@ -60,6 +60,7 @@ namespace RegularEncoding {
     int skipped = 0;
     set<set<int>> InductiveEncoder::encode() {
         skipped = 0;
+        auto startEncoding = chrono::high_resolution_clock::now();
         cout << "\n[*] Encoding ";
         constraint.toString(cout);
         cout << "\n";
@@ -68,24 +69,40 @@ namespace RegularEncoding {
         shared_ptr<Words::RegularConstraints::RegNode> expr = constraint.expr;
 
         vector<FilledPos> filledPat = filledPattern(pattern);
+        profiler.patternSize = filledPat.size();
 
-        auto start = high_resolution_clock::now();
+        auto startRabs = high_resolution_clock::now();
+        LengthAbstraction::fromExpression(*expr);
+        auto stopRabs = high_resolution_clock::now();
+        auto rabsduration = duration_cast<milliseconds>(stopRabs - startRabs);
+        profiler.timeLengthAbstraction = rabsduration.count();
+
+        auto startFormula = high_resolution_clock::now();
         PLFormula f = doEncode(filledPat, expr);
-
+        auto stopFormula = high_resolution_clock::now();
+        auto durationFormula = duration_cast<milliseconds>(stopFormula - startFormula);
+        profiler.timeFormula = durationFormula.count();
         cout << "\t - Built formula (depth: " << f.depth() << ", size:" << f.size() << ") creating CNF\n";
         cout << "\t\t - Skipped " << skipped << " encodings due to length abstraction\n";
 
+        profiler.skipped = skipped;
+
+        auto startTsey = high_resolution_clock::now();
         set<set<int>> cnf = tseytin_cnf(f, solver);
-        auto stop = high_resolution_clock::now();
-        auto duration = duration_cast<milliseconds>(stop - start);
+        auto stopTsy = high_resolution_clock::now();
+        auto durationTsey = duration_cast<milliseconds>(stopFormula - startFormula);
+        profiler.timeTseytin = durationTsey.count();
+
 
         int litTotal = 0;
         for (const auto &cl: cnf) {
             litTotal += int(cl.size());
         }
 
+        auto stopEncoding = chrono::high_resolution_clock::now();
+        auto durationEncoding = duration_cast<milliseconds>(startEncoding -stopEncoding);
         cout << "\t - CNF done, " << cnf.size() << " clauses and " << litTotal << " literals in total\n";
-        cout << "[*] Encoding done. Took " << duration.count() << "ms" << endl;
+        cout << "[*] Encoding done. Took " << durationEncoding.count() << "ms" << endl;
         return cnf;
     }
 
@@ -492,6 +509,7 @@ namespace RegularEncoding {
         shared_ptr<Words::RegularConstraints::RegNode> expr = constraint.expr;
 
         vector<FilledPos> filledPat = filledPattern(pattern);
+        profiler.patternSize = filledPat.size();
 
 
         auto start = high_resolution_clock::now();
@@ -522,10 +540,12 @@ namespace RegularEncoding {
 
         auto stop = chrono::high_resolution_clock::now();
         auto duration = chrono::duration_cast<milliseconds>(stop - start);
+        profiler.timeNFA = duration.count();
         cout << "\t - Built filled NFA with " << Mxi.numStates() << " states and " << Mxi.numTransitions()
              << " transitions. Took " << duration.count() << "ms\n";
 
 
+        start = high_resolution_clock::now();
         LengthAbstraction::UNFALengthAbstractionBuilder builder(M);
 
         LengthAbstraction::ArithmeticProgressions rAbs = builder.forState(M.getInitialState());
@@ -545,49 +565,12 @@ namespace RegularEncoding {
             // Can't be satisfied
             cout << "\t - Length abstraction not satisfied\n";
             Glucose::Var v = solver.newVar();
+            stop = chrono::high_resolution_clock::now();
+            duration = chrono::duration_cast<milliseconds>(stop - start);
+            profiler.timeLengthAbstraction = duration.count();
             return set<set<int>>{set<int>{v}, set<int>{-v}};
         }
 
-
-        auto delta = M.getDelta();
-
-
-        map<int, set<pair<Words::Terminal *, int>>> pred;
-        for (auto &trans: Mxi.getDelta()) {
-            int qsrc = trans.first;
-            for (auto &target: trans.second) {
-                Words::Terminal *label = target.first;
-                int qdst = target.second;
-                if (pred.count(qdst) == 1) {
-                    pred[qdst].insert(make_pair(label, qsrc));
-                } else {
-                    pred[qdst] = set<pair<Words::Terminal *, int>>{make_pair(label, qsrc)};
-                }
-            }
-        }
-
-
-
-        /**
-        set<int> visited{M.getInitialState()};
-        list<int> queue;
-        for (auto t: delta[M.getInitialState()]) {
-            queue.push_back(t.second);
-        }
-        while (!queue.empty()) {
-            int q = queue.front();
-            queue.pop_front();
-            visited.insert(q);
-            LengthAbstraction::ArithmeticProgressions qrabs = builder.forState(q);
-            satewiseLengthAbstraction[q] = qrabs;
-            for (auto t: delta[q]) {
-                if (visited.count(t.second) == 0) {
-                    queue.push_back(t.second);
-                }
-            }
-        }*/
-
-        start = high_resolution_clock::now();
         omp_set_num_threads(omp_get_num_procs());
 #pragma omp parallel for schedule(dynamic) default(none) shared(M, builder)
         for (int q = 1; q < M.numStates(); q++) {
@@ -597,8 +580,8 @@ namespace RegularEncoding {
 
         stop = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<milliseconds>(stop - start);
+        profiler.timeLengthAbstraction = duration.count();
         cout << "\t - Built length abstraction for each state. Took " << duration.count() << "ms\n";
-
 
         start = high_resolution_clock::now();
 
@@ -645,11 +628,28 @@ namespace RegularEncoding {
 
         stop = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<milliseconds>(stop - start);
+        profiler.timeFormulaTransition = duration.count();
         cout << "\t - Created [Transition] constraint. Took " << duration.count() << "ms\n";
 
         start = high_resolution_clock::now();
         // Predecessor constraint
 
+        auto delta = M.getDelta();
+
+
+        map<int, set<pair<Words::Terminal *, int>>> pred;
+        for (auto &trans: Mxi.getDelta()) {
+            int qsrc = trans.first;
+            for (auto &target: trans.second) {
+                Words::Terminal *label = target.first;
+                int qdst = target.second;
+                if (pred.count(qdst) == 1) {
+                    pred[qdst].insert(make_pair(label, qsrc));
+                } else {
+                    pred[qdst] = set<pair<Words::Terminal *, int>>{make_pair(label, qsrc)};
+                }
+            }
+        }
 
         set<pair<int, int>> tmpv{};
         vector<PLFormula> predFormulae;
@@ -666,17 +666,21 @@ namespace RegularEncoding {
         }
         stop = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<milliseconds>(stop - start);
+        profiler.timeFormulaPredecessor = duration.count();
         cout << "\t - Created [Predecessor] constraint (depth: " << predecessor.depth() << ", size: "
              << predecessor.size() << "). Took " << duration.count() << "ms\n";
 
         start = high_resolution_clock::now();
         stop = chrono::high_resolution_clock::now();
-        duration = chrono::duration_cast<milliseconds>(stop - start);
+
         set<set<int>> predecessorCnf = tseytin_cnf(predecessor, solver);
+        duration = chrono::duration_cast<milliseconds>(stop - start);
+        profiler.timeTseytinPredecessor = duration.count();
+        cout << "\t - Created CNF. Took " << duration.count() << "ms\n";
         for (const auto &clause: predecessorCnf) {
             cnf.insert(clause);
         }
-        cout << "\t - Created CNF. Took " << duration.count() << "ms\n";
+
 
 
 

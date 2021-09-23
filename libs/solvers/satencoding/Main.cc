@@ -1539,8 +1539,6 @@ setupSolverMain(Words::Options &opt) { // std::vector<std::string>& mlhs,
         readSymbols(exprAlph);
 
 
-
-
     }
 
     return Words::Solvers::Result::NoIdea;
@@ -1564,9 +1562,11 @@ template<bool newencode = true>
                                    const Words::Context &context,
                                    Words::Substitution &substitution,
                                    Words::Solvers::Timing::Keeper &tkeeper,
-                                   std::ostream *odia = nullptr) {
+                                   std::ostream *odia = nullptr,
+                                   RegularEncoding::EncodingProfiler* profiler = nullptr) {
 
     clear();
+    auto startTotal = chrono::high_resolution_clock::now();
     {
         // Words::Solvers::Timing::Timer overalltimer (tkeeper, "Setup ");
 
@@ -1723,25 +1723,41 @@ template<bool newencode = true>
 
         //Handle regular constraints
         cout << "Current bound: " << bound << "\n";
-        for (auto recon: input_options.recons) {
+        profiler->bound = (int) bound;
+
+
+
+        for (const auto &recon: input_options.recons) {
 
             //auto strippedRecon = RegularEncoding::stripSuffix(RegularEncoding::stripPrefix(*recon));
-
+            profiler->exprComplexity = (int) recon->expr->complexity();
             set<set<int>> clauses;
+            auto startEnc = chrono::high_resolution_clock::now();
             if (AUTOMATON) {
+                RegularEncoding::AutomatonProfiler aprofiler{};
                 RegularEncoding::AutomatonEncoder regEncoder(*recon, context, S, sigmaSize,
                                                              &vIndices,
-                                                             &maxPadding, &tIndices, &variableVars, &constantsVars, index2t);
+                                                             &maxPadding, &tIndices, &variableVars, &constantsVars,
+                                                             index2t, aprofiler);
                 clauses = regEncoder.encode();
-            }else {
+                profiler->automatonProfiler = aprofiler;
+                profiler->automaton = true;
+            } else {
+                RegularEncoding::InductiveProfiler iprofiler{};
                 RegularEncoding::InductiveEncoder regEncoder(*recon, context, S, sigmaSize,
                                                              &vIndices,
-                                                             &maxPadding, &tIndices, &variableVars, &constantsVars, index2t);
+                                                             &maxPadding, &tIndices, &variableVars, &constantsVars,
+                                                             index2t, iprofiler);
                 clauses = regEncoder.encode();
+                profiler->inductiveProfiler = iprofiler;
+                profiler->automaton = false;
             }
+            auto stopEnc = chrono::high_resolution_clock::now();
+            auto encTime = chrono::duration_cast<chrono::milliseconds>(stopEnc-startEnc);
+            profiler->timeEncoding = encTime.count();
 
-            // Convert clasues and add to solver
-            for (const set<int>& cl: clauses) {
+            // Convert clauses and add to solver
+            for (const set<int> &cl: clauses) {
                 vec<Lit> clvec;
                 for (int l: cl) {
                     int isneg = l < 0;
@@ -1792,8 +1808,20 @@ template<bool newencode = true>
     lbool ret;
     {
         Words::Solvers::Timing::Timer(tkeeper, "Solving");
+        auto startSolving = chrono::high_resolution_clock::now();
         ret = S.solveLimited(dummy);
+        auto endSolving = chrono::high_resolution_clock::now();
+        auto durSolving = chrono::duration_cast<chrono::milliseconds>(endSolving - startSolving);
+        auto durTotal = chrono::duration_cast<chrono::milliseconds>(endSolving - startTotal);
+        profiler->timeSolving = durSolving.count();
+        profiler->timeTotal = durTotal.count();
+        if (ret == l_True) {
+            profiler->sat = true;
+        } else {
+            profiler->sat = false;
+        }
     }
+
 
     int stateVarsSeen = 0;
     int stateVarsOverall = 0;
@@ -2014,9 +2042,9 @@ memory.\n"); } }
 template ::Words::Solvers::Result
 runSolver<true>(const bool squareAuto, size_t, const Words::Context &,
                 Words::Substitution &, Words::Solvers::Timing::Keeper &,
-                std::ostream *);
+                std::ostream *, RegularEncoding::EncodingProfiler*);
 
 template ::Words::Solvers::Result
 runSolver<false>(const bool squareAuto, size_t, const Words::Context &,
                  Words::Substitution &, Words::Solvers::Timing::Keeper &,
-                 std::ostream *);
+                 std::ostream *, RegularEncoding::EncodingProfiler*);

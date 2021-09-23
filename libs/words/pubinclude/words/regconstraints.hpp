@@ -49,6 +49,8 @@ namespace Words {
 
             virtual bool acceptsEpsilon() = 0;
 
+            virtual long complexity(){return 0;};
+
 
         private:
             std::string str = "-";
@@ -81,6 +83,8 @@ namespace Words {
                 os << "</>";
             }
 
+            long complexity(){return 1;}
+
             void getAlphabet(Words::WordBuilder wb) {}
 
             size_t characters() override {
@@ -111,6 +115,8 @@ namespace Words {
             size_t characters() override {
                 return word.characters();
             }
+
+            long complexity(){return characters();}
 
             int longestLiteral(){
                 return characters();
@@ -425,6 +431,14 @@ namespace Words {
                     sum += c->characters();
                 }
                 return sum;
+            }
+
+            long complexity() override{
+                int sum = 0;
+                for (const auto& c: children) {
+                    sum += c->complexity();
+                }
+                return sum+1;
             }
 
             void getAlphabet(Words::WordBuilder wb) {

@@ -11,6 +11,8 @@
 #include "words/regconstraints.hpp"
 #include "words/words.hpp"
 #include "core/Solver.h"
+#include <fstream>
+#include <ctime>
 
 
 namespace RegularEncoding {
@@ -344,6 +346,40 @@ namespace RegularEncoding {
         std::pair<int, int> vIndex = std::make_pair(-1, -1);
     };
 
+
+
+
+    struct InductiveProfiler {
+        int patternSize;
+        long timeLengthAbstraction;
+        long skipped;
+        long timeFormula;
+        long timeTseytin;
+    };
+
+    struct AutomatonProfiler {
+        int patternSize;
+        long timeNFA;
+        long timeLengthAbstraction;
+        long timeFormulaTransition;
+        long timeFormulaPredecessor;
+        long timeTseytinPredecessor;
+    };
+
+    struct EncodingProfiler {
+        int bound;
+        int exprComplexity;
+        long timeEncoding;
+        long timeSolving;
+        long timeTotal;
+        bool sat;
+        bool automaton;
+        AutomatonProfiler automatonProfiler;
+        InductiveProfiler inductiveProfiler;
+    };
+
+
+
     class Encoder {
     public:
         Encoder(Words::RegularConstraints::RegConstraint constraint,
@@ -407,10 +443,10 @@ namespace RegularEncoding {
                          std::map<Words::Terminal *, int> *tIndices,
                          std::map<std::pair<std::pair<int, int>, int>, Glucose::Var> *variableVars,
                          std::map<std::pair<int, int>, Glucose::Var> *constantsVars,
-                         std::map<int, Words::Terminal *> &index2t)
+                         std::map<int, Words::Terminal *> &index2t,
+                         InductiveProfiler& profiler)
                 : Encoder(constraint, ctx, solver, sigmaSize, vIndices, maxPadding, tIndices, variableVars,
-                          constantsVars,
-                          index2t) /*, *ccache(std::unordered_map<size_t, PropositionalLogic::PLFormula*>())*/ {
+                          constantsVars, index2t), profiler(profiler) {
 
         };
 
@@ -440,12 +476,28 @@ namespace RegularEncoding {
                    const std::shared_ptr<Words::RegularConstraints::RegEmpty>& empty);
 
         //std::unordered_map<size_t, PropositionalLogic::PLFormula*> ccache;
+        InductiveProfiler& profiler;
 
     };
 
     class AutomatonEncoder : public Encoder {
     public:
-        using Encoder::Encoder;
+
+        AutomatonEncoder(Words::RegularConstraints::RegConstraint constraint,
+                         Words::Context ctx,
+                         Glucose::Solver &solver,
+                         int sigmaSize,
+                         std::map<Words::Variable *, int> *vIndices,
+                         std::map<int, int> *maxPadding,
+                         std::map<Words::Terminal *, int> *tIndices,
+                         std::map<std::pair<std::pair<int, int>, int>, Glucose::Var> *variableVars,
+                         std::map<std::pair<int, int>, Glucose::Var> *constantsVars,
+                         std::map<int, Words::Terminal *> &index2t,
+                         AutomatonProfiler& profiler)
+                : Encoder(constraint, ctx, solver, sigmaSize, vIndices, maxPadding, tIndices, variableVars,
+                          constantsVars, index2t), profiler(profiler) {
+
+        };
 
         std::set<std::set<int>> encode();
 
@@ -469,6 +521,8 @@ namespace RegularEncoding {
         std::map<int, LengthAbstraction::ArithmeticProgressions> satewiseLengthAbstraction{};
 
         std::map<int, std::shared_ptr<std::set<int>>> reachable;
+
+        AutomatonProfiler& profiler;
 
     };
 
