@@ -351,27 +351,27 @@ namespace RegularEncoding {
 
     struct InductiveProfiler {
         int patternSize;
-        long timeLengthAbstraction;
-        long skipped;
-        long timeFormula;
-        long timeTseytin;
+        unsigned long timeLengthAbstraction;
+        unsigned long skipped;
+        unsigned long timeFormula;
+        unsigned long timeTseytin;
     };
 
     struct AutomatonProfiler {
         int patternSize;
-        long timeNFA;
-        long timeLengthAbstraction;
-        long timeFormulaTransition;
-        long timeFormulaPredecessor;
-        long timeTseytinPredecessor;
+        unsigned long timeNFA;
+        unsigned long timeLengthAbstraction;
+        unsigned long timeFormulaTransition;
+        unsigned long timeFormulaPredecessor;
+        unsigned long timeTseytinPredecessor;
     };
 
     struct EncodingProfiler {
         int bound;
         int exprComplexity;
-        long timeEncoding;
-        long timeSolving;
-        long timeTotal;
+        unsigned long timeEncoding;
+        unsigned long timeSolving;
+        unsigned long timeTotal;
         bool sat;
         bool automaton;
         AutomatonProfiler automatonProfiler;
