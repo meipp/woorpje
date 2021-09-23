@@ -299,7 +299,7 @@ namespace RegularEncoding {
             std::shared_ptr<std::set<int>> pre(std::shared_ptr<std::set<int>> &);
 
             std::vector<std::shared_ptr<std::set<int>>> T;
-            std::vector<std::vector<std::set<int>>> Sq;
+            std::vector<std::vector<std::unordered_set<int>>> Sq;
             std::map<std::set<int>, std::shared_ptr<std::set<int>>> successorsCache{};
             std::map<std::set<int>, std::shared_ptr<std::set<int>>> predecessorCache{};
             std::map<int, std::shared_ptr<ArithmeticProgressions>> statewiserAbs;
@@ -518,7 +518,7 @@ namespace RegularEncoding {
 
         std::map<std::pair<int, int>, int> stateVars{};
 
-        std::map<int, LengthAbstraction::ArithmeticProgressions> satewiseLengthAbstraction{};
+        std::unordered_map<int, std::shared_ptr<LengthAbstraction::ArithmeticProgressions>> satewiseLengthAbstraction{};
 
         std::map<int, std::shared_ptr<std::set<int>>> reachable;
 

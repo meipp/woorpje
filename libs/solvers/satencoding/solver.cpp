@@ -184,17 +184,24 @@ namespace Words {
                 );
 
                 int actualbre = 0;
+                int lowerBound = -1; 
                 for (const auto &recon: opt.recons) {
                     recon->expr->flatten();
                     int maxm = recon->expr->longestLiteral();
+                    int minm = recon->expr->shortesLiteral();
                     if (maxm > actualbre) {
                         actualbre = maxm;
+                    }
+                    if (lowerBound < 0 || minm < lowerBound) {
+                        lowerBound = minm;
                     }
                 }
 
                 actualbre = (int) std::ceil(std::sqrt(actualbre)) + 1;
 
-                int i = 0;
+                
+
+                int i = lowerBound;
 
 
                 Words::Solvers::Result ret = Words::Solvers::Result::NoSolution;

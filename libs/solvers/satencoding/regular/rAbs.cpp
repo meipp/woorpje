@@ -1,6 +1,7 @@
 
 #include <algorithm>
 #include <unordered_map>
+#include <unordered_set>
 #include <map>
 #include "regencoding.h"
 #include "commons.h"
@@ -189,29 +190,30 @@ namespace RegularEncoding {
         };
 
 
+
         /*
          * UNFALengthAbstractionBuilder
          */
 
         // i = transtitions done, N = max transtitions
-        vector<vector<set<int>>> buildS(int N, map<int, set<pair<Words::Terminal *, int>>> &delta) {
+        vector<vector<unordered_set<int>>> buildS(int N, map<int, set<pair<Words::Terminal *, int>>> &delta) {
             auto start = chrono::high_resolution_clock::now();
 
-            vector<vector<set<int>>> Sq(N);
-            omp_set_num_threads(omp_get_num_procs());
+            //TODO: cache
+
+            vector<vector<unordered_set<int>>> Sq(N);
             for (int q = 0; q < N; q++) {
-                Sq[q] = vector<set<int>>((int) pow(N, 2));
-                Sq[q][0] = set<int>{q};
+                Sq[q] = vector<unordered_set<int>>((int) pow(N, 2));
+                Sq[q][0] = unordered_set<int>{q};
                 for (int i = 1; i < pow(N, 2); i++) {
-                    Sq[q][i] = set<int>{};
+                    Sq[q][i] = unordered_set<int>{};
                 }
             }
 
             int p = pow(N, 2);
 
-            omp_set_num_threads(omp_get_num_procs());
             for (int i = 1; i < p; i++) {
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for 
                 for (int q = 0; q < N; q++) {
                     for (int pre: Sq[q][i - 1]) {
                         for (auto &tr: delta[pre]) {
@@ -229,12 +231,23 @@ namespace RegularEncoding {
             return Sq;
         }
 
+        map<string, vector<vector<unordered_set<int>>>> buildSCache{};
+
         UNFALengthAbstractionBuilder::UNFALengthAbstractionBuilder(Automaton::NFA nfa) : nfa(nfa) {
             adjm = buildAdjacencyMatrix();
             statewiserAbs = std::map<int, std::shared_ptr<ArithmeticProgressions>>{};
             N = int(adjm.size());
             auto delta = nfa.getDelta();
-            Sq = buildS(N, delta);
+
+
+            if (buildSCache.count(nfa.toString()) == 0) {
+                Sq = buildS(N, delta);
+                buildSCache[nfa.toString()] = Sq;
+            } else {
+                Sq = buildSCache.at(nfa.toString());
+            }
+
+            
 
             if (!nfa.getDelta().empty()) {
 
@@ -251,8 +264,6 @@ namespace RegularEncoding {
                         T[i] = pre(T[i - 1]);
                     }
                     nfaTcache[nfa.toString()] = T;
-
-
                 }
             } else {
 
@@ -287,7 +298,7 @@ namespace RegularEncoding {
             }
 
 
-            vector<set<int>> &S = Sq[q];
+            vector<unordered_set<int>> &S = Sq[q];
 
 
             set<int> imp;

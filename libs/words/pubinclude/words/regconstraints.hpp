@@ -32,6 +32,8 @@ namespace Words {
 
             virtual int longestLiteral(){return 0;};
 
+            virtual int shortesLiteral(){return 0;};
+
             virtual std::shared_ptr<RegNode> reverse() = 0;
 
             virtual std::shared_ptr<RegNode> derivative(std::string d) = 0;
@@ -121,6 +123,8 @@ namespace Words {
             int longestLiteral(){
                 return characters();
             }
+            int shortesLiteral(){return characters();};
+
 
             bool acceptsEpsilon() {
                 return word.characters() == 0;
@@ -404,6 +408,28 @@ namespace Words {
                         break;
                 }
             }
+
+            int shortesLiteral(){
+                int shortest = 0;
+                if (op == RegularOperator::STAR) {
+                    // star of shortest literals is shortest literal
+                    return 0;
+                } else  if (op == RegularOperator::CONCAT) {
+                    // Concatenation of shortest literals is shortest literal
+                    for (const auto& ch: children) {
+                        shortest += ch->shortesLiteral();
+                    }
+                    return shortest;
+                } else {
+                    for (const auto& ch: children) {
+                        int chl = ch->shortesLiteral();
+                        if (chl < shortest) {
+                            shortest = chl;
+                        }
+                    }
+                    return shortest;
+                }
+            };
 
             int longestLiteral(){
                 int longest = 0;
