@@ -212,11 +212,13 @@ namespace RegularEncoding {
 
             int p = pow(N, 2);
 
+            int q;
             for (int i = 1; i < p; i++) {
-#pragma omp parallel for 
-                for (int q = 0; q < N; q++) {
+                #pragma omp parallel for
+                for (q = 0; q < N; q++) {
                     for (int pre: Sq[q][i - 1]) {
                         for (auto &tr: delta[pre]) {
+                            #pragma omp critical
                             Sq[q][i].insert(tr.second);
                             //cout << "inserted " << tr.second << "\n";
                         }

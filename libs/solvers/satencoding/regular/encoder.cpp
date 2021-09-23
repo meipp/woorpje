@@ -580,13 +580,13 @@ namespace RegularEncoding {
             return set<set<int>>{set<int>{v}, set<int>{-v}};
         }
 
-        #pragma omp parallel
+        //#pragma omp parallel
         {
             //omp_set_num_threads(omp_get_num_procs());
-            #pragma omp parallel for schedule(static)
+            //#pragma omp parallel for 
             for (int q = 1; q < M.numStates(); q++) {
                 auto rabs = builder.forStateComplete(q);
-                //#pragma omp critical
+                #pragma omp critical
                 satewiseLengthAbstraction[q] = make_shared<LengthAbstraction::ArithmeticProgressions>(rabs);
 
             }
