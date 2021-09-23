@@ -1731,6 +1731,8 @@ template<bool newencode = true>
 
             //auto strippedRecon = RegularEncoding::stripSuffix(RegularEncoding::stripPrefix(*recon));
             profiler->exprComplexity = (int) recon->expr->complexity();
+            profiler->starHeight = recon->expr->starHeight();
+            profiler->numStars = recon->expr->numStars();
             set<set<int>> clauses;
             auto startEnc = chrono::high_resolution_clock::now();
             if (AUTOMATON) {

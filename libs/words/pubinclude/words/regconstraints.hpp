@@ -19,6 +19,9 @@ namespace Words {
 
             virtual void toString(std::ostream &os) = 0;
 
+            virtual int numStars() {return 0;};
+            virtual int starHeight() {return 0;};
+
             std::string toString() {
                 if (str == "-") {
                     std::stringstream ss;
@@ -430,6 +433,32 @@ namespace Words {
                     return shortest;
                 }
             };
+
+            virtual int numStars() {
+                int c = 0;
+                if (op == RegularOperator::STAR) {
+                    c++;
+                }
+                for (const auto& ch: children) {
+                    c += ch->numStars();
+                }
+                return c;
+            };
+
+            virtual int starHeight() {
+                int c = 0;
+                for (const auto &ch: children) {
+                    int csh = ch->starHeight();
+                    if (csh > c) {
+                        c = csh;
+                    }
+                }
+
+                if (op == RegularOperator::STAR) {
+                    c++;
+                }
+                return c;
+            }
 
             int longestLiteral(){
                 int longest = 0;

@@ -369,6 +369,8 @@ namespace RegularEncoding {
     struct EncodingProfiler {
         int bound;
         int exprComplexity;
+        int numStars;
+        int starHeight;
         unsigned long timeEncoding;
         unsigned long timeSolving;
         unsigned long timeTotal;
