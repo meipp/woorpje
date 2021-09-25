@@ -220,7 +220,6 @@ namespace RegularEncoding {
                         for (auto &tr: delta[pre]) {
                             #pragma omp critical
                             Sq[q][i].insert(tr.second);
-                            //cout << "inserted " << tr.second << "\n";
                         }
                     }
                 }
@@ -274,7 +273,6 @@ namespace RegularEncoding {
                     if (nfa.getFinalStates().count(q) > 0) {
                         empty.add(make_pair(0, 0));
                     }
-                    cout << "Setting " << q << endl;
                     statewiserAbs[q] = make_shared<ArithmeticProgressions>(empty);
                 }
             }
@@ -390,23 +388,20 @@ namespace RegularEncoding {
 
             // Check predecessors;
             const string nfastr = nfa.toString();
-            //cout << "hier\n";
             if (nfaCache.count(make_pair(nfastr, q)) > 0) {
 
-                //cout<< "other\n";
                 return *nfaCache[make_pair(nfastr, q)];
             }
             if (statewiserAbs.count(q) > 0) {
                 auto aps = *statewiserAbs[q];
                 nfaCache[make_pair(nfastr, q)] = make_shared<ArithmeticProgressions>(aps);
-                cout << "statewise\n";
                 return aps;
             }
 
 
             bool haspred = false;
             ArithmeticProgressions aps;
-            //cout << "Hier für " << q << "\n";
+
             for (int v = 0; v < N; v++) {
                 if (adjm[v][q]) {
                     haspred = true;
@@ -428,9 +423,7 @@ namespace RegularEncoding {
                             apsV = forState(v);
                         } else {
                             // v and q in same scc, prevent infite recursion
-                            //cout << q << "==" << v << endl;
                             apsV = forStateComplete(v);
-                            //cout << "OK\n";
                             auto shr = make_shared<ArithmeticProgressions>(apsV);
                             nfaCache[make_pair(nfastr, v)] = shr;
                             statewiserAbs[v] = shr;
@@ -439,7 +432,6 @@ namespace RegularEncoding {
                     }
 
                     for (pair<int, int> ap: apsV.getProgressions()) {
-                        //cout << "Building...\n";
                         if (sameScc && ap.second > 0) {
 
                             aps.add(make_pair((ap.first - 1) % ap.second, ap.second));
@@ -456,7 +448,6 @@ namespace RegularEncoding {
             if (!haspred) {
                 aps = forStateComplete(q);
             } else {
-                //cout << "Return für " << q << "\n";
                 statewiserAbs[q] = make_shared<ArithmeticProgressions>(aps);
             }
             nfaCache[make_pair(nfastr, q)] = make_shared<ArithmeticProgressions>(aps);

@@ -34,7 +34,7 @@ namespace commons {
         
         map<int, tuple<int, int, int>> visits;
                 
-        int n = adjacency_matrix.size();
+        int n = static_cast<int>(adjacency_matrix.size());
         int t = 0;
         vector<int> vertices(n);
         iota(vertices.begin(), vertices.end(), 0);
@@ -57,10 +57,10 @@ namespace commons {
 
     vector<set<int>> scc(vector<vector<bool>> adjacency_matrix){
         vector<vector<bool>> transpose_adjacency_matrix;
-        int n = adjacency_matrix.size();
+        int n = static_cast<int>(adjacency_matrix.size());
         // init transpose with false
         for (int i=0; i<n; i++) {
-            transpose_adjacency_matrix.push_back(vector<bool>(n, false));
+            transpose_adjacency_matrix.emplace_back(n, false);
         }
         // set transpose edges to true
         for (int i=0; i<n; i++) {
@@ -82,28 +82,28 @@ namespace commons {
         map<int, int> sccs_map;
              
         for (auto it = visits_transpose.begin(); it != visits_transpose.end(); it++) {
+
+
             int pred = get<2>(it->second);
             int current = it->first;
-            
+            int original = current;
             if (sccs_map.find(pred) == sccs_map.end()) {
                 while (pred != -1 && sccs_map.find(pred) == sccs_map.end()) {
                     current = pred;
                     pred = get<2>(visits[pred]);
                 }
             }
-              
             if (pred == -1) {
-                sccs_map[current] = scc_counter;
+                sccs_map[original] = scc_counter;
                 scc_counter++;
             } else {
-                sccs_map[current] = sccs_map[pred];   
+                sccs_map[original] = sccs_map[pred];
             }
             
         }
 
         vector<set<int>> sccs(scc_counter ,set<int>{});
 
-        int ff = 0;
         for (auto it = sccs_map.begin(); it != sccs_map.end(); it++) {
             sccs[it->second].insert(it->first);
         }
