@@ -92,7 +92,7 @@ namespace RegularEncoding {
         auto startTsey = high_resolution_clock::now();
         set<set<int>> cnf = tseytin_cnf(f, solver);
         auto stopTsy = high_resolution_clock::now();
-        auto durationTsey = duration_cast<milliseconds>(stopFormula - startFormula);
+        auto durationTsey = duration_cast<milliseconds>(stopTsy - startTsey);
         profiler.timeTseytin = durationTsey.count();
 
 
@@ -102,7 +102,7 @@ namespace RegularEncoding {
         }
 
         auto stopEncoding = chrono::high_resolution_clock::now();
-        auto durationEncoding = duration_cast<milliseconds>(startEncoding -stopEncoding);
+        auto durationEncoding = duration_cast<milliseconds>(stopEncoding-startEncoding);
         cout << "\t - CNF done, " << cnf.size() << " clauses and " << litTotal << " literals in total\n";
         cout << "[*] Encoding done. Took " << durationEncoding.count() << "ms" << endl;
         return cnf;
@@ -686,9 +686,8 @@ namespace RegularEncoding {
              << predecessor.size() << "). Took " << duration.count() << "ms\n";
 
         start = high_resolution_clock::now();
-        stop = chrono::high_resolution_clock::now();
-
         set<set<int>> predecessorCnf = tseytin_cnf(predecessor, solver);
+        stop = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<milliseconds>(stop - start);
         profiler.timeTseytinPredecessor = duration.count();
         cout << "\t - Created CNF. Took " << duration.count() << "ms\n";

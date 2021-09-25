@@ -61,7 +61,7 @@ void profileToCsv(const std::vector<RegularEncoding::EncodingProfiler> &profiles
 
     if (stat(filename.c_str(), &buffer) != 0) {
         outfile.open(filename, std::ios_base::app);
-        outfile << "bound;exprComplexity;starHeight;numStars;patternSize;timeEncoding;timeSolving;timeTotal;sat;";
+        outfile << "bound;exprComplexity;exprDepth;starHeight;numStars;patternSize;timeEncoding;timeSolving;timeTotal;sat;";
         if (automaton) {
             outfile << "timeNFA;timeLengthAbstraction;timeFormulaTransition;timeFormulaPredecessor;timeTseytinPredecessor\n";
         } else {
@@ -85,7 +85,7 @@ void profileToCsv(const std::vector<RegularEncoding::EncodingProfiler> &profiles
             patternSize = p.inductiveProfiler.patternSize;
         }
 
-        outfile << std::boolalpha << p.bound << ";" << p.exprComplexity << ";" << p.starHeight << ";" << p.numStars << ";"<< patternSize << ";" << p.timeEncoding << ";"
+        outfile << std::boolalpha << p.bound << ";" << p.exprComplexity << ";" << p.depth << ";" << p.starHeight << ";" << p.numStars << ";"<< patternSize << ";" << p.timeEncoding << ";"
                 << p.timeSolving << ";" << p.timeTotal << ";" << p.sat << ";";
         if (automaton) {
             outfile << p.automatonProfiler.timeNFA << ";" << p.automatonProfiler.timeLengthAbstraction << ";" << p.automatonProfiler.timeFormulaTransition

@@ -21,6 +21,7 @@ namespace Words {
 
             virtual int numStars() {return 0;};
             virtual int starHeight() {return 0;};
+            virtual int depth() {return 0;};
 
             std::string toString() {
                 if (str == "-") {
@@ -501,6 +502,17 @@ namespace Words {
                     c->getAlphabet(wb);
                 }
             }
+
+            int depth() {
+                int d = 0;
+                for (const auto& c: children) {
+                    int cd = c->depth();
+                    if (cd > d) {
+                        d = cd;
+                    }
+                }
+                return d+1;
+            };
 
             /**
              * Returns a vector of the operand nodes.

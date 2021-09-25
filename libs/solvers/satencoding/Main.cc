@@ -1733,6 +1733,7 @@ template<bool newencode = true>
             profiler->exprComplexity = (int) recon->expr->complexity();
             profiler->starHeight = recon->expr->starHeight();
             profiler->numStars = recon->expr->numStars();
+            profiler->depth = recon->expr->depth();
             set<set<int>> clauses;
             auto startEnc = chrono::high_resolution_clock::now();
             if (AUTOMATON) {
