@@ -61,7 +61,7 @@ namespace RegularEncoding {
             }
         }
 
-        set<int> NFA::epsilonClosure(int q, set<int> ignoreStates) {
+        set<int> NFA::epsilonClosure(int q, set<int>& ignoreStates) {
             set<int> closure{};
             if (delta.count(q) == 0) {
 
@@ -87,7 +87,9 @@ namespace RegularEncoding {
             }
             // Add direct transitions, skipping e-transitions
             for (int q=0; q < nQ; q++) {
-                set<int> eclosure = epsilonClosure(q, set<int>{});
+
+                auto tmp = set<int>{};
+                set<int> eclosure = epsilonClosure(q, tmp);
                 for (int qe: eclosure) {
                     if (final_states.count(qe) == 1) {
                         add_final_state(q);
@@ -158,8 +160,8 @@ namespace RegularEncoding {
 
         bool NFA::accept(const Words::Word& w) {
             set<int> s{initState};
-
-            for (int q: epsilonClosure(initState, set<int>{})) {
+            auto tmp = set<int>{};
+            for (int q: epsilonClosure(initState, tmp)) {
                 s.insert(q);
             }
 
@@ -173,7 +175,8 @@ namespace RegularEncoding {
                         for (auto trans: delta[q]) {
                             if (trans.first->getChar() == (e->getTerminal()->getChar()) || trans.first->isEpsilon()) {
                                 succs.insert(trans.second);
-                                for (auto epsq: epsilonClosure(trans.second, set<int>{})) {
+                                auto tmp1 = set<int>{};
+                                for (auto epsq: epsilonClosure(trans.second, tmp1)) {
                                     succs.insert(epsq);
                                 }
                             }
@@ -309,7 +312,7 @@ namespace RegularEncoding {
                             M.new_state();
                         }
                         // Apply offset delta
-                        for (auto trans: offsetDelta) {
+                        for (const auto& trans: offsetDelta) {
                             for (auto target: trans.second) {
                                 M.add_transition(trans.first, target.first, target.second);
                                 if (subM.getFinalStates().count(target.second - off) == 1) {
@@ -331,8 +334,9 @@ namespace RegularEncoding {
 
                         M.add_final_state(qf);
                         for (int q: oldFs) {
-                            M.add_transition(q, ctx.getEpsilon(), qf);
-                            M.add_transition(q, ctx.getEpsilon(), oldQ0);
+                            //M.add_transition(q, ctx.getEpsilon(), qf);
+                            //M.add_transition(q, ctx.getEpsilon(), oldQ0);
+                            M.add_transition(q, ctx.getEpsilon(), q0);
                         }
                         M.add_transition(q0, ctx.getEpsilon(), qf);
                         return M;
