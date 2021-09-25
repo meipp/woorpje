@@ -29,7 +29,7 @@ namespace RegularEncoding {
 
         class NFA {
         private:
-            std::set<int> epsilonClosure(int, std::set<int> ignoreStates);
+            std::set<int> epsilonClosure(int, std::set<int>& ignoreStates);
 
             int nQ = 0;
             std::map<int, std::set<std::pair<Words::Terminal *, int>>> delta;
