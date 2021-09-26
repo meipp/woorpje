@@ -555,48 +555,9 @@ namespace RegularEncoding {
 
 
         start = high_resolution_clock::now();
-        LengthAbstraction::UNFALengthAbstractionBuilder builder(M);
-
-        LengthAbstraction::ArithmeticProgressions rAbs = builder.forState(M.getInitialState());
 
 
-        satewiseLengthAbstraction[M.getInitialState()] = make_shared<LengthAbstraction::ArithmeticProgressions>(rAbs);
 
-
-        bool lenghtOk = false;
-        for (int l = numTerminals(filledPat); l <= filledPat.size(); l++) {
-            if (rAbs.contains(l)) {
-                lenghtOk = true;
-                break;
-            }
-        }
-        if (!lenghtOk) {
-            // Can't be satisfied
-            cout << "\t - Length abstraction not satisfied\n";
-            Glucose::Var v = solver.newVar();
-            stop = chrono::high_resolution_clock::now();
-            duration = chrono::duration_cast<milliseconds>(stop - start);
-            profiler.timeLengthAbstraction = duration.count();
-            return set<set<int>>{set<int>{v}, set<int>{-v}};
-        }
-
-        //#pragma omp parallel
-        {
-            //omp_set_num_threads(omp_get_num_procs());
-            //#pragma omp parallel for 
-            for (int q = 1; q < M.numStates(); q++) {
-                auto rabs = builder.forStateComplete(q);
-                #pragma omp critical
-                satewiseLengthAbstraction[q] = make_shared<LengthAbstraction::ArithmeticProgressions>(rabs);
-
-            }
-        }
-
-
-        stop = chrono::high_resolution_clock::now();
-        duration = chrono::duration_cast<milliseconds>(stop - start);
-        profiler.timeLengthAbstraction = duration.count();
-        cout << "\t - Built length abstraction for each state. Took " << duration.count() << "ms\n";
 
         start = high_resolution_clock::now();
 
@@ -743,18 +704,6 @@ namespace RegularEncoding {
             for (auto &target: trans.second) {
                 for (int i = 0; i < filledPat.size(); i++) {
 
-
-                    bool lengthOk = false;
-                    for (int lb = numTerminals(filledPat, i); lb <= filledPat.size() - i; lb++) {
-                        if (satewiseLengthAbstraction[trans.first]->contains(lb - i)) {
-                            lengthOk = true;
-                            break;
-                        }
-                    }
-                    if (!lengthOk) {
-                        continue;
-                    }
-
                     vector<PLFormula> clause;
 
                     int k;
@@ -837,42 +786,33 @@ namespace RegularEncoding {
         int succVar = -stateVars[make_pair(q, i)];
         disj.push_back(PLFormula::lit(succVar));
 
-        bool lengthOk = false;
-        for (int lb = numTerminals(filledPat, i); lb <= filledPat.size() - i; lb++) {
-            if (satewiseLengthAbstraction[q]->contains(lb)) {
-                lengthOk = true;
-                break;
+;
+        for (auto qh: preds) {
+
+            int predVar = stateVars[make_pair(qh.second, currentPos)];
+            // word
+            int k;
+            if (qh.first->isEpsilon()) {
+                k = sigmaSize;
+            } else {
+                k = tIndices->at(qh.first);
             }
-        }
-
-
-        if (lengthOk) {
-            for (auto qh: preds) {
-
-                int predVar = stateVars[make_pair(qh.second, currentPos)];
-                // word
-                int k;
-                if (qh.first->isEpsilon()) {
-                    k = sigmaSize;
-                } else {
-                    k = tIndices->at(qh.first);
-                }
-                int word;
-                if (filledPat.at(currentPos).isTerminal()) {
-                    int ci = filledPat[currentPos].getTerminalIndex();
-                    word = constantsVars->at(make_pair(ci, k));
-                } else {
-                    pair<int, int> xij = filledPat[currentPos].getVarIndex();
-                    word = variableVars->at(make_pair(xij, k));
-                }
-
-
-                auto predF = PLFormula::land(vector<PLFormula>{PLFormula::lit(word), PLFormula::lit(predVar)});
-                conj.push_back(predF);
-
-
+            int word;
+            if (filledPat.at(currentPos).isTerminal()) {
+                int ci = filledPat[currentPos].getTerminalIndex();
+                word = constantsVars->at(make_pair(ci, k));
+            } else {
+                pair<int, int> xij = filledPat[currentPos].getVarIndex();
+                word = variableVars->at(make_pair(xij, k));
             }
+
+
+            auto predF = PLFormula::land(vector<PLFormula>{PLFormula::lit(word), PLFormula::lit(predVar)});
+            conj.push_back(predF);
+
+
         }
+        
         if (!conj.empty()) {
             disj.push_back(PLFormula::lor(conj));
         }
