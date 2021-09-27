@@ -1739,6 +1739,8 @@ template<bool newencode = true>
             profiler->starHeight = recon->expr->starHeight();
             profiler->numStars = recon->expr->numStars();
             profiler->depth = recon->expr->depth();
+            profiler->longestLiteral = recon->expr->longestLiteral();
+            profiler->shortestLiteral = recon->expr->shortesLiteral();
 
 
             set<set<int>> clauses;

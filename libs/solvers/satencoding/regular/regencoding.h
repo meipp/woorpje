@@ -370,6 +370,8 @@ namespace RegularEncoding {
         int bound;
         int exprComplexity;
         int depth;
+        int longestLiteral;
+        int shortestLiteral;
         int numStars;
         int starHeight;
         unsigned long timeEncoding;
