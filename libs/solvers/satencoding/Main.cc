@@ -67,6 +67,11 @@ bool terminal(char c) { return c >= 'a' && c <= 'z'; }
 
 bool variable(char c) { return c >= 'A' && c <= 'Z'; }
 
+namespace commons {
+    void profileToCsv(const std::vector<RegularEncoding::EncodingProfiler> &profiles, std::string prefix = "");
+}
+
+
 class StreamWrapper {
 public:
     StreamWrapper(std::ostream *os) : out(os) {}
@@ -1734,9 +1739,15 @@ template<bool newencode = true>
             profiler->starHeight = recon->expr->starHeight();
             profiler->numStars = recon->expr->numStars();
             profiler->depth = recon->expr->depth();
+
+
             set<set<int>> clauses;
             auto startEnc = chrono::high_resolution_clock::now();
             if (AUTOMATON) {
+                profiler->automaton = true;
+
+                commons::profileToCsv(vector<RegularEncoding::EncodingProfiler>{*profiler}, "try_");
+
                 RegularEncoding::AutomatonProfiler aprofiler{};
                 RegularEncoding::AutomatonEncoder regEncoder(*recon, context, S, sigmaSize,
                                                              &vIndices,
@@ -1744,7 +1755,6 @@ template<bool newencode = true>
                                                              index2t, aprofiler);
                 clauses = regEncoder.encode();
                 profiler->automatonProfiler = aprofiler;
-                profiler->automaton = true;
             } else {
                 RegularEncoding::InductiveProfiler iprofiler{};
                 RegularEncoding::InductiveEncoder regEncoder(*recon, context, S, sigmaSize,

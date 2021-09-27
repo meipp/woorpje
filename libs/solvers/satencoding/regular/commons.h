@@ -6,6 +6,7 @@
 #include <numeric>
 #include <functional>
 #include <algorithm>
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -163,6 +164,82 @@ namespace commons {
         return make_tuple(b, x0, y0);
     }
 
+
+
+    void profileToCsv(const std::vector<RegularEncoding::EncodingProfiler> &profiles, string prefix = "") {
+        std::ofstream outfile;
+
+        if (profiles.empty()) {
+            return;
+        }
+
+        bool automaton = false;
+        bool inductive = false;
+        for (auto prof: profiles) {
+            if (prof.automaton) {
+                automaton = true;
+            }
+            if (!prof.automaton) {
+                inductive = true;
+            }
+        }
+
+        if (automaton && inductive) {
+            throw std::runtime_error("Can't mix inductive and automaton when profiling");
+        }
+
+
+        std::string filename = prefix+"profiling_";
+        if (automaton) {
+            filename += "automaton.csv";
+        } else {
+            filename += "inductive.csv";
+        }
+
+
+
+        struct stat buffer;
+        // Does not exist, write headers
+
+        if (stat(filename.c_str(), &buffer) != 0) {
+            outfile.open(filename, std::ios_base::app);
+            outfile << "bound;exprComplexity;exprDepth;starHeight;numStars;patternSize;timeEncoding;timeSolving;timeTotal;sat;";
+            if (automaton) {
+                outfile << "timeNFA;timeLengthAbstraction;timeFormulaTransition;timeFormulaPredecessor;timeTseytinPredecessor\n";
+            } else {
+                outfile << "timeLengthAbstraction;skipped;timeFormula;timeTseytin\n";
+            }
+            outfile.close();
+        }
+
+        outfile.open(filename, std::ios_base::app);
+
+        if (!outfile.good()) {
+            std::cout << "[*] Could not write profilings\n";
+            return;
+        }
+
+        for (auto p: profiles) {
+            int patternSize;
+            if (automaton) {
+                patternSize = p.automatonProfiler.patternSize;
+            } else {
+                patternSize = p.inductiveProfiler.patternSize;
+            }
+
+            outfile << std::boolalpha << p.bound << ";" << p.exprComplexity << ";" << p.depth << ";" << p.starHeight << ";" << p.numStars << ";"<< patternSize << ";" << p.timeEncoding << ";"
+                    << p.timeSolving << ";" << p.timeTotal << ";" << p.sat << ";";
+            if (automaton) {
+                outfile << p.automatonProfiler.timeNFA << ";" << p.automatonProfiler.timeLengthAbstraction << ";" << p.automatonProfiler.timeFormulaTransition
+                        << ";" << p.automatonProfiler.timeFormulaPredecessor << ";"
+                        << p.automatonProfiler.timeTseytinPredecessor;
+            } else {
+                outfile << p.inductiveProfiler.timeLengthAbstraction << ";" << p.inductiveProfiler.skipped << ";"
+                        << p.inductiveProfiler.timeFormula << ";" << p.inductiveProfiler.timeTseytin;
+            }
+            outfile << "\n";
+        }
+    }
 
 
 }
