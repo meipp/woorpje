@@ -1756,6 +1756,8 @@ template<bool newencode = true>
                 clauses = regEncoder.encode();
                 profiler->automatonProfiler = aprofiler;
             } else {
+                profiler->automaton = false;
+                commons::profileToCsv(vector<RegularEncoding::EncodingProfiler>{*profiler}, "try_");
                 RegularEncoding::InductiveProfiler iprofiler{};
                 RegularEncoding::InductiveEncoder regEncoder(*recon, context, S, sigmaSize,
                                                              &vIndices,
@@ -1763,7 +1765,7 @@ template<bool newencode = true>
                                                              index2t, iprofiler);
                 clauses = regEncoder.encode();
                 profiler->inductiveProfiler = iprofiler;
-                profiler->automaton = false;
+                
             }
             auto stopEnc = chrono::high_resolution_clock::now();
             auto encTime = chrono::duration_cast<chrono::milliseconds>(stopEnc-startEnc);
