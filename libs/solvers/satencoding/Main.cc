@@ -1743,7 +1743,7 @@ template<bool newencode = true>
             profiler->shortestLiteral = recon->expr->shortesLiteral();
 
             if (recon->expr->isEmpty()) {
-                Words::Solvers::Result::NoSolution; 
+                return Words::Solvers::Result::NoSolution; 
             }
             set<set<int>> clauses;
             auto startEnc = chrono::high_resolution_clock::now();
