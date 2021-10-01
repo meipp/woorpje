@@ -148,6 +148,8 @@ namespace Words {
                         if (ret == Words::Solvers::Result::HasSolution) {
                             commons::profileToCsv(profilers);
                             return ret;
+                        }  else if (ret == Words::Solvers::Result::DefinitelyNoSolution) {
+                            return ret;
                         }
                     } catch (Glucose::OutOfMemoryException &e) {
                         throw Words::Solvers::OutOfMemoryException();

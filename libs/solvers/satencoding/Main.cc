@@ -1724,7 +1724,7 @@ template<bool newencode = true>
         }
 
 
-        bool AUTOMATON = true;
+        bool AUTOMATON = false;
 
         //Handle regular constraints
         cout << "Current bound: " << bound << "\n";
@@ -1743,7 +1743,7 @@ template<bool newencode = true>
             profiler->shortestLiteral = recon->expr->shortesLiteral();
 
             if (recon->expr->isEmpty()) {
-                return Words::Solvers::Result::NoSolution; 
+                return Words::Solvers::Result::DefinitelyNoSolution; 
             }
             set<set<int>> clauses;
             auto startEnc = chrono::high_resolution_clock::now();
