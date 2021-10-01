@@ -23,6 +23,8 @@ namespace Words {
             virtual int starHeight() {return 0;};
             virtual int depth() {return 0;};
 
+            virtual bool isEmpty() {return false;};
+
             std::string toString() {
                 if (str == "-") {
                     std::stringstream ss;
@@ -81,6 +83,8 @@ namespace Words {
                 return false;
             }
 
+            bool isEmpty() {return true;}
+
             virtual bool isLeaf() { return true; }
 
             int longestLiteral(){return 0;}
@@ -121,6 +125,8 @@ namespace Words {
             size_t characters() override {
                 return word.characters();
             }
+
+            bool isEmpty() {return false;}
 
             long complexity(){return characters();}
 
@@ -226,6 +232,30 @@ namespace Words {
                         std::vector<std::shared_ptr<RegNode>> chdRev{getChildren()[0]->reverse()};
                         return std::make_shared<RegOperation>(RegOperation(RegularOperator::STAR, chdRev));
                         break;
+                    }
+                }
+            };
+
+            bool isEmpty() {
+                switch (op) {
+                    case RegularOperator::UNION: {
+                        for (auto ch: getChildren()) {
+                            if (!ch->isEmpty()) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                    case RegularOperator::CONCAT: {
+                        for (auto ch: getChildren()) {
+                            if (ch->isEmpty()) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                    case RegularOperator::STAR: {
+                        return children[0]->isEmpty();
                     }
                 }
             };

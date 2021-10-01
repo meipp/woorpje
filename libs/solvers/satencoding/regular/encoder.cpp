@@ -65,7 +65,6 @@ namespace RegularEncoding {
         constraint.toString(cout);
         cout << "\n";
 
-        omp_set_num_threads(omp_get_num_procs());
 
         Words::Word pattern = constraint.pattern;
         shared_ptr<Words::RegularConstraints::RegNode> expr = constraint.expr;
@@ -182,7 +181,7 @@ namespace RegularEncoding {
         vector<PLFormula> disj{};
         LengthAbstraction::ArithmeticProgressions la = LengthAbstraction::fromExpression(*expression);
 
-        #pragma omp parallel for
+
         for (const auto &c: expression->getChildren()) {
             bool lengthOk = false;
             for (int i = numTerminals(filledPat); i <= filledPat.size(); i++) {
@@ -194,7 +193,6 @@ namespace RegularEncoding {
             }
             if (lengthOk) {
                 PLFormula f = doEncode(filledPat, c);
-                #pragma omp critical
                 disj.push_back(f);
             }
         }
@@ -283,7 +281,6 @@ namespace RegularEncoding {
         LengthAbstraction::ArithmeticProgressions laL = LengthAbstraction::fromExpression(*L);
         LengthAbstraction::ArithmeticProgressions laR = LengthAbstraction::fromExpression(*R);
 
-        #pragma omp parallel for
         for (int i = 0; i <= int(filledPat.size()); i++) {
 
             vector<FilledPos> prefix(filledPat.begin(), filledPat.begin() + i);
@@ -321,7 +318,6 @@ namespace RegularEncoding {
 
             PLFormula current = PLFormula::land(vector<PLFormula>{fl, fr});
 
-            #pragma omp critical
             disj.push_back(current);
         }
 
@@ -438,7 +434,6 @@ namespace RegularEncoding {
 
         // Both are non-empty
         vector<PLFormula> disj{};
-        #pragma omp parallel for
         for (int j = -1; j < int(expressionIdx.size()); j++) {
             vector<PLFormula> conj{};
             // Match prefix of size j+1
@@ -484,10 +479,8 @@ namespace RegularEncoding {
             }
 
             if (conj.size() == 1) {
-                #pragma omp critical
                 disj.push_back(conj[0]);
             } else if (conj.size() > 1) {
-                #pragma omp critical
                 disj.push_back(PLFormula::land(conj));
             }
         }
@@ -580,17 +573,16 @@ namespace RegularEncoding {
             return set<set<int>>{set<int>{v}, set<int>{-v}};
         }
 
-        //#pragma omp parallel
-        {
-            //omp_set_num_threads(omp_get_num_procs());
-            //#pragma omp parallel for 
+
+
+
             for (int q = 1; q < M.numStates(); q++) {
                 auto rabs = builder.forStateComplete(q);
-                #pragma omp critical
+
                 satewiseLengthAbstraction[q] = make_shared<LengthAbstraction::ArithmeticProgressions>(rabs);
 
             }
-        }
+        
 
 
         stop = chrono::high_resolution_clock::now();

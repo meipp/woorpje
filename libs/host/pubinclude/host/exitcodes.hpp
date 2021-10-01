@@ -22,7 +22,7 @@ namespace Words {
 		os << "Found a solution" << std::endl << "sat" << std::endl;
 		  break;
 	  case ExitCode::NoSolution:
-		os << "Equation has no solution due to set bounds" << std::endl << "unsat" << std::endl;
+		os << "Equation has no solution due to set bounds" << std::endl << "unknown" << std::endl;
 		break;
 	  case ExitCode::DefinitelyNoSolution:
 		os << "Equation has no solution" << std::endl << "unsat" << std::endl;

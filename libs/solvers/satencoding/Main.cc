@@ -1742,7 +1742,9 @@ template<bool newencode = true>
             profiler->longestLiteral = recon->expr->longestLiteral();
             profiler->shortestLiteral = recon->expr->shortesLiteral();
 
-
+            if (recon->expr->isEmpty()) {
+                Words::Solvers::Result::NoSolution; 
+            }
             set<set<int>> clauses;
             auto startEnc = chrono::high_resolution_clock::now();
             if (AUTOMATON) {
@@ -1756,6 +1758,7 @@ template<bool newencode = true>
                                                              &maxPadding, &tIndices, &variableVars, &constantsVars,
                                                              index2t, aprofiler);
                 clauses = regEncoder.encode();
+                
                 profiler->automatonProfiler = aprofiler;
             } else {
                 profiler->automaton = false;
