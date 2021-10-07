@@ -461,11 +461,11 @@ namespace RegularEncoding {
 
                     // Remaining of this variable must also be set to lambda
                     int k = j + 2;
-                    while (k < filledPat.size() && filledPat[k].isVariable()) {
-                        if (filledPat[k].getVarIndex().first == xij.first) {
-                            auto wordLambda = variableVars->at(make_pair(filledPat[k].getVarIndex(), sigmaSize));
-                            conj.push_back(PLFormula::lit(wordLambda));
-                        }
+                    while (k < filledPat.size() && filledPat[k].isVariable() && filledPat[k].getVarIndex().first == xij.first) {
+                        
+                        auto wordLambda = variableVars->at(make_pair(filledPat[k].getVarIndex(), sigmaSize));
+                        conj.push_back(PLFormula::lit(wordLambda));
+                        
                         k++;
                     }
 
