@@ -1,0 +1,5 @@
+(set-logic QF_S)
+(declare-fun A () String)
+(declare-fun B () String)
+(assert (str.in_re (str.++  (str.++ (str.++ B "c") A ))  (str.to_re "abc") ))
+(check-sat)

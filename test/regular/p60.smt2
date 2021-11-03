@@ -1,0 +1,8 @@
+(set-logic QF_S)
+(declare-fun A () String)
+(declare-fun B () String)
+(declare-fun C () String)
+(declare-fun D () String)
+(declare-fun E () String)
+(assert (str.in_re (str.++ E (str.++ B (str.++ (str.++ C "d")(str.++ D (str.++ A "opjoqphz"))))) (re.union (re.++ (str.to_re "yed") (str.to_re "eopjoqphz")) (re.++ (str.to_re "ekjxeicgzbeicybec") (str.to_re "ihdczzvcwyvjskkypsud")))))
+(check-sat)

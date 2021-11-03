@@ -401,7 +401,6 @@ namespace RegularEncoding {
             skipped++;
             return ffalse;
         }
-
         if (expressionIdx.empty()) {
 
             if (filledPat.empty()) {
@@ -435,12 +434,24 @@ namespace RegularEncoding {
         // Both are non-empty
         vector<PLFormula> disj{};
         for (int j = -1; j < int(expressionIdx.size()); j++) {
+            
+            // Skip prefixes of size j where j+1 is terminal
+            if (j + 1 < filledPat.size() && filledPat[j + 1].isTerminal()) {
+                // Unsat, cant set terminal to lambda
+                continue;
+            }
+
+            bool valid = true;
             vector<PLFormula> conj{};
             // Match prefix of size j+1
             for (int i = 0; i <= j; i++) {
                 int k = expressionIdx[i];
                 if (filledPat[i].isTerminal()) {
                     int ci = filledPat[i].getTerminalIndex();
+                    if (ci != k) {
+                        valid = false;
+                        break;
+                    }
                     auto word = constantsVars->at(make_pair(ci, k));
                     conj.push_back(PLFormula::lit(word));
                 } else {
@@ -449,33 +460,32 @@ namespace RegularEncoding {
                     conj.push_back(PLFormula::lit(word));
                 }
             }
+            if (!valid) {
+                break;
+            }
+
             // Match j+1-th position in pat to lambda and match pattern[j+2:] to expression[j:]
             if (j + 1 < filledPat.size()) {
-                if (filledPat[j + 1].isTerminal()) {
-                    // Unsat, cant set terminal to lambda
-                    continue;
-                } else {
-                    pair<int, int> xij = filledPat[j + 1].getVarIndex();
-                    auto word = variableVars->at(make_pair(xij, sigmaSize));
-                    conj.push_back(PLFormula::lit(word));
+                pair<int, int> xij = filledPat[j + 1].getVarIndex();
+                auto word = variableVars->at(make_pair(xij, sigmaSize));
+                conj.push_back(PLFormula::lit(word));
 
-                    // Remaining of this variable must also be set to lambda
-                    int k = j + 2;
-                    while (k < filledPat.size() && filledPat[k].isVariable() && filledPat[k].getVarIndex().first == xij.first) {
-                        
-                        auto wordLambda = variableVars->at(make_pair(filledPat[k].getVarIndex(), sigmaSize));
-                        conj.push_back(PLFormula::lit(wordLambda));
-                        
-                        k++;
-                    }
-
-
-                    vector<FilledPos> suffixPattern(filledPat.begin() + k, filledPat.end());
-                    vector<int> suffixExpression(expressionIdx.begin() + j + 1, expressionIdx.end());
-
-                    PLFormula suffFormula = encodeWord(suffixPattern, suffixExpression);
-                    conj.push_back(suffFormula);
+                // Remaining of this variable must also be set to lambda
+                int k = j + 2;
+                while (k < filledPat.size() && filledPat[k].isVariable() && filledPat[k].getVarIndex().first == xij.first) {
+                    
+                    auto wordLambda = variableVars->at(make_pair(filledPat[k].getVarIndex(), sigmaSize));
+                    conj.push_back(PLFormula::lit(wordLambda));
+                    
+                    k++;
                 }
+
+
+                vector<FilledPos> suffixPattern(filledPat.begin() + k, filledPat.end());
+                vector<int> suffixExpression(expressionIdx.begin() + j + 1, expressionIdx.end());
+
+                PLFormula suffFormula = encodeWord(suffixPattern, suffixExpression);
+                conj.push_back(suffFormula); 
             }
 
             if (conj.size() == 1) {
@@ -486,7 +496,7 @@ namespace RegularEncoding {
         }
 
         if (disj.empty()) {
-            return ftrue;
+            return ffalse;
         } else if (disj.size() == 1) {
             return disj[0];
         } else {
@@ -620,7 +630,8 @@ namespace RegularEncoding {
             }
         }
 
-        set<pair<int, int>> tmpv{};
+        
+        set<pair<int, int>> tmpv{};       
         vector<PLFormula> predFormulae;
         for (auto qf: Mxi.getFinalStates()) {
             PLFormula predPart = encodePredNew(Mxi, filledPat, qf, (int) filledPat.size(), tmpv, pred);
@@ -628,11 +639,15 @@ namespace RegularEncoding {
             predFormulae.push_back(predPart);
 
         }
-
         PLFormula predecessor = PLFormula::land(predFormulae);
         if (predFormulae.size() == 1) {
             predecessor = predFormulae[0];
         }
+
+        //OLD ITERATIVE APPROACH 
+        //PLFormula predecessor = encodePredecessor(Mxi, filledPat);
+        
+
         stop = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<milliseconds>(stop - start);
         profiler.timeFormulaPredecessor = duration.count();
@@ -652,12 +667,7 @@ namespace RegularEncoding {
 
 
 
-        /* OLD ITERATIVE APPROACH
-        PLFormula predecessor = encodePredecessor(Mxi, filledPat);
-        set<set<int>> predecessorCnf = tseytin_cnf(predecessor, solver);
-        for (const auto &clause: predecessorCnf) {
-            cnf.insert(clause);
-        }*/
+        
 
 
 
@@ -729,6 +739,116 @@ namespace RegularEncoding {
 
         return PLFormula::land(vector<PLFormula>{ffalse});
     }
+    
+   PLFormula AutomatonEncoder::encodePredecessor(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat) {
+        // calc pred
+        map<int, set<pair<Words::Terminal *, int>>> pred;
+        for (auto &trans: Mxi.getDelta()) {
+            int qsrc = trans.first;
+            for (auto &target: trans.second) {
+                Words::Terminal *label = target.first;
+                int qdst = target.second;
+                if (pred.count(qdst) == 1) {
+                    pred[qdst].insert(make_pair(label, qsrc));
+                } else {
+                    pred[qdst] = set<pair<Words::Terminal *, int>>{make_pair(label, qsrc)};
+                }
+            }
+        }
+
+        set<pair<int, int>> visited{};
+
+
+        vector<PLFormula> disj;
+        for (int i = filledPat.size(); i >= 1; i--) {
+            for (int q = Mxi.numStates()-1; q >= 0; q--) {
+            
+                if (visited.count(make_pair(q, i))) {
+                    continue;
+                }
+                 
+                int currentPos = i-1; // Current position in pattern
+                set<pair<Words::Terminal *, int>> preds{}; // Predecessors of q
+                for (auto t: pred[q]) {
+                    if (filledPat.at(currentPos).isTerminal()) {
+                        if (!t.first->isEpsilon() && tIndices->at(t.first) == filledPat[currentPos].getTerminalIndex()) {
+                            preds.insert(t);
+                        }
+                    } else {
+                        preds.insert(t);
+                    }
+                }
+                
+                // Go back while reading constants in the pattern from right to left
+                while (currentPos - 1 >= 1 && filledPat.at(currentPos - 1).isTerminal()) {
+                    set<pair<Words::Terminal *, int>> predPreds{};
+                    for (auto p: preds) {
+                        for (auto pp: pred[p.second]) { // Predecessors of p
+                            if (!pp.first->isEpsilon() &&
+                                tIndices->at(pp.first) == filledPat.at(currentPos - 1).getTerminalIndex()) {
+                                predPreds.insert(pp);
+
+                            } else if (pp.first->isEpsilon()) {
+                                predPreds.insert(pp);
+                            }
+                        }
+                        visited.insert(make_pair(p.second, currentPos));
+                    }
+                    preds = predPreds;
+                    currentPos--;
+                }
+
+                vector<PLFormula> pred_q_disj; // S_q^i -> (\/ {(S_pr^i /\ w)})
+                PLFormula sqi = PLFormula::lit(-stateVars[make_pair(q, i)]); // S_q^i
+                pred_q_disj.push_back(sqi);
+                if (preds.size() > 0) {
+                    // Has predecessor(s)
+                    for (auto q_pred: preds) {
+
+                        PLFormula sqip = PLFormula::lit(stateVars[make_pair(q_pred.second, currentPos)]); // S_q'^i
+
+                        vector<PLFormula> conj;
+                        int word;
+                        int k;
+                        if (q_pred.first->isEpsilon()) {
+                            k = sigmaSize;
+                        } else {
+                            k = tIndices->at(q_pred.first);
+                        }
+                        if (filledPat[currentPos].isTerminal()) {
+                            int ci = filledPat[currentPos].getTerminalIndex();
+                            if (ci != k) {
+                                // UNSAT!
+                                continue;
+                            }
+                            word = constantsVars->at(make_pair(ci, k));
+                        } else {
+                            pair<int, int> xij = filledPat[currentPos].getVarIndex();
+                            word = variableVars->at(make_pair(xij, k));
+                        }
+                        conj.push_back(sqip);
+                        conj.push_back(PLFormula::lit(word));
+
+                        pred_q_disj.push_back(PLFormula::land(conj));
+                    }
+                    disj.push_back(PLFormula::lor(pred_q_disj));
+                } else {
+                    disj.push_back(sqi);
+                }
+            }
+        }
+
+        if (disj.empty()) {
+            // TODO: FALSE or TRUE?
+            return ffalse;
+        } else if (disj.size() == 1) {
+            return disj[0];
+        } else {
+            return PLFormula::land(disj);
+        }
+    }
+
+
 
 
     PLFormula AutomatonEncoder::encodePredNew(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat, int q, int i,
@@ -739,9 +859,8 @@ namespace RegularEncoding {
         visited.insert(make_pair(q, i));
         vector<PLFormula> f{};
 
-        int currentPos = i - 1;
-        set<pair<Words::Terminal *, int>> preds{};
-        set<pair<int, int>> unreachable{};
+        int currentPos = i - 1; // Position of i in the pattern
+        set<pair<Words::Terminal *, int>> preds{}; // Predecessors for currentPos
         for (auto t: pred[q]) {
             if (filledPat.at(currentPos).isTerminal()) {
                 if (!t.first->isEpsilon() && tIndices->at(t.first) == filledPat[currentPos].getTerminalIndex()) {
@@ -753,15 +872,15 @@ namespace RegularEncoding {
         }
 
         // Go back while reading constants in the pattern from right to left
-        while (currentPos - 1 >= 0 && filledPat[currentPos - 1].isTerminal()) {
+        
+        while (filledPat[i - 1].isTerminal() && currentPos - 1 >= 0 && filledPat[currentPos - 1].isTerminal()) {
             set<pair<Words::Terminal *, int>> predPreds{};
             for (auto p: preds) {
                 for (auto pp: pred[p.second]) {
-                    if (!pp.first->isEpsilon() &&
-                        tIndices->at(pp.first) == filledPat.at(currentPos - 1).getTerminalIndex()) {
+                    if ((!pp.first->isEpsilon() && tIndices->at(pp.first) == filledPat.at(currentPos - 1).getTerminalIndex())) {
                         predPreds.insert(pp);
 
-                    }
+                    } 
                 }
                 visited.insert(make_pair(p.second, currentPos));
             }
@@ -770,7 +889,7 @@ namespace RegularEncoding {
         }
 
 
-        // If preds is empty, we now that Sqi has no valid predecessor and we'll encode -Sqi.
+        // If preds is empty, we know that Sqi has no valid predecessor and we'll encode -Sqi.
         vector<PLFormula> disj;
         // For all reachable states q' in succ, encode that q is the predecessor after reading i symbols
         auto delta = Mxi.getDelta();
@@ -779,7 +898,6 @@ namespace RegularEncoding {
         int succVar = -stateVars[make_pair(q, i)];
         disj.push_back(PLFormula::lit(succVar));
 
-;
         for (auto qh: preds) {
 
             int predVar = stateVars[make_pair(qh.second, currentPos)];
