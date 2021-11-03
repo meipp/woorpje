@@ -1730,7 +1730,6 @@ template<bool newencode = true>
         cout << "Current bound: " << bound << "\n";
         profiler->bound = (int) bound;
 
-        cout << "HIER\n";
 
         for (const auto &recon: input_options.recons) {
 
@@ -1741,10 +1740,8 @@ template<bool newencode = true>
             profiler->depth = recon->expr->depth();
             profiler->longestLiteral = recon->expr->longestLiteral();
             profiler->shortestLiteral = recon->expr->shortesLiteral();
-            cout << "HIER2\n";
             if (recon->expr->isEmpty()) {
                 cout << recon->expr->toString();
-                cout << "HIER3\n";
                 return Words::Solvers::Result::DefinitelyNoSolution; 
             }
             set<set<int>> clauses;

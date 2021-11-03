@@ -740,7 +740,11 @@ namespace RegularEncoding {
         return PLFormula::land(vector<PLFormula>{ffalse});
     }
     
-   PLFormula AutomatonEncoder::encodePredecessor(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat) {
+
+    /**
+     * Deprecated, use AutomatonEncoder::encodePredNew
+     */
+    PLFormula AutomatonEncoder::encodePredecessor(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat) {
         // calc pred
         map<int, set<pair<Words::Terminal *, int>>> pred;
         for (auto &trans: Mxi.getDelta()) {
