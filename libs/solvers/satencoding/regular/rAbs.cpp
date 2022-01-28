@@ -597,9 +597,10 @@ namespace RegularEncoding {
         }
 
 
-        vector<vector<bool>> multiply(vector<vector<bool>>& a, vector<vector<bool>>& b) {
+        std::pair<vector<vector<bool>>, bool> multiply(vector<vector<bool>>& a, vector<vector<bool>>& b) {
             size_t N = a.size();
             vector<vector<bool>> res(N, vector<bool>(N, false));
+            bool allZero = true;
             for (int row = 0; row < N; row ++) {
                 for (int col = 0; col < N; col++) {
                     bool elem = false;
@@ -607,9 +608,12 @@ namespace RegularEncoding {
                         elem = elem | (a[row][i] & b[i][col]);
                     }
                     res[row][col] = elem;
+                    if (elem) {
+                        allZero = false;
+                    };
                 }
             }
-            return res;
+            return std::make_pair(res, allZero);
         }
 
         void print(vector<vector<bool>>& m) {
@@ -626,7 +630,11 @@ namespace RegularEncoding {
             vector<vector<vector<bool>>> waymatrices(k+1, vector<vector<bool>>(matrix.size(), vector<bool>(matrix.size(), false)));
             waymatrices[1] = matrix;
             for (int kk = 2; kk <= k; kk++) {
-                waymatrices[kk] = multiply(waymatrices[kk-1], matrix);
+                auto mult =  multiply(waymatrices[kk-1], matrix);
+                waymatrices[kk] = std::get<0>(mult);
+                if (std::get<1>(mult)) {
+                    break;
+                }
                 /*print(waymatrices[kk-1]);
                 cout << "times\n";
                 print(matrix);
