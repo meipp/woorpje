@@ -284,8 +284,6 @@ namespace RegularEncoding {
 
             ArithmeticProgressions forStateComplete(int q);
 
-
-
         private:
             Automaton::NFA nfa;
             int N;
@@ -313,6 +311,8 @@ namespace RegularEncoding {
             int sl(int q, const std::set<int>& ignore);
 
         };
+
+        std::vector<std::vector<std::vector<bool>>> waymatrix(Automaton::NFA& nfa, int k);
 
     }
 
@@ -528,6 +528,7 @@ namespace RegularEncoding {
         std::map<int, std::shared_ptr<std::set<int>>> reachable;
 
         AutomatonProfiler& profiler;
+        std::vector<std::vector<std::vector<bool>>> waymatrix;
 
     };
 

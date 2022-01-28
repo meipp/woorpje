@@ -4,8 +4,8 @@
 
 (assert (= A A))
 
-(assert (str.in_re (str.++ "c" A)
-    (re.union
+(assert (str.in_re (str.++  A)
+    (re.++
         (str.to_re "bb")
         (str.to_re "a")
     )

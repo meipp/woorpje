@@ -578,5 +578,66 @@ namespace RegularEncoding {
         }
 
 
+        vector<vector<bool>> nfa2matrix(Automaton::NFA& nfa) {
+            int n = nfa.numStates();
+            vector<vector<bool>> matrix(n);
+            for (int i = 0; i < n; i++) {
+                vector<bool> row(n, false);
+                matrix[i] = row;
+            }
+
+            for (const auto& trans: nfa.getDelta()) {
+                int qsrc = trans.first;
+                for (auto target: trans.second) {
+                    int qt = target.second;
+                    matrix[qsrc][qt] = true;
+                }
+            }
+            return matrix;
+        }
+
+
+        vector<vector<bool>> multiply(vector<vector<bool>>& a, vector<vector<bool>>& b) {
+            size_t N = a.size();
+            vector<vector<bool>> res(N, vector<bool>(N, false));
+            for (int row = 0; row < N; row ++) {
+                for (int col = 0; col < N; col++) {
+                    bool elem = false;
+                    for (int i = 0; i <col; i++) {
+                        elem = elem | (a[row][i] & b[i][col]);
+                    }
+                    res[row][col] = elem;
+                }
+            }
+            return res;
+        }
+
+        void print(vector<vector<bool>>& m) {
+            for (int row = 0; row < m.size(); row++) {
+                for (int col = 0; col < m.size(); col++) {
+                    cout << m[row][col] << " ";
+                }
+                cout << std::endl;
+            }
+        }
+
+        vector<vector<vector<bool>>> waymatrix(Automaton::NFA& nfa, int k) {
+            vector<vector<bool>> matrix = nfa2matrix(nfa);
+            vector<vector<vector<bool>>> waymatrices(k+1, vector<vector<bool>>(matrix.size(), vector<bool>(matrix.size(), false)));
+            waymatrices[1] = matrix;
+            for (int kk = 2; kk <= k; kk++) {
+                waymatrices[kk] = multiply(waymatrices[kk-1], matrix);
+                /*print(waymatrices[kk-1]);
+                cout << "times\n";
+                print(matrix);
+                cout << "is\n";
+                print(waymatrices[kk]);*/
+            }
+            for (int i = 0; i < matrix.size(); i++) {
+                waymatrices[0][i][i] = true;
+            }
+            return waymatrices;
+        }
+
     }
 }

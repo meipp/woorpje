@@ -1091,54 +1091,7 @@ bool addLinearEqualityConstraint(Solver &s, map<int, int> &coefficients,
 }
 // Variables from regular language
 
-/*void printStats(Solver& solver)
-{
-  double cpu_time = cpuTime();
-  double mem_used = 0;//memUsedPeak();
-  printf("c restarts              : %"PRIu64" (%"PRIu64" conflicts in avg)\n",
-solver.starts,(solver.starts>0 ?solver.conflicts/solver.starts : 0)); printf("c
-blocked restarts      : %"PRIu64" (multiple: %"PRIu64") \n",
-solver.nbstopsrestarts,solver.nbstopsrestartssame); printf("c last block at
-restart : %"PRIu64"\n",solver.lastblockatrestart); printf("c nb ReduceDB :
-%lld\n", solver.nbReduceDB); printf("c nb removed Clauses    :
-%lld\n",solver.nbRemovedClauses); printf("c nb learnts DL2        : %lld\n",
-solver.nbDL2); printf("c nb learnts size 2     : %lld\n", solver.nbBin);
-  printf("c nb learnts size 1     : %lld\n", solver.nbUn);
 
-  printf("c conflicts             : %-12"PRIu64"   (%.0f /sec)\n",
-solver.conflicts   , solver.conflicts   /cpu_time); printf("c decisions :
-%-12"PRIu64"   (%4.2f %% random) (%.0f /sec)\n", solver.decisions,
-(float)solver.rnd_decisions*100 / (float)solver.decisions, solver.decisions
-/cpu_time); printf("c propagations          : %-12"PRIu64"   (%.0f /sec)\n",
-solver.propagations, solver.propagations/cpu_time); printf("c conflict literals
-: %-12"PRIu64"   (%4.2f %% deleted)\n", solver.tot_literals,
-(solver.max_literals - solver.tot_literals)*100 / (double)solver.max_literals);
-  printf("c nb reduced Clauses    : %lld\n",solver.nbReducedClauses);
-
-  if (mem_used != 0) printf("Memory used           : %.2f MB\n", mem_used);
-  printf("c CPU time              : %g s\n", cpu_time);
-}
-*/
-
-/*
-static Solver* solver;
-// Terminate by notifying the solver and back out gracefully. This is mainly to
-have a test-case
-// for this feature of the Solver as it may take longer than an immediate call
-to '_exit()'. static void SIGINT_interrupt(int signum) { solver->interrupt(); }
-
-// Note that '_exit()' rather than 'exit()' has to be used. The reason is that
-'exit()' calls
-// destructors and may cause deadlocks if a malloc/free function happens to be
-running (these
-// functions are guarded by locks for multithreaded use).
-static void SIGINT_exit(int signum) {
-  printf("\n"); printf("*** INTERRUPTED ***\n");
-  if (solver->verbosity > 0){
-        printStats(*solver);
-        printf("\n"); printf("*** INTERRUPTED ***\n"); }
-  _exit(1); }
-*/
 
 //=================================================================================================
 // Main:
@@ -1510,24 +1463,6 @@ setupSolverMain(Words::Options &opt) { // std::vector<std::string>& mlhs,
 
     std::map<char, std::string> subsitutions;
 
-    // Naive preprocessing
-    /*for(int i=0; i<mlhs.size();i++){
-            string rhs = mlhs[i];
-            string lhs = mrhs[i];
-            input_equations_lhs.push_back(lhs);
-            input_equations_rhs.push_back(rhs);
-    }*/
-
-    // Encode problem here
-    // assume for aXbY, i.e. terminal symbols small, variables capital letters
-    /*for(int i = 0 ; i < input_equations_lhs.size();i++){
-          readSymbols(input_equations_lhs[i]);
-          readSymbols(input_equations_rhs[i]);
-
-     }*/
-
-
-
     for (auto &eq: opt.equations) {
         readSymbols(eq.lhs);
         readSymbols(eq.rhs);
@@ -1639,7 +1574,7 @@ template<bool newencode = true>
         // index "i" equals sigma g:  x, i, sigma -> BV
 
         {
-            // Words::Solvers::Timing::Timer (tkeeper,"Encode variables ");
+            Words::Solvers::Timing::Timer (tkeeper,"Encode variables ");
             for (int i = 0; i < numVars; i++) {
                 assert(maxPadding.count(i));
                 for (int j = 0; j < maxPadding[i]; j++) {
@@ -1904,27 +1839,7 @@ template<bool newencode = true>
             substitution[index2v[i]] = std::move(sub);
         }
 
-        // To be handled by external solver
-        /*for(int i = 0 ; i < equations_lhs.size();i++){
-          cout << "---" << endl;
-          cout << " equation " << i << ": " << endl;
-          for(int j = 0 ; equations_lhs[i].count(make_pair(j, 0)) ; j++){
-                for(int k = 0 ; k < sigmaSize ; k++){
-                  assert(equations_lhs[i].count(make_pair(j,k)));
-                  if(S.modelValue(equations_lhs[i][make_pair(j,k)]) == l_True)
-                        cout << index2Terminal[k];
-                }
-          }
-          cout << " = " ;
-          for(int j = 0 ; equations_rhs[i].count(make_pair(j, 0)) ; j++){
-                for(int k = 0 ; k < sigmaSize ; k++){
-                  assert(equations_rhs[i].count(make_pair(j,k)));
-                  if(S.modelValue(equations_rhs[i][make_pair(j,k)]) == l_True)
-                        cout << index2Terminal[k];
-                }
-          }
-          cout << endl;
-          }*/
+
         if (wrap) {
             for (int t = 0; t < stateTables.size(); t++) {
                 vector<Var> &v = stateTables[t];
@@ -1953,110 +1868,6 @@ template<bool newencode = true>
     return Words::Solvers::Result::NoIdea;
 }
 
-/*
-int main(int argc, char** argv)
-{
-    setbuf(stdout, NULL);
-  printf("c\nc This is glucose 3.0 --  based on MiniSAT (Many thanks to MiniSAT
-team)\nc\n"); try { setUsageHelp("c USAGE: %s [options] <input-file>
-<result-output-file>\n\n  where input may be either in plain or gzipped
-DIMACS.\n");
-        // printf("This is MiniSat 2.0 beta\n");
-
-#if defined(__linux__)
-        fpu_control_t oldcw, newcw;
-        _FPU_GETCW(oldcw); newcw = (oldcw & ~_FPU_EXTENDED) | _FPU_DOUBLE;
-_FPU_SETCW(newcw); printf("c WARNING: for repeatability, setting FPU to use
-double precision\n"); #endif
-        // Extra options:
-        //
-        IntOption    verb   ("MAIN", "verb",   "Verbosity level (0=silent,
-1=some, 2=more).", 1, IntRange(0, 2)); BoolOption   mod   ("MAIN", "model",
-"show model.", false); IntOption    vv  ("MAIN", "vv",   "Verbosity every vv
-conflicts", 10000, IntRange(1,INT32_MAX)); IntOption    cpu_lim("MAIN",
-"cpu-lim","Limit on CPU time allowed in seconds.\n", INT32_MAX, IntRange(0,
-INT32_MAX)); IntOption    mem_lim("MAIN", "mem-lim","Limit on memory usage in
-megabytes.\n", INT32_MAX, IntRange(0, INT32_MAX)); BoolOption   squareAuto
-("MAIN", "useSquareAutomaton",   "Make the automaton the shape of a square.",
-false); BoolOption   optPrintTable   ("MAIN", "printTables",   "Print tables.",
-false);
-
-        parseOptions(argc, argv, true);
-
-        Solver S;
-        double initial_time = cpuTime();
-
-        S.verbosity = verb;
-        S.verbEveryConflicts = vv;
-        S.showModel = mod;
-        solver = &S;
-        // Use signal handlers that forcibly quit until the solver will be able
-to respond to
-        // interrupts:
-        //        signal(SIGINT, SIGINT_exit);
-        //signal(SIGXCPU,SIGINT_exit);
-
-        // Set limit on CPU-time:
-        if (cpu_lim != INT32_MAX){
-            rlimit rl;
-            getrlimit(RLIMIT_CPU, &rl);
-            if (rl.rlim_max == RLIM_INFINITY || (rlim_t)cpu_lim < rl.rlim_max){
-                rl.rlim_cur = cpu_lim;
-                if (setrlimit(RLIMIT_CPU, &rl) == -1)
-                    printf("c WARNING! Could not set resource limit:
-CPU-time.\n"); } }
-
-        // Set limit on virtual memory:
-        if (mem_lim != INT32_MAX){
-            rlim_t new_mem_lim = (rlim_t)mem_lim * 1024*1024;
-            rlimit rl;
-            getrlimit(RLIMIT_AS, &rl);
-            if (rl.rlim_max == RLIM_INFINITY || new_mem_lim < rl.rlim_max){
-                rl.rlim_cur = new_mem_lim;
-                if (setrlimit(RLIMIT_AS, &rl) == -1)
-                    printf("c WARNING! Could not set resource limit: Virtual
-memory.\n"); } }
-
-
-        trueConst = S.newVar();
-        S.addClause(mkLit(trueConst));
-        falseConst = S.newVar();
-        S.addClause(~mkLit(falseConst));
-
-        // Header format: maxPadding e d lin reg
-        // maxPadding: maximum variable length
-        // e: number of equalities
-        // d: number of disequalities
-        // lin: number of linear equalities
-        // reg: number of regular constraints
-        int e, d, lin, reg;  // upper bound on length of variables
-
-        if(! (cin >> globalMaxPadding))
-            assert(false && "invalid input format! ");
-        if(! (cin >> e))
-            assert(false && "invalid input format! ");
-        if(! (cin >> d))
-            assert(false && "invalid input format! ");
-        if(! (cin >> lin))
-            assert(false && "invalid input format! ");
-        if(! (cin >> reg))
-            assert(false && "invalid input format! ");
-
-
-        for(int i = 0 ; i < e ; i++){
-            string s1;
-            cin >> s1;
-            input_equations_lhs.push_back(s1);
-            string s2;
-            cin >> s2;
-            input_equations_rhs.push_back(s2);
-            cout << "Read " << s1 << " = " << s2 << endl;
-        }
-
-}
-
-
-*/
 
 template ::Words::Solvers::Result
 runSolver<true>(const bool squareAuto, size_t, const Words::Context &,

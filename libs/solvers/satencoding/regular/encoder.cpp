@@ -14,9 +14,12 @@ namespace RegularEncoding {
 
     namespace {
 
-        int numTerminals(vector<FilledPos> &pat, int from = 0) {
+        int numTerminals(vector<FilledPos> &pat, int from = 0, int to = -1) {
+            if (to < 0) {
+                to = pat.size();
+            }
             int ts = 0;
-            for (int i = from; i < pat.size(); i++) {
+            for (int i = from; i < to; i++) {
                 if (pat[i].isTerminal()) {
                     ts++;
                 }
@@ -32,7 +35,7 @@ namespace RegularEncoding {
      * @param pattern the pattern
      * @return a vector containing the indices of the filled pattern
      */
-    vector<FilledPos> Encoder::filledPattern(const Words::Word& pattern) {
+    vector<FilledPos> Encoder::filledPattern(const Words::Word &pattern) {
         vector<FilledPos> filledPattern{};
 
         for (auto s: pattern) {
@@ -58,6 +61,7 @@ namespace RegularEncoding {
      ************************* Inductive Encoder *************************
      *********************************************************************/
     int skipped = 0;
+
     set<set<int>> InductiveEncoder::encode() {
         skipped = 0;
         auto startEncoding = chrono::high_resolution_clock::now();
@@ -101,7 +105,7 @@ namespace RegularEncoding {
         }
 
         auto stopEncoding = chrono::high_resolution_clock::now();
-        auto durationEncoding = duration_cast<milliseconds>(stopEncoding-startEncoding);
+        auto durationEncoding = duration_cast<milliseconds>(stopEncoding - startEncoding);
         cout << "\t - CNF done, " << cnf.size() << " clauses and " << litTotal << " literals in total\n";
         cout << "[*] Encoding done. Took " << durationEncoding.count() << "ms" << endl;
         return cnf;
@@ -277,7 +281,6 @@ namespace RegularEncoding {
         }
 
 
-
         LengthAbstraction::ArithmeticProgressions laL = LengthAbstraction::fromExpression(*L);
         LengthAbstraction::ArithmeticProgressions laR = LengthAbstraction::fromExpression(*R);
 
@@ -434,7 +437,7 @@ namespace RegularEncoding {
         // Both are non-empty
         vector<PLFormula> disj{};
         for (int j = -1; j < int(expressionIdx.size()); j++) {
-            
+
             // Skip prefixes of size j where j+1 is terminal
             if (j + 1 < filledPat.size() && filledPat[j + 1].isTerminal()) {
                 // Unsat, cant set terminal to lambda
@@ -472,11 +475,12 @@ namespace RegularEncoding {
 
                 // Remaining of this variable must also be set to lambda
                 int k = j + 2;
-                while (k < filledPat.size() && filledPat[k].isVariable() && filledPat[k].getVarIndex().first == xij.first) {
-                    
+                while (k < filledPat.size() && filledPat[k].isVariable() &&
+                       filledPat[k].getVarIndex().first == xij.first) {
+
                     auto wordLambda = variableVars->at(make_pair(filledPat[k].getVarIndex(), sigmaSize));
                     conj.push_back(PLFormula::lit(wordLambda));
-                    
+
                     k++;
                 }
 
@@ -485,7 +489,7 @@ namespace RegularEncoding {
                 vector<int> suffixExpression(expressionIdx.begin() + j + 1, expressionIdx.end());
 
                 PLFormula suffFormula = encodeWord(suffixPattern, suffixExpression);
-                conj.push_back(suffFormula); 
+                conj.push_back(suffFormula);
             }
 
             if (conj.size() == 1) {
@@ -508,7 +512,6 @@ namespace RegularEncoding {
     /*********************************************************************
      ************************* Automaton Encoder *************************
      *********************************************************************/
-
     set<set<int>> AutomatonEncoder::encode() {
 
         auto total_start = high_resolution_clock::now();
@@ -557,9 +560,14 @@ namespace RegularEncoding {
              << " transitions. Took " << duration.count() << "ms\n";
 
 
+        // Waymatrix
         start = high_resolution_clock::now();
-
-
+        this->waymatrix = LengthAbstraction::waymatrix(M, filledPat.size());
+        stop = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<milliseconds>(stop - start);
+        cout << "\t - Built waymatrix with "
+             << waymatrix[0].size() << "x" << waymatrix[0].size()
+             << "states and " << filledPat.size() << " exponents. Took " << duration.count() << "ms\n";
 
 
         start = high_resolution_clock::now();
@@ -630,8 +638,8 @@ namespace RegularEncoding {
             }
         }
 
-        
-        set<pair<int, int>> tmpv{};       
+
+        set<pair<int, int>> tmpv{};
         vector<PLFormula> predFormulae;
         for (auto qf: Mxi.getFinalStates()) {
             PLFormula predPart = encodePredNew(Mxi, filledPat, qf, (int) filledPat.size(), tmpv, pred);
@@ -644,9 +652,9 @@ namespace RegularEncoding {
             predecessor = predFormulae[0];
         }
 
-        //OLD ITERATIVE APPROACH 
-        //PLFormula predecessor = encodePredecessor(Mxi, filledPat);
-        
+        // OLD ITERATIVE APPROACH
+        // PLFormula predecessor = encodePredecessor(Mxi, filledPat);
+
 
         stop = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<milliseconds>(stop - start);
@@ -663,12 +671,6 @@ namespace RegularEncoding {
         for (const auto &clause: predecessorCnf) {
             cnf.insert(clause);
         }
-
-
-
-
-        
-
 
 
         duration = duration_cast<milliseconds>(high_resolution_clock::now() - total_start);
@@ -704,10 +706,25 @@ namespace RegularEncoding {
         vector<PLFormula> disj;
 
         for (auto &trans: Mxi.getDelta()) {
-            for (auto &target: trans.second) {
-                for (int i = 0; i < filledPat.size(); i++) {
+            for (int i = 0; i < filledPat.size(); i++) {
+                for (auto &target: trans.second) {
+
 
                     vector<PLFormula> clause;
+
+                    bool lengthOk = false;
+                    for (int lb = numTerminals(filledPat, i); lb <= filledPat.size() - i; lb++) {
+                        for (int fs: Mxi.getFinalStates()) {
+                            if (this->waymatrix[lb][trans.first][fs]) {
+                                lengthOk = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!lengthOk) {
+                        continue;
+                    }
+
 
                     int k;
                     if (target.first->isEpsilon()) {
@@ -739,7 +756,7 @@ namespace RegularEncoding {
 
         return PLFormula::land(vector<PLFormula>{ffalse});
     }
-    
+
 
     /**
      * Deprecated, use AutomatonEncoder::encodePredNew
@@ -765,24 +782,41 @@ namespace RegularEncoding {
 
         vector<PLFormula> disj;
         for (int i = filledPat.size(); i >= 1; i--) {
-            for (int q = Mxi.numStates()-1; q >= 0; q--) {
-            
+            for (int q = Mxi.numStates() - 1; q >= 0; q--) {
+
                 if (visited.count(make_pair(q, i))) {
                     continue;
                 }
-                 
-                int currentPos = i-1; // Current position in pattern
+
+                bool lengthOk = false;
+                for (int lb = numTerminals(filledPat, i); lb <= filledPat.size() - i; lb++) {
+                    for (int fs: Mxi.getFinalStates()) {
+                        if (lb == 0 && fs == q) {
+                            lengthOk = true;
+                            break;
+                        }
+                        if (this->waymatrix[lb][q][fs]) {
+                            lengthOk = true;
+                            break;
+                        }
+                    }
+                }
+                if (!lengthOk) {
+                    continue;
+                }
+                int currentPos = i - 1; // Current position in pattern
                 set<pair<Words::Terminal *, int>> preds{}; // Predecessors of q
                 for (auto t: pred[q]) {
                     if (filledPat.at(currentPos).isTerminal()) {
-                        if (!t.first->isEpsilon() && tIndices->at(t.first) == filledPat[currentPos].getTerminalIndex()) {
+                        if (!t.first->isEpsilon() &&
+                            tIndices->at(t.first) == filledPat[currentPos].getTerminalIndex()) {
                             preds.insert(t);
                         }
                     } else {
                         preds.insert(t);
                     }
                 }
-                
+
                 // Go back while reading constants in the pattern from right to left
                 while (currentPos - 1 >= 1 && filledPat.at(currentPos - 1).isTerminal()) {
                     set<pair<Words::Terminal *, int>> predPreds{};
@@ -853,8 +887,8 @@ namespace RegularEncoding {
     }
 
 
-
-
+    // Encodes: If after [i] transitions in state [q], there must be a state [q'] reachable after [i]-1 transitions and
+    // an edge from [q] to [q'] labeled with [filledPat[i-1]]
     PLFormula AutomatonEncoder::encodePredNew(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat, int q, int i,
                                               set<pair<int, int>> &visited,
                                               map<int, set<pair<Words::Terminal *, int>>> &pred) {
@@ -863,8 +897,26 @@ namespace RegularEncoding {
         visited.insert(make_pair(q, i));
         vector<PLFormula> f{};
 
+
         int currentPos = i - 1; // Position of i in the pattern
-        set<pair<Words::Terminal *, int>> preds{}; // Predecessors for currentPos
+
+        bool lenghtOk = false;
+
+        for (int lb = numTerminals(filledPat, 0, i); lb <= i; lb++) {
+
+
+            if (this->waymatrix[lb][Mxi.getInitialState()][q]) {
+                lenghtOk = true;
+                break;
+            }
+        }if (!lenghtOk && i > 1) {
+            // Seems to introduce pure literals
+            int succVar = -stateVars[make_pair(q, i)];
+            return PLFormula::lit(succVar);
+        }
+
+        // Find all predecessors q' of q where there is an edge labeled with filledPat[i-1] (always the case if filledPat[i-1] is variable)
+        set<pair<Words::Terminal *, int>> preds{};
         for (auto t: pred[q]) {
             if (filledPat.at(currentPos).isTerminal()) {
                 if (!t.first->isEpsilon() && tIndices->at(t.first) == filledPat[currentPos].getTerminalIndex()) {
@@ -876,22 +928,21 @@ namespace RegularEncoding {
         }
 
         // Go back while reading constants in the pattern from right to left
-        
         while (filledPat[i - 1].isTerminal() && currentPos - 1 >= 0 && filledPat[currentPos - 1].isTerminal()) {
             set<pair<Words::Terminal *, int>> predPreds{};
             for (auto p: preds) {
                 for (auto pp: pred[p.second]) {
-                    if ((!pp.first->isEpsilon() && tIndices->at(pp.first) == filledPat.at(currentPos - 1).getTerminalIndex())) {
+                    if ((!pp.first->isEpsilon() &&
+                         tIndices->at(pp.first) == filledPat.at(currentPos - 1).getTerminalIndex())) {
                         predPreds.insert(pp);
 
-                    } 
+                    }
                 }
                 visited.insert(make_pair(p.second, currentPos));
             }
             preds = predPreds;
             currentPos--;
         }
-
 
         // If preds is empty, we know that Sqi has no valid predecessor and we'll encode -Sqi.
         vector<PLFormula> disj;
@@ -903,7 +954,6 @@ namespace RegularEncoding {
         disj.push_back(PLFormula::lit(succVar));
 
         for (auto qh: preds) {
-
             int predVar = stateVars[make_pair(qh.second, currentPos)];
             // word
             int k;
@@ -920,14 +970,10 @@ namespace RegularEncoding {
                 pair<int, int> xij = filledPat[currentPos].getVarIndex();
                 word = variableVars->at(make_pair(xij, k));
             }
-
-
             auto predF = PLFormula::land(vector<PLFormula>{PLFormula::lit(word), PLFormula::lit(predVar)});
             conj.push_back(predF);
-
-
         }
-        
+
         if (!conj.empty()) {
             disj.push_back(PLFormula::lor(conj));
         }

@@ -5,7 +5,7 @@
 
 (assert (= A A))
 
-(assert (str.in_re (str.++  A "p://www.a.a")
+(assert (str.in_re (str.++  A "p://www" B "." B)
 
     (re.++ 
         (re.union (str.to_re "ht") (str.to_re "f"))
