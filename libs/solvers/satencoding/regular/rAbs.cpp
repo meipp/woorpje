@@ -163,7 +163,7 @@ namespace RegularEncoding {
                                 }
                             }
                         }
-                        
+
                         cache[restr] = make_shared<ArithmeticProgressions>(aps);
                         return aps;
 
@@ -248,7 +248,7 @@ namespace RegularEncoding {
                 Sq = buildSCache.at(nfa.toString());
             }
 
-            
+
 
             if (!nfa.getDelta().empty()) {
 
@@ -597,8 +597,15 @@ namespace RegularEncoding {
         }
 
 
+        struct MatrixCache {
+            vector<vector<vector<bool>>> m;
+        };
+
+        std::map<vector<vector<bool>>, vector<vector<vector<bool>>>> matrixmultcache{};
+
         std::pair<vector<vector<bool>>, bool> multiply(vector<vector<bool>>& a, vector<vector<bool>>& b) {
             size_t N = a.size();
+
             vector<vector<bool>> res(N, vector<bool>(N, false));
             bool allZero = true;
             for (int row = 0; row < N; row ++) {
@@ -616,36 +623,38 @@ namespace RegularEncoding {
             return std::make_pair(res, allZero);
         }
 
-        void print(vector<vector<bool>>& m) {
-            for (int row = 0; row < m.size(); row++) {
-                for (int col = 0; col < m.size(); col++) {
-                    cout << m[row][col] << " ";
-                }
-                cout << std::endl;
-            }
-        }
-
         vector<vector<vector<bool>>> waymatrix(Automaton::NFA& nfa, int k) {
             vector<vector<bool>> matrix = nfa2matrix(nfa);
             vector<vector<vector<bool>>> waymatrices(k+1, vector<vector<bool>>(matrix.size(), vector<bool>(matrix.size(), false)));
-            waymatrices[1] = matrix;
-            for (int kk = 2; kk <= k; kk++) {
-                auto mult =  multiply(waymatrices[kk-1], matrix);
-                waymatrices[kk] = std::get<0>(mult);
-                if (std::get<1>(mult)) {
-                    break;
+            if (matrixmultcache.find(matrix) != matrixmultcache.end()) {
+                auto& cached = matrixmultcache[matrix];
+                for(int n = 0; n < cached.size(); n++) {
+                    waymatrices[n] = cached[n];
                 }
-                /*print(waymatrices[kk-1]);
-                cout << "times\n";
-                print(matrix);
-                cout << "is\n";
-                print(waymatrices[kk]);*/
+                for (int kk = cached.size(); kk <=k; kk++) {
+                    auto mult =  multiply(waymatrices[kk-1], matrix);
+                    waymatrices[kk] = std::get<0>(mult);
+                    if (std::get<1>(mult)) {
+                        break;
+                    }
+                }
+            } else {
+                waymatrices[1] = matrix;
+                for (int kk = 2; kk <= k; kk++) {
+                    auto mult =  multiply(waymatrices[kk-1], matrix);
+                    waymatrices[kk] = std::get<0>(mult);
+                    if (std::get<1>(mult)) {
+                        break;
+                    }
+                }
+                for (int i = 0; i < matrix.size(); i++) {
+                    waymatrices[0][i][i] = true;
+                }
             }
-            for (int i = 0; i < matrix.size(); i++) {
-                waymatrices[0][i][i] = true;
-            }
+            matrixmultcache[matrix] = waymatrices;
             return waymatrices;
         }
+
 
     }
 }
