@@ -560,15 +560,6 @@ namespace RegularEncoding {
              << " transitions. Took " << duration.count() << "ms\n";
 
 
-        // Waymatrix
-        start = high_resolution_clock::now();
-        this->waymatrix = LengthAbstraction::waymatrix(M, filledPat.size());
-        stop = chrono::high_resolution_clock::now();
-        duration = chrono::duration_cast<milliseconds>(stop - start);
-        cout << "\t - Built waymatrix with "
-             << waymatrix[0].size() << "x" << waymatrix[0].size()
-             << "states and " << filledPat.size() << " exponents. Took " << duration.count() << "ms\n";
-
 
         start = high_resolution_clock::now();
 
@@ -712,19 +703,6 @@ namespace RegularEncoding {
 
                     vector<PLFormula> clause;
 
-                    bool lengthOk = false;
-                    for (int lb = numTerminals(filledPat, i); lb <= filledPat.size() - i; lb++) {
-                        for (int fs: Mxi.getFinalStates()) {
-                            if (this->waymatrix[lb][trans.first][fs]) {
-                                lengthOk = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!lengthOk) {
-                        continue;
-                    }
-
 
                     int k;
                     if (target.first->isEpsilon()) {
@@ -788,22 +766,6 @@ namespace RegularEncoding {
                     continue;
                 }
 
-                bool lengthOk = false;
-                for (int lb = numTerminals(filledPat, i); lb <= filledPat.size() - i; lb++) {
-                    for (int fs: Mxi.getFinalStates()) {
-                        if (lb == 0 && fs == q) {
-                            lengthOk = true;
-                            break;
-                        }
-                        if (this->waymatrix[lb][q][fs]) {
-                            lengthOk = true;
-                            break;
-                        }
-                    }
-                }
-                if (!lengthOk) {
-                    continue;
-                }
                 int currentPos = i - 1; // Current position in pattern
                 set<pair<Words::Terminal *, int>> preds{}; // Predecessors of q
                 for (auto t: pred[q]) {
@@ -899,21 +861,6 @@ namespace RegularEncoding {
 
 
         int currentPos = i - 1; // Position of i in the pattern
-
-        bool lenghtOk = false;
-
-        for (int lb = numTerminals(filledPat, 0, i); lb <= i; lb++) {
-
-
-            if (this->waymatrix[lb][Mxi.getInitialState()][q]) {
-                lenghtOk = true;
-                break;
-            }
-        }if (!lenghtOk && i > 1) {
-            // Seems to introduce pure literals
-            int succVar = -stateVars[make_pair(q, i)];
-            return PLFormula::lit(succVar);
-        }
 
         // Find all predecessors q' of q where there is an edge labeled with filledPat[i-1] (always the case if filledPat[i-1] is variable)
         set<pair<Words::Terminal *, int>> preds{};
