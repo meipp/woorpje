@@ -7,6 +7,12 @@
 (assert (str.in_re (str.++  A)
     (re.++
         (str.to_re "bb")
-        (str.to_re "a")
+        (re.*
+            (str.to_re "a")
+        )
+        (re.union
+            (str.to_re "a")
+            (str.to_re "bb")
+        )
     )
 ) )

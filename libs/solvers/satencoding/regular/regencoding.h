@@ -36,6 +36,8 @@ namespace RegularEncoding {
             int initState = -1;
             std::set<int> final_states{};
 
+
+
         public:
             NFA() : final_states(std::set<int>{}), initState(-1) {};
 
@@ -64,7 +66,7 @@ namespace RegularEncoding {
                 return final_states;
             }
 
-            int getInitialState() {
+            int getInitialState() const {
                 return initState;
             }
 
@@ -78,13 +80,13 @@ namespace RegularEncoding {
 
             void add_transition(int, Words::Terminal *, int);
 
-            int numStates() {
+            int numStates() const {
                 return nQ;
             }
 
             int numTransitions() {
                 int c = 0;
-                for (auto trans: delta) {
+                for (const auto& trans: delta) {
                     c += trans.second.size();
                 }
                 return c;
@@ -93,6 +95,8 @@ namespace RegularEncoding {
             std::map<int, std::set<std::pair<Words::Terminal *, int>>> getDelta() {
                 return std::map<int, std::set<std::pair<Words::Terminal *, int>>>(delta);
             }
+            std::unordered_map<int, int> minReachable{};
+            std::unordered_map<int, int> maxReachable{};
 
 
             /*
@@ -311,7 +315,9 @@ namespace RegularEncoding {
             int sl(int q, const std::set<int>& ignore);
 
         };
-        
+
+
+
 
     }
 

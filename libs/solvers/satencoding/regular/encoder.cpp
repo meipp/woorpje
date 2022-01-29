@@ -3,6 +3,7 @@
 #include "regencoding.h"
 #include <chrono>
 #include <omp.h>
+#include <stack>
 
 
 using namespace std;
@@ -512,6 +513,8 @@ namespace RegularEncoding {
     /*********************************************************************
      ************************* Automaton Encoder *************************
      *********************************************************************/
+
+
     set<set<int>> AutomatonEncoder::encode() {
 
         auto total_start = high_resolution_clock::now();
@@ -552,6 +555,7 @@ namespace RegularEncoding {
 
 
         Automaton::NFA Mxi = filledAutomaton(M);
+
 
         auto stop = chrono::high_resolution_clock::now();
         auto duration = chrono::duration_cast<milliseconds>(stop - start);
@@ -613,6 +617,7 @@ namespace RegularEncoding {
         // Predecessor constraint
 
         auto delta = M.getDelta();
+
 
 
         map<int, set<pair<Words::Terminal *, int>>> pred;
@@ -735,6 +740,37 @@ namespace RegularEncoding {
         return PLFormula::land(vector<PLFormula>{ffalse});
     }
 
+
+
+    bool checkLength(int q, int q0, map<int, set<pair<Words::Terminal *, int>>> &pred, int minLength, int maxLenght) {
+        std::stack<std::pair<int, int>> todo{};
+        todo.push(std::make_pair(q, maxLenght));
+        std::set<std::pair<int, int>> seen{};
+        while (!todo.empty()) {
+            auto current = todo.top();
+            todo.pop();
+            seen.insert(current);
+            int cq = std::get<0>(current);
+            int ci = std::get<1>(current);
+            if (cq == q0) {
+                if (minLength <= ci) {
+                    return true;
+                }
+            } else {
+                if (minLength < ci) {
+                    for (auto& tran: pred[cq]) {
+                        if (!tran.first->isEpsilon()) {
+                            std::pair<int, int> next = std::make_pair(tran.second, ci-1);
+                            if (seen.find(next) == seen.end()) {
+                                todo.push(next);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
     /**
      * Deprecated, use AutomatonEncoder::encodePredNew
@@ -860,6 +896,16 @@ namespace RegularEncoding {
         vector<PLFormula> f{};
 
 
+        // Check whether there is path back to q0 at least covering the terminals and at most the pattern up to position i.
+        int minLength = numTerminals(filledPat, 0, i);
+        int maxLength = i;
+        if (maxLength < Mxi.minReachable[q]  || minLength > Mxi.maxReachable[q] ) {
+            // cout << "No path with length in [" << minLength << ", " << maxLength << "] from q0 to state " << q;
+            // cout << "(is [" << Mxi.minReachable[q] << ", " << Mxi.maxReachable[q] << "])\n";
+            int succVar = -stateVars[make_pair(q, i)];
+            return PLFormula::lit(succVar);
+        }
+
         int currentPos = i - 1; // Position of i in the pattern
 
         // Find all predecessors q' of q where there is an edge labeled with filledPat[i-1] (always the case if filledPat[i-1] is variable)
@@ -957,6 +1003,8 @@ namespace RegularEncoding {
         for (int q = 0; q < Mxi.numStates(); q++) {
             Mxi.add_transition(q, ctx.getEpsilon(), q);
         }
+        Mxi.maxReachable = nfa.maxReachable;
+        Mxi.minReachable = nfa.minReachable;
         return Mxi;
     }
 
