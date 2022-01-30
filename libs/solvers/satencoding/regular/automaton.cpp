@@ -368,6 +368,13 @@ namespace RegularEncoding::Automaton {
                         int oldQ0 = 0;
                         auto sub = opr.getChildren()[0];
                         NFA subM = regexToNfa(*sub, ctx);
+                        
+
+                        if (subM.getDelta().empty()) {
+                            // Star over empty automaton is the automaton itself
+                            // eps^* = eps, </>^* = </>
+                            return subM;
+                        }
 
                         int off = M.numStates();
                         auto offsetDelta = subM.offset_states(off);
@@ -392,6 +399,8 @@ namespace RegularEncoding::Automaton {
                                 }
                             }
                         }
+                        M.minReachable[subM.getInitialState()+off] = subM.minReachable[subM.getInitialState()];
+                        M.maxReachable[subM.getInitialState()+off] = subM.maxReachable[subM.getInitialState()];
                         for (int s = 0; s < subM.numStates(); s++) {
                             M.maxReachable[s + off] = INT_MAX;
                         }
@@ -435,7 +444,7 @@ namespace RegularEncoding::Automaton {
 
                             for (int i = 0; i < subM.numStates(); i++) {
                                 // Add numStates
-                                M.new_state();
+                                int s = M.new_state();
                             }
                             // Apply offset delta
                             for (const auto &trans: offsetDelta) {
@@ -459,8 +468,6 @@ namespace RegularEncoding::Automaton {
                             }
 
                         }
-
-
                         int qF = M.new_state();
                         M.add_final_state(qF);
                         for (int oqf: oldQfs) {
