@@ -253,10 +253,6 @@ namespace RegularEncoding::Automaton {
                 }
                 M.add_final_state(q_src);
 
-                for (int s = 0; s < M.numStates(); s++) {
-                    assert(M.minReachable[s] > -1);
-                    assert(M.maxReachable[s] > -1 );
-                }
                 return M;
 
             } catch (bad_cast &) {}
@@ -275,10 +271,6 @@ namespace RegularEncoding::Automaton {
                         for (const auto &sub: opr.getChildren()) {
                             NFA subM = regexToNfa(*sub, ctx);
 
-                            for (int s = 0; s < subM.numStates(); s++) {
-                                assert(subM.maxReachable[s] > -1);
-                            }
-
                             if (subM.getDelta().empty()) {
                                 continue;
                             }
@@ -295,7 +287,7 @@ namespace RegularEncoding::Automaton {
                                 M.minReachable[trans.first] = subM.minReachable[trans.first - off];
                                 M.maxReachable[trans.first] = subM.maxReachable[trans.first - off];
                                 assert(M.maxReachable[trans.first] > -1);
-                                for (auto target: trans.second) {
+                                for (auto& target: trans.second) {
                                     M.add_transition(trans.first, target.first, target.second);
                                     // Keep reachability information
                                     M.minReachable[target.second] = subM.minReachable[target.second - off];
@@ -346,12 +338,6 @@ namespace RegularEncoding::Automaton {
                         M.minReachable[qf] = minMinReachable;
                         M.maxReachable[qf] = maxMaxReachable;
 
-
-                        for (int s = 0; s < M.numStates(); s++) {
-                            assert(M.minReachable[s] > -1);
-                            assert(M.maxReachable[s] > -1);
-                        }
-
                         return M;
                         break;
                     }
@@ -368,7 +354,7 @@ namespace RegularEncoding::Automaton {
                         int oldQ0 = 0;
                         auto sub = opr.getChildren()[0];
                         NFA subM = regexToNfa(*sub, ctx);
-                        
+
 
                         if (subM.getDelta().empty()) {
                             // Star over empty automaton is the automaton itself
@@ -386,7 +372,7 @@ namespace RegularEncoding::Automaton {
                         for (const auto &trans: offsetDelta) {
                             M.minReachable[trans.first] = subM.minReachable[trans.first - off];
                             M.maxReachable[trans.first] = subM.maxReachable[trans.first - off];
-                            for (auto target: trans.second) {
+                            for (auto& target: trans.second) {
                                 M.add_transition(trans.first, target.first, target.second);
                                 M.minReachable[target.second] = subM.minReachable[target.second - off];
                                 M.maxReachable[target.second] = subM.maxReachable[target.second - off];
@@ -420,10 +406,6 @@ namespace RegularEncoding::Automaton {
                         M.maxReachable[qf] = M.maxReachable[q0];
                         M.minReachable[qf] = M.minReachable[q0];
 
-                        for (int s = 0; s < M.numStates(); s++) {
-                            assert(M.minReachable[s] > -1);
-                            assert(M.maxReachable[s] > -1);
-                        }
                         return M;
                         break;
                     }
@@ -451,7 +433,7 @@ namespace RegularEncoding::Automaton {
                                 M.minReachable[trans.first] = subM.minReachable[trans.first - off];
                                 M.maxReachable[trans.first] = subM.maxReachable[trans.first - off];
                                 assert(M.maxReachable[trans.first] > -1);
-                                for (auto target: trans.second) {
+                                for (auto& target: trans.second) {
                                     M.minReachable[target.second] = subM.minReachable[target.second - off];
                                     M.maxReachable[target.second] = subM.maxReachable[target.second - off];
                                     assert(M.maxReachable[target.second] > -1);
@@ -478,10 +460,6 @@ namespace RegularEncoding::Automaton {
                         }
                         for (int oq0: oldq0s) {
                             M.add_transition(q0, ctx.getEpsilon(), oq0);
-                        }
-                        for (int s = 0; s < M.numStates(); s++) {
-                            // assert(M.minReachable[s] <= M.numStates());
-                            assert(M.maxReachable[s] > -1);
                         }
                         return M;
                         break;
