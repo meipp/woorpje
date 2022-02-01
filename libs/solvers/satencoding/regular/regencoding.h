@@ -97,6 +97,8 @@ namespace RegularEncoding {
             }
             std::unordered_map<int, int> minReachable{};
             std::unordered_map<int, int> maxReachable{};
+            std::unordered_map<int, int> maxrAbs{};
+            std::unordered_map<int, int> minrAbs{};
 
 
             /*

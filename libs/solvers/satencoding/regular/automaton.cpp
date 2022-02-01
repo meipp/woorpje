@@ -236,17 +236,22 @@ namespace RegularEncoding::Automaton {
                 // WORD
                 auto &word = dynamic_cast<RegWord &>(regExpr);
                 NFA M;
+                int N = word.characters();
                 int q0 = M.new_state();
                 M.set_initial_state(q0);
                 int numTrans = 0;
                 M.minReachable[q0] = numTrans;
                 M.maxReachable[q0] = numTrans;
+                M.maxrAbs[q0] = N - numTrans;
+                M.minrAbs[q0] = N - numTrans;
                 numTrans++;
                 int q_src = q0;
                 for (auto c: word.word) {
                     int q_target = M.new_state();
                     M.minReachable[q_target] = numTrans;
                     M.maxReachable[q_target] = numTrans;
+                    M.maxrAbs[q_target] = N - numTrans;
+                    M.minrAbs[q_target] = N - numTrans;
                     numTrans++;
                     M.add_transition(q_src, c->getTerminal(), q_target);
                     q_src = q_target;
@@ -311,6 +316,8 @@ namespace RegularEncoding::Automaton {
                             }
                             assert(minMinReachable > -1);
                             assert(maxMaxReachable > -1);
+                            int maxMaxrAbs = -1;
+                            int minMinrAbs = INT_MAX;
                             for (int s = 0; s < subM.numStates(); s++) {
                                 M.minReachable[s + off] = subM.minReachable[s] + minMinReachable;
                                 if (subM.maxReachable[s] == INT_MAX || maxMaxReachable == INT_MAX) {
@@ -318,8 +325,13 @@ namespace RegularEncoding::Automaton {
                                 } else {
                                     M.maxReachable[s + off] = subM.maxReachable[s] + maxMaxReachable;
                                 }
-
+                                maxMaxrAbs = std::max(maxMaxrAbs, subM.maxrAbs[s]);
+                                minMinrAbs = std::min(minMinrAbs, subM.minrAbs[s]);
                                 assert(M.maxReachable[s + off] > -1);
+                            }
+                            for (int s = 0; s < off; s++) {
+                                M.minrAbs[s] = M.minrAbs[s] + minMinrAbs;
+                                M.maxrAbs[s] = M.maxrAbs[s] + maxMaxrAbs;
                             }
                             qFs = newqFs;
                         }
@@ -372,10 +384,14 @@ namespace RegularEncoding::Automaton {
                         for (const auto &trans: offsetDelta) {
                             M.minReachable[trans.first] = subM.minReachable[trans.first - off];
                             M.maxReachable[trans.first] = subM.maxReachable[trans.first - off];
+                            M.minrAbs[trans.first] = subM.minrAbs[trans.first - off];
+                            M.maxrAbs[trans.first] = subM.maxrAbs[trans.first - off];
                             for (auto& target: trans.second) {
                                 M.add_transition(trans.first, target.first, target.second);
                                 M.minReachable[target.second] = subM.minReachable[target.second - off];
                                 M.maxReachable[target.second] = subM.maxReachable[target.second - off];
+                                M.minrAbs[target.second] = subM.minrAbs[target.second - off];
+                                M.maxrAbs[target.second] = subM.maxrAbs[target.second - off];
                                 if (subM.getFinalStates().count(target.second - off) == 1) {
                                     oldFs.insert(target.second);
                                 }
@@ -387,8 +403,11 @@ namespace RegularEncoding::Automaton {
                         }
                         M.minReachable[subM.getInitialState()+off] = subM.minReachable[subM.getInitialState()];
                         M.maxReachable[subM.getInitialState()+off] = subM.maxReachable[subM.getInitialState()];
+                        M.minrAbs[subM.getInitialState()+off] = subM.minrAbs[subM.getInitialState()];
+                        M.maxrAbs[subM.getInitialState()+off] = subM.maxrAbs[subM.getInitialState()];
                         for (int s = 0; s < subM.numStates(); s++) {
                             M.maxReachable[s + off] = INT_MAX;
+                            M.maxrAbs[s + off] = INT_MAX;
                         }
 
                         M.add_transition(q0, ctx.getEpsilon(), oldQ0);
@@ -402,9 +421,12 @@ namespace RegularEncoding::Automaton {
                             M.add_transition(q, ctx.getEpsilon(), q0);
                         }
                         M.maxReachable[q0] = INT_MAX;
+                        M.maxrAbs[q0] = INT_MAX;
                         M.add_transition(q0, ctx.getEpsilon(), qf);
                         M.maxReachable[qf] = M.maxReachable[q0];
+                        M.maxrAbs[qf] = M.maxrAbs[q0];
                         M.minReachable[qf] = M.minReachable[q0];
+                        M.minrAbs[qf] = M.minrAbs[q0];
 
                         return M;
                         break;
@@ -432,10 +454,14 @@ namespace RegularEncoding::Automaton {
                             for (const auto &trans: offsetDelta) {
                                 M.minReachable[trans.first] = subM.minReachable[trans.first - off];
                                 M.maxReachable[trans.first] = subM.maxReachable[trans.first - off];
+                                M.minrAbs[trans.first] = subM.minrAbs[trans.first - off];
+                                M.maxrAbs[trans.first] = subM.maxrAbs[trans.first - off];
                                 assert(M.maxReachable[trans.first] > -1);
                                 for (auto& target: trans.second) {
                                     M.minReachable[target.second] = subM.minReachable[target.second - off];
                                     M.maxReachable[target.second] = subM.maxReachable[target.second - off];
+                                    M.minrAbs[target.second] = subM.minrAbs[target.second - off];
+                                    M.maxrAbs[target.second] = subM.maxrAbs[target.second - off];
                                     assert(M.maxReachable[target.second] > -1);
                                     M.add_transition(trans.first, target.first, target.second);
                                 }
@@ -445,6 +471,8 @@ namespace RegularEncoding::Automaton {
                             // Special case when subM has only one state an no transition ("")
                             M.minReachable[subM.getInitialState() + off] = subM.minReachable[subM.getInitialState()];
                             M.maxReachable[subM.getInitialState() + off] = subM.maxReachable[subM.getInitialState()];
+                            M.minrAbs[subM.getInitialState()+off] = subM.minrAbs[subM.getInitialState()];
+                            M.maxrAbs[subM.getInitialState()+off] = subM.maxrAbs[subM.getInitialState()];
                             for (int oldf: subM.getFinalStates()) {
                                 oldQfs.push_back(oldf + off);
                             }
@@ -456,6 +484,8 @@ namespace RegularEncoding::Automaton {
                             M.add_transition(oqf, ctx.getEpsilon(), qF);
                             M.minReachable[qF] = std::min(M.minReachable[qF], M.minReachable[oqf]);
                             M.maxReachable[qF] = std::max(M.maxReachable[qF], M.maxReachable[oqf]);
+                            M.minrAbs[qF] = std::min(M.minrAbs[qF], M.minrAbs[oqf]);
+                            M.maxrAbs[qF] = std::max(M.maxrAbs[qF], M.maxrAbs[oqf]);
                             assert(M.maxReachable[qF] > -1);
                         }
                         for (int oq0: oldq0s) {

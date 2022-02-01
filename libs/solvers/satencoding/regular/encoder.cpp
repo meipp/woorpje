@@ -703,10 +703,16 @@ namespace RegularEncoding {
 
         for (auto &trans: Mxi.getDelta()) {
             for (int i = 0; i < filledPat.size(); i++) {
+                if (numTerminals(filledPat, i) > Mxi.maxrAbs[trans.first] || filledPat.size() - i < Mxi.minrAbs[trans.first]) {
+                    //int succVar = -stateVars[make_pair(trans.first, i)];
+                    //disj.push_back(PLFormula::lit(succVar));
+                    continue;
+                }
                 for (auto &target: trans.second) {
 
 
                     vector<PLFormula> clause;
+
 
 
                     int k;
