@@ -1,17 +1,11 @@
-project(wordsolver)
 cmake_minimum_required(VERSION 3.10)
-
-option(HIDEDEVNAMES "Hide developers names for review")
-
-if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-include_directories(/usr/local/include)
-include_directories(/usr/local/Cellar/flex/2.6.4_1/include)
-endif(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-
 
 include_directories(/home/mku/share/packages/include)
 include_directories(/home/mku/share/packages/include/cvc4)
 
+project(wordsolver)
+
+set(CMAKE_CXX_STANDARD 14)
 
 SET (ToolName woorpje)
 SET (Translator ${ToolName}2SMT)
@@ -56,36 +50,38 @@ execute_process(COMMAND
   OUTPUT_VARIABLE GIT_HASH
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-
 configure_file (
  "${PROJECT_SOURCE_DIR}/config.h.in"
  "${PROJECT_BINARY_DIR}/config.h"
 )
+
+#
+# Must find boost first.
+# external and libs require ${Boost_INCLUDE_DIR} to compile
+#
+SET(Boost_USE_STATIC_LIBS ON)
+FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
+
 add_subdirectory(external)
 add_subdirectory(libs)
 
-SET(Boost_USE_STATIC_LIBS ON)
-FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
 
 if (ENABLE_STATIC)
 set(CMAKE_EXE_LINKER_FLAGS " -static")
 endif(ENABLE_STATIC)
 
 add_executable (${ToolName} main.cpp)
-target_link_libraries (${ToolName}  libs ${Boost_LIBRARIES} )
+
+target_link_libraries (${ToolName} libs ${Boost_LIBRARIES} )
 target_include_directories(${ToolName} PRIVATE ${PROJECT_BINARY_DIR})
 
 add_executable (${ToolName}SMT main.cpp)
 target_link_libraries (${ToolName}SMT  slibs ${Boost_LIBRARIES} )
 target_include_directories(${ToolName}SMT PRIVATE ${PROJECT_BINARY_DIR})
 
-
-
 add_executable (${Translator} woorpje2smt.cpp)
-target_link_libraries (${Translator}  libs ${Boost_LIBRARIES} )
-target_include_directories(${Translator} PRIVATE ${PROJECT_BINARY_DIR})
-
-
+target_link_libraries (${Translator} libs ${Boost_LIBRARIES} )
+target_include_directories(${Translator} PRIVATE ${PROJECT_BINARY_DIRS})
 
 SET(CPACK_GENERATOR "ZIP")
 SET(CPACK_PACKAGE_FILE_NAME ${ToolName}-${VERSION_MAJOR}_${VERSION_MINOR})

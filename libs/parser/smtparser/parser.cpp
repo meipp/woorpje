@@ -19,11 +19,11 @@ namespace Words {
     class JGenerator : public Words::JobGenerator {
     public:
         JGenerator() {}
+        virtual ~JGenerator() = default;
 
         std::unique_ptr<Words::Job> newJob() {
 
             std::stringstream str;
-            static int i = 0;
 
             if (solver.solve(assumptions)) {
                 UpdateSolverBuilder builder(hashToLit, constraints, eqs, solver, neqmap, assumptions);
@@ -156,20 +156,19 @@ namespace Words {
             m.accept(*this);
         }
 
-        virtual void caseLEQ(LEQ &c) {
+        virtual void caseLEQ(LEQ &c) override {
             visitRedirect<Words::Constraints::Cmp::LEq>(c);
         }
 
-
-        virtual void caseLT(LT &c) {
+        virtual void caseLT(LT &c) override {
             visitRedirect<Words::Constraints::Cmp::Lt>(c);
         }
 
-        virtual void caseGEQ(GEQ &c) {
+        virtual void caseGEQ(GEQ &c) override {
             visitRedirect<Words::Constraints::Cmp::GEq>(c);
         }
 
-        virtual void caseGT(GT &c) {
+        virtual void caseGT(GT &c) override {
             visitRedirect<Words::Constraints::Cmp::Gt>(c);
         }
 
@@ -180,8 +179,7 @@ namespace Words {
         /**
          * Adds word equations to the job's context.
          */
-        virtual void caseEQ(EQ &c) {
-
+        virtual void caseEQ(EQ &c) override {
             if (!checkAlreadyIn(c, var)) {
                 var = Glucose::lit_Undef;
                 auto lexpr = c.getExpr(0);
@@ -241,7 +239,7 @@ namespace Words {
             return var;
         }
 
-        virtual void caseNEQ(NEQ &c) {
+        virtual void caseNEQ(NEQ &c) override {
             if (!checkAlreadyIn(c, var)) {
                 var = Glucose::lit_Undef;
                 auto lexpr = c.getExpr(0);
@@ -334,7 +332,7 @@ namespace Words {
             }
         }
 
-        virtual void caseNumericLiteral(NumericLiteral &c) {
+        virtual void caseNumericLiteral(NumericLiteral &c) override {
             if (!vm) {
                 adder->add(c.getVal());
             } else {
@@ -342,11 +340,11 @@ namespace Words {
             }
         }
 
-        virtual void caseFunctionApplication(FunctionApplication &c) {
+        virtual void caseFunctionApplication(FunctionApplication&) override {
             throw UnsupportedFeature();
         }
 
-        virtual void caseMultiplication(Multiplication &c) {
+        virtual void caseMultiplication(Multiplication &c) override {
             Words::Constraints::VarMultiplicity kk(nullptr, 1);
             vm = &kk;
             for (auto &cc: c) {
@@ -357,7 +355,7 @@ namespace Words {
             vm = nullptr;
         }
 
-        virtual void caseStringLiteral(StringLiteral &s) {
+        virtual void caseStringLiteral(StringLiteral &s) override {
             if (adder) {
                 adder->add(s.getVal().size());
             } else {
@@ -367,7 +365,7 @@ namespace Words {
             }
         }
 
-        virtual void caseIdentifier(Identifier &c) {
+        virtual void caseIdentifier(Identifier &c) override {
             if (c.getSort() == Sort::String && instrlen) {
                 if (vm) {
                     vm->entry = ctxt.findSymbol(c.getSymbol()->getVal());
@@ -396,7 +394,6 @@ namespace Words {
         }
 
         virtual void caseNegLiteral(NegLiteral &c) override {
-
             if (!checkAlreadyIn(c, var)) {
                 c.inner()->accept(*this);
                 var = ~var;
@@ -404,14 +401,14 @@ namespace Words {
             }
         }
 
-        virtual void caseAssert(Assert &c) {
+        virtual void caseAssert(Assert &c) override {
             c.getExpr()->accept(*this);
             if (var != Glucose::lit_Undef) {
                 solver.addClause(var);
             }
         }
 
-        virtual void caseStrLen(StrLen &c) {
+        virtual void caseStrLen(StrLen &c) override {
             instrlen = true;
             c.getExpr(0)->accept(*this);
             instrlen = false;
@@ -422,7 +419,7 @@ namespace Words {
             }
         }
 
-        virtual void caseStrConcat(StrConcat &c) {
+        virtual void caseStrConcat(StrConcat &c) override {
             for (auto &cc: c) {
                 cc->accept(*this);
                 if (instrlen) {
@@ -435,7 +432,7 @@ namespace Words {
             }
         }
 
-        virtual void caseDisjunction(Disjunction &c) {
+        virtual void caseDisjunction(Disjunction &c) override {
             if (!checkAlreadyIn(c, var)) {
                 Glucose::vec<Glucose::Lit> vec;
                 for (auto cc: c) {
@@ -455,7 +452,7 @@ namespace Words {
             }
         }
 
-        virtual void caseConjunction(Conjunction &c) {
+        virtual void caseConjunction(Conjunction &c) override {
             if (!checkAlreadyIn(c, var)) {
                 Glucose::vec<Glucose::Lit> vec;
                 for (auto cc: c) {
@@ -474,7 +471,7 @@ namespace Words {
             }
         }
 
-        virtual void caseReIn(ReIn &c) {
+        virtual void caseReIn(ReIn&) override {
             // Do nothing
         }
 
@@ -612,8 +609,7 @@ namespace Words {
             processRegOp(c, Words::RegularConstraints::RegularOperator::STAR);
         }
 
-        virtual void caseReNone(ReNone &c) {
-
+        virtual void caseReNone(ReNone&) {
             std::shared_ptr<Words::RegularConstraints::RegEmpty> empty(new Words::RegularConstraints::RegEmpty);
             if (root == nullptr) {
                 root = empty;
@@ -623,11 +619,11 @@ namespace Words {
         }
 
 
-        virtual void caseFunctionApplication(FunctionApplication &c) {
+        virtual void caseFunctionApplication(FunctionApplication&) {
             throw UnsupportedFeature();
         }
 
-        virtual void caseEQ(EQ &c) {/* Do nothing */}
+        virtual void caseEQ(EQ&) {/* Do nothing */}
 
         void run(ASTNode &node) {
             node.accept(*this);

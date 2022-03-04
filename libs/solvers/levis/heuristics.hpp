@@ -27,7 +27,7 @@ namespace Words {
 		  return pw.size() > bound;
 		}
 		
-		virtual void configureSolver (Words::SMT::Solver_ptr&) {}
+		virtual void configureSolver (Words::SMT::Solver_ptr&) override {}
 		virtual std::string getDescription () const override {return (Formatter ("WaitingListLimit - %1%") % bound).str();};
 	  private:
 		size_t bound;
@@ -46,7 +46,7 @@ namespace Words {
 			  
 		}
 		
-		virtual void configureSolver (Words::SMT::Solver_ptr& solver) {
+		virtual void configureSolver (Words::SMT::Solver_ptr& solver) override {
 		  solver->setTimeout (timeout);
 		}
 		
@@ -74,7 +74,7 @@ namespace Words {
 		}
 
 
-		virtual void configureSolver (Words::SMT::Solver_ptr&) {
+		virtual void configureSolver (Words::SMT::Solver_ptr&) override {
 		}
         virtual std::string getDescription () const override {return (Formatter ("Fixed equation length exceeded - %1%") % eqLengthBound).str();};
 		
@@ -103,7 +103,7 @@ namespace Words {
 		  return eqsSize;
         }
 		
-		virtual void configureSolver (Words::SMT::Solver_ptr&) {}
+		virtual void configureSolver (Words::SMT::Solver_ptr&) override {}
         virtual std::string getDescription () const override {return (Formatter ("Equation growth - %1%") % scale).str();};
 
 	  private:
@@ -135,7 +135,7 @@ namespace Words {
           }
         }
 
-        virtual void configureSolver (Words::SMT::Solver_ptr&) {}
+        virtual void configureSolver (Words::SMT::Solver_ptr&) override {}
 
       private:
         double scale = 1.25;
@@ -152,7 +152,7 @@ namespace Words {
         virtual std::string getDescription () const override {return "No SMT Solver";};
 
 
-        virtual void configureSolver (Words::SMT::Solver_ptr&) {}
+        virtual void configureSolver (Words::SMT::Solver_ptr&) override {}
       };
     }
   }

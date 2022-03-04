@@ -35,7 +35,7 @@ namespace Words {
 	  virtual void addConstraint (const Constraints::Constraint& ) {}
 	  virtual void addEquation (const Words::Equation& ) {}
 	  virtual void evaluate (Words::Variable*, Words::WordBuilder& wb) = 0;
-	  virtual void setTimeout (size_t t) { throw Words::WordException ("Timeout not implemented");}
+	  virtual void setTimeout (size_t) { throw Words::WordException ("Timeout not implemented");}
 	  
 	  template<class iterator>
 	  void addEquations (iterator begin, iterator end) {
@@ -83,18 +83,16 @@ namespace Words {
 
 	class IntegerSolver {
 	public:
-	  ~IntegerSolver () {}
+	  virtual ~IntegerSolver () {}
 	  virtual void addVariable (const Words::Variable* ) {}
 	  virtual void addConstraint (const Constraints::Constraint& ) {}
 	  virtual SolverResult solve () {return SolverResult::Unknown;}
 	  virtual size_t evaluate (Words::Variable*) = 0;
-	  virtual void setTimeout (size_t t) { throw Words::WordException ("Timeout not implemented");}
+	  virtual void setTimeout (size_t) { throw Words::WordException ("Timeout not implemented");}
 	};
 
 	using IntSolver_ptr = std::unique_ptr<IntegerSolver>;
 	IntSolver_ptr makeIntSolver (); 
-	
-	
   }
 }
 

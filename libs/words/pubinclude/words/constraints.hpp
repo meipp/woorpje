@@ -10,6 +10,7 @@ namespace Words  {
 	class Unrestricted;
 	class Constraint {
 	public:
+	  virtual ~Constraint() = default;
 	  virtual bool isLinear () const  {return false;}
 	  virtual bool isUnrestricted () const  {return false;}
 	  virtual const LinearConstraint* getLinconstraint () const {return nullptr;}

@@ -35,7 +35,7 @@ struct LevisHeuristics {
 class CoutResultGatherer : public Words::Solvers::DummyResultGatherer {
 public:
   CoutResultGatherer (const Words::Options& opt,std::string& out,std::string& smtmodelfile) : opt(opt),outputfile(out),smtmodelfile(smtmodelfile) {}
-  void setSubstitution (Words::Substitution& w) {
+  void setSubstitution (Words::Substitution& w) override {
 	std::cout << "Substitution: " << std::endl;
 	for (size_t var = 0; var < opt.context->nbVars(); var++) {
 	  auto variable = opt.context->getVariable (var);
@@ -308,7 +308,7 @@ int main (int argc, char** argv) {
   
   
   
-  bool parsesucc = false;
+  // bool parsesucc = false; BD: not used
   try {
 	
 	std::fstream inp;

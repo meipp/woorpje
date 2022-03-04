@@ -397,13 +397,12 @@ namespace Words {
 	      return Words::Solvers::Result::HasSolution;
 	    }
 	    else if (res == Words::SMT::SolverResult::NSatis) {
-		   return Words::Solvers::Result::DefinitelyNoSolution;
+	      return Words::Solvers::Result::DefinitelyNoSolution;
+	    }			
+	    else {
+	      return Words::Solvers::Result::NoIdea;
 	    }
-			
-	    else
-	      Words::Solvers::Result::NoIdea;
-			
-          }
+	  }
 	}
 	//auto insert = opt.copy ();
 	else {

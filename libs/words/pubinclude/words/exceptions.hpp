@@ -1,6 +1,7 @@
 #ifndef _WORD_EXCEPTIONS__
 #define _WORD_EXCEPTIONS__
 #include <stdexcept>
+#include <string>
 
 namespace Words {
   class WordException : public std::runtime_error  {
@@ -10,7 +11,7 @@ namespace Words {
   
   class ConstraintUnsupported : public WordException  {
   public:
-	ConstraintUnsupported () : WordException ("A constraint is unsupported for the solver") {}
+    ConstraintUnsupported () : WordException ("A constraint is unsupported for the solver") {}
   };
 
   class UnsupportedFeature : public WordException  {

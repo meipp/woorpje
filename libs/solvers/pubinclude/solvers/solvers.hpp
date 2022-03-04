@@ -100,9 +100,9 @@ namespace Words {
 	
 	class DummyResultGatherer : public ResultGatherer {
 	public:
-	  virtual void setSubstitution (Words::Substitution&) {}
-	  virtual void diagnosticString (const std::string&) {}
-	  virtual void timingInfo (const Timing::Keeper&) {} 
+	  virtual void setSubstitution (Words::Substitution&) override {}
+	  virtual void diagnosticString (const std::string&) override {}
+	  virtual void timingInfo (const Timing::Keeper&) override {} 
 	};
 	
 	class Solver {
@@ -111,8 +111,10 @@ namespace Words {
 
 	  //Should only be called if Result returned HasSolution
 	  virtual void getResults (ResultGatherer& r) = 0;
-      virtual void getMoreInformation (std::ostream& os){};
+      virtual void getMoreInformation (std::ostream&){};
 	  virtual void enableDiagnosticOutput () {}
+
+	  virtual ~Solver () = default;
 	};
 
 	using Solver_ptr =std::unique_ptr<Solver>;

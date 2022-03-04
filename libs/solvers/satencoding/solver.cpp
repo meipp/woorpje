@@ -119,7 +119,7 @@ namespace Words {
                 for (const auto &recon: opt.recons) {
                     recon->expr->flatten();
                     int maxm = recon->expr->longestLiteral();
-                    int minm = recon->expr->shortesLiteral();
+                    int minm = recon->expr->shortestLiteral();
                     if (maxm > actualbre) {
                         actualbre = maxm;
                     }

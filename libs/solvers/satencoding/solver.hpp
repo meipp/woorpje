@@ -18,7 +18,7 @@ namespace Words {
 		Result Solve (Words::Options&,Words::Solvers::MessageRelay&) override;
 		//Should only be called if Result returned HasSolution
 		void getResults (Words::Solvers::ResultGatherer& r) override;
-		virtual void enableDiagnosticOutput () {
+		virtual void enableDiagnosticOutput () override {
 		  diagnostic= true;
 		}
 	  private:

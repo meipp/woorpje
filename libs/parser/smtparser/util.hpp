@@ -16,7 +16,6 @@ namespace Words {
 
   // lhs -> \/ rhs
   void reify_or(Glucose::Solver & s, Glucose::Lit lhs, Glucose::vec<Glucose::Lit> & rhs){
-	
     // lhs -> \/ rhs
     Glucose::vec<Glucose::Lit> ps;
     for(int i = 0 ; i < rhs.size();i++)
@@ -65,11 +64,10 @@ namespace Words {
   void at_most_one (Glucose::Solver & s, Glucose::vec<Glucose::Lit> & rhs){
     for(int i = 0 ; i < rhs.size();i++){
       for (int j = i+1; j < rhs.size(); j++) {
-	Glucose::vec<Glucose::Lit> ps;
-	ps.push(~rhs[i]);
-	ps.push(~rhs[j]);
-	s.addClause(ps);
-
+        Glucose::vec<Glucose::Lit> ps;
+        ps.push(~rhs[i]);
+        ps.push(~rhs[j]);
+        s.addClause(ps);
       }	  
     }
   }
@@ -80,16 +78,16 @@ namespace Words {
     Adder (std::unique_ptr<T>& t)  : inner(t),left(true) {}
     void add (int64_t val) {
       if (left)
-	inner->addLHS (val);
+        inner->addLHS (val);
       else
-	inner->addRHS (val);
+        inner->addRHS (val);
     }
 
     void add (Words::Constraints::VarMultiplicity& v) {
       if (left)
-	inner->addLHS (v.entry,v.number);
+        inner->addLHS (v.entry,v.number);
       else
-	inner->addRHS (v.entry,v.number);
+        inner->addRHS (v.entry,v.number);
     }
 
     void switchSide () {left = !left;}
@@ -157,51 +155,45 @@ namespace Words {
       return std::move(job);
     }
     
-    virtual void caseLEQ (LEQ& c) {
+    virtual void caseLEQ (LEQ& c) override {
       visitRedirect (c);
     }
 	
-	
-    virtual void caseLT (LT& c) {
+    virtual void caseLT (LT& c) override {
       visitRedirect (c);
     }
 	
-    virtual void caseGEQ (GEQ& c) {
+    virtual void caseGEQ (GEQ& c) override {
       visitRedirect (c);
     }
 	
-    virtual void caseGT (GT& c) {
+    virtual void caseGT (GT& c) override {
       visitRedirect (c);
     }
 	
-    virtual void caseEQ (EQ& c) {
+    virtual void caseEQ (EQ& c) override {
       visitRedirect(c);
-      
     } 
     
-    virtual void caseNEQ (NEQ& c) {
+    virtual void caseNEQ (NEQ& c) override {
       assert(neqmap.count(c.hash()));
       neqmap.at(c.hash())->accept (*this);
     }
 		
-    
-    virtual void caseFunctionApplication (FunctionApplication& c) {
+    virtual void caseFunctionApplication (FunctionApplication&) override {
       throw UnsupportedFeature ();
     }
     
-
     virtual void caseNegLiteral (NegLiteral& c) override {
       c.inner()->accept(*this);
     }
-	
-	
-    virtual void caseAssert (Assert& c) {
+
+    virtual void caseAssert (Assert& c) override {
       //auto l = Glucose::var(alreadyCreated.at(c.getExpr()->hash()));
       c.getExpr()->accept(*this);
     }
-	 
-	
-    virtual void caseDisjunction (Disjunction& c){
+
+    virtual void caseDisjunction (Disjunction& c) override {
       assert(alreadyCreated.count(c.hash()));
       auto l = Glucose::var(alreadyCreated.at(c.hash()));
       if (solver.modelValue (l) == l_True) {
@@ -220,7 +212,7 @@ namespace Words {
       }      
     }
     
-    virtual void caseConjunction (Conjunction& c) {
+    virtual void caseConjunction (Conjunction& c) override {
       assert(alreadyCreated.count(c.hash()));
       auto l = Glucose::var(alreadyCreated.at(c.hash()));
       if (solver.modelValue (l) == l_True) {
@@ -234,7 +226,6 @@ namespace Words {
     }
    
   private:
-	
     std::unordered_map<size_t, Glucose::Lit>& alreadyCreated;
     std::unordered_map<Glucose::Var,Words::Constraints::Constraint_ptr>& constraints;
     std::unordered_map<Glucose::Var,Words::Equation>& eqs;

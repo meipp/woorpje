@@ -69,7 +69,10 @@ namespace Words {
 		solver = Words::CVC4::makeCVC4IntSolver ();
 		break;
 #endif
+	  default:
+		throw SMTSolverUnavailable ();
 	  }
+
 	  if (defaultTimeout ) {
 		solver->setTimeout (defaultTimeout);
 	  }

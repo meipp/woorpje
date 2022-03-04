@@ -38,7 +38,7 @@ namespace Words {
 
             virtual int longestLiteral(){return 0;};
 
-            virtual int shortesLiteral(){return 0;};
+            virtual int shortestLiteral(){return 0;};
 
             virtual std::shared_ptr<RegNode> reverse() = 0;
 
@@ -79,33 +79,27 @@ namespace Words {
         public:
             RegEmpty() {};
 
-            bool acceptsEpsilon() {
-                return false;
-            }
+            bool acceptsEpsilon() override { return false; }
 
-            bool isEmpty() {return true;}
+            bool isEmpty() override { return true; }
 
-            virtual bool isLeaf() { return true; }
+            virtual bool isLeaf() override { return true; }
 
-            int longestLiteral(){return 0;}
+            int longestLiteral() override { return 0; }
 
-            void toString(std::ostream &os) {
-                os << "</>";
-            }
+            void toString(std::ostream &os) override { os << "</>"; }
 
-            long complexity(){return 1;}
+            long complexity() override { return 1; }
 
-            void getAlphabet(Words::WordBuilder wb) {}
+            void getAlphabet(Words::WordBuilder) override {}
 
-            size_t characters() override {
-                return 0;
-            }
+            size_t characters() override { return 0; }
 
-            std::shared_ptr<RegNode> derivative(std::string d) {
+            std::shared_ptr<RegNode> derivative(std::string) override {
                 return std::make_shared<RegEmpty>(RegEmpty());
             }
 
-            std::shared_ptr<RegNode> reverse() {
+            std::shared_ptr<RegNode> reverse() override {
                 return std::make_shared<RegEmpty>(RegEmpty());
             }
 
@@ -116,8 +110,7 @@ namespace Words {
             //RegWord(std::string word) : word(word){};
             RegWord(Words::Word word) : word(word) {};
 
-            void toString(std::ostream &os) {
-
+            void toString(std::ostream &os) override {
                 for (auto c: word)
                     os << c->getTerminal()->getChar();
             }
@@ -126,21 +119,17 @@ namespace Words {
                 return word.characters();
             }
 
-            bool isEmpty() {return false;}
+            bool isEmpty() override {return false;}
 
-            long complexity(){return characters();}
+            long complexity() override { return characters(); }
 
-            int longestLiteral(){
-                return characters();
-            }
-            int shortesLiteral(){return characters();};
+            int longestLiteral() override { return characters(); }
 
+            int shortestLiteral() override { return characters(); }
 
-            bool acceptsEpsilon() {
-                return word.characters() == 0;
-            }
+            bool acceptsEpsilon() override { return word.characters() == 0; }
 
-            std::shared_ptr<RegNode> derivative(std::string d) {
+            std::shared_ptr<RegNode> derivative(std::string d) override {
                 if (d.empty()) {
                     return std::make_shared<RegWord>(RegWord(word));
                 }
@@ -163,8 +152,7 @@ namespace Words {
                 return std::make_shared<RegWord>(RegWord(derivWord));
             }
 
-            std::shared_ptr<RegNode> reverse() {
-
+            std::shared_ptr<RegNode> reverse() override {
                 std::vector<IEntry *> revEntries;
                 for (auto w: word) {
                     revEntries.push_back(w);
@@ -175,10 +163,9 @@ namespace Words {
                 return res;
             }
 
-            virtual bool isLeaf() { return true; }
+            virtual bool isLeaf() override { return true; }
 
-            void getAlphabet(Words::WordBuilder wb) {
-
+            void getAlphabet(Words::WordBuilder wb) override {
                 for (auto e: word) {
                     if (e->isTerminal()) {
                         wb << e->getTerminal()->getChar();
@@ -208,9 +195,9 @@ namespace Words {
                 children.push_back(node);
             };
 
-            virtual bool isLeaf() { return false; }
+            virtual bool isLeaf() override { return false; }
 
-            std::shared_ptr<RegNode> reverse() {
+            std::shared_ptr<RegNode> reverse() override {
                 switch (op) {
                     case RegularOperator::UNION: {
                         std::vector<std::shared_ptr<RegNode>> chdRev{};
@@ -236,7 +223,7 @@ namespace Words {
                 }
             };
 
-            bool isEmpty() {
+            bool isEmpty() override {
                 switch (op) {
                     case RegularOperator::UNION: {
                         for (auto ch: getChildren()) {
@@ -260,15 +247,10 @@ namespace Words {
                 }
             };
 
-            virtual void flatten(){
-
-
+            virtual void flatten() override {
                 for (const auto& ch:children) {
                     ch->flatten();
                 }
-
-
-
                 std::vector<std::shared_ptr<RegNode>> newChildren;
                 for (const auto &ch: children) {
                     std::shared_ptr<RegOperation> asOp = std::dynamic_pointer_cast<RegOperation>(ch);
@@ -283,7 +265,6 @@ namespace Words {
                     }
                 }
                 children = newChildren;
-
 
                 if(op == RegularOperator::CONCAT) {
                     std::vector<std::shared_ptr<RegNode>> newChildren;
@@ -319,7 +300,7 @@ namespace Words {
                 }
             }
 
-            std::shared_ptr<RegNode> derivative(std::string d) {
+            std::shared_ptr<RegNode> derivative(std::string d) override {
                 if (d.empty()) {
                     return std::make_shared<RegOperation>(op, children);
                 }
@@ -341,10 +322,9 @@ namespace Words {
                         break;
                     }
                     case RegularOperator::CONCAT: {
-
                         if (children.size() > 2) {
                             std::vector<std::shared_ptr<RegNode>> lhsChild{};
-                            for (int i = 1; i < children.size(); i++) {
+                            for (unsigned i = 1; i < children.size(); i++) {
                                 lhsChild.push_back(children[i]);
                             }
                             RegOperation lhs(RegularOperator::CONCAT, lhsChild);
@@ -415,11 +395,11 @@ namespace Words {
 
             RegularOperator getOperator() { return op; };
 
-            void toString(std::ostream &os) {
+            void toString(std::ostream &os) override {
                 switch (op) {
                     case RegularOperator::UNION:
                         os << "(";
-                        for (int i = 0; i < children.size() - 1; i++) {
+                        for (unsigned i = 0; i < children.size() - 1; i++) {
                             children[i]->toString(os);
                             os << "|";
                         }
@@ -428,14 +408,14 @@ namespace Words {
                         break;
                     case RegularOperator::CONCAT:
                         os << "(";
-                        for (int i = 0; i < children.size(); i++) {
+                        for (unsigned i = 0; i < children.size(); i++) {
                             children[i]->toString(os);
                         }
                         os << ")";
                         break;
                     case RegularOperator::STAR:
                         os << "(";
-                        for (int i = 0; i < children.size(); i++) {
+                        for (unsigned i = 0; i < children.size(); i++) {
                             children[i]->toString(os);
                         }
                         os << ")*";
@@ -443,7 +423,7 @@ namespace Words {
                 }
             }
 
-            int shortesLiteral(){
+            int shortestLiteral() override {
                 int shortest = 0;
                 if (op == RegularOperator::STAR) {
                     // star of shortest literals is shortest literal
@@ -451,12 +431,12 @@ namespace Words {
                 } else  if (op == RegularOperator::CONCAT) {
                     // Concatenation of shortest literals is shortest literal
                     for (const auto& ch: children) {
-                        shortest += ch->shortesLiteral();
+                        shortest += ch->shortestLiteral();
                     }
                     return shortest;
                 } else {
                     for (const auto& ch: children) {
-                        int chl = ch->shortesLiteral();
+                        int chl = ch->shortestLiteral();
                         if (chl < shortest) {
                             shortest = chl;
                         }
@@ -465,7 +445,7 @@ namespace Words {
                 }
             };
 
-            virtual int numStars() {
+            virtual int numStars() override {
                 int c = 0;
                 if (op == RegularOperator::STAR) {
                     c++;
@@ -476,7 +456,7 @@ namespace Words {
                 return c;
             };
 
-            virtual int starHeight() {
+            virtual int starHeight() override {
                 int c = 0;
                 for (const auto &ch: children) {
                     int csh = ch->starHeight();
@@ -491,7 +471,7 @@ namespace Words {
                 return c;
             }
 
-            int longestLiteral(){
+            int longestLiteral() override {
                 int longest = 0;
 
                 if (op == RegularOperator::CONCAT) {
@@ -519,7 +499,7 @@ namespace Words {
                 return sum;
             }
 
-            long complexity() override{
+            long complexity() override {
                 int sum = 0;
                 for (const auto& c: children) {
                     sum += c->complexity();
@@ -527,13 +507,13 @@ namespace Words {
                 return sum+1;
             }
 
-            void getAlphabet(Words::WordBuilder wb) {
+            void getAlphabet(Words::WordBuilder wb) override {
                 for (auto c: children) {
                     c->getAlphabet(wb);
                 }
             }
 
-            int depth() {
+            int depth() override {
                 int d = 0;
                 for (const auto& c: children) {
                     int cd = c->depth();
@@ -551,7 +531,7 @@ namespace Words {
                 return children;
             };
 
-            bool acceptsEpsilon() {
+            bool acceptsEpsilon() override {
                 switch (op) {
                     case RegularOperator::UNION: {
 
@@ -585,7 +565,7 @@ namespace Words {
 
 
 
-        struct RegConstraint {
+        class RegConstraint {
         public:
             RegConstraint(Words::Word pattern, std::shared_ptr<RegNode> expr) : pattern(pattern), expr(expr) {};
 

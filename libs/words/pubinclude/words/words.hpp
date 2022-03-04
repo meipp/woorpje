@@ -72,17 +72,17 @@ namespace Words {
 
         bool isVariable() const override { return true; }
 
-        virtual Variable *getVariable() { return this; }
+        virtual Variable *getVariable() override { return this; }
 
-        virtual const Variable *getVariable() const { return this; }
+        virtual const Variable *getVariable() const override { return this; }
 
-        virtual char getRepr() const { return str.at(0); }
+        virtual char getRepr() const override { return str.at(0); }
 
-        virtual std::ostream &output(std::ostream &os) const {
+        virtual std::ostream &output(std::ostream &os) const override {
             return os << '_' << str << '_';
         }
 
-        virtual std::string getName() const { return str; }
+        virtual std::string getName() const override { return str; }
 
     protected:
         Variable(const std::string &s, size_t index, Context *ctxt)
@@ -105,9 +105,9 @@ namespace Words {
 
         bool isSequence() const override { return true; }
 
-        virtual Sequence *getSequence() { return this; }
+        virtual Sequence *getSequence() override { return this; }
 
-        virtual const Sequence *getSequence() const { return this; }
+        virtual const Sequence *getSequence() const override { return this; }
 
         const_iterator begin() const { return entries.begin(); }
 
@@ -219,7 +219,7 @@ namespace Words {
             return diff;
         }
 
-        virtual std::string getName() const {
+        virtual std::string getName() const override {
             std::stringstream str;
             this->output(str);
             return str.str();
@@ -239,17 +239,17 @@ namespace Words {
 
         bool isTerminal() const override { return true; }
 
-        virtual Terminal *getTerminal() { return this; }
+        virtual Terminal *getTerminal() override { return this; }
 
-        virtual const Terminal *getTerminal() const { return this; }
+        virtual const Terminal *getTerminal() const override { return this; }
 
         virtual bool isEpsilon() const { return epsilon; }
 
-        virtual std::ostream &output(std::ostream &os) const { return os << repr; }
+        virtual std::ostream &output(std::ostream &os) const override { return os << repr; }
 
         virtual char getChar() const { return repr; }
 
-        virtual std::string getName() const { return std::string(getChar(), 1); }
+        virtual std::string getName() const override { return std::string(getChar(), 1); }
 
     protected:
         Terminal(char repr, size_t index, Context *ctxt, bool eps = false)
@@ -631,8 +631,8 @@ namespace Words {
         Equation(const Word &lhs, Word &rhs, EqType type = EqType::Eq)
                 : lhs(lhs), rhs(rhs), type(type) {}
 
-        Equation(const Equation &eq)
-                : lhs(eq.lhs), rhs(eq.rhs), type(eq.type), ctxt(eq.ctxt) {}
+        //Equation(const Equation &eq)
+        //       : lhs(eq.lhs), rhs(eq.rhs), type(eq.type), ctxt(eq.ctxt) {}
 
         Word lhs;
         Word rhs;

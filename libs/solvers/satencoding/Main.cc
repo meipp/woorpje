@@ -1674,7 +1674,7 @@ template<bool newencode = true>
             profiler->numStars = recon->expr->numStars();
             profiler->depth = recon->expr->depth();
             profiler->longestLiteral = recon->expr->longestLiteral();
-            profiler->shortestLiteral = recon->expr->shortesLiteral();
+            profiler->shortestLiteral = recon->expr->shortestLiteral();
             if (recon->expr->isEmpty()) {
                 cout << recon->expr->toString();
                 return Words::Solvers::Result::DefinitelyNoSolution; 

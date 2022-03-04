@@ -20,7 +20,7 @@ namespace Words {
 	public:
 	  ~Simplifier () {}
 	  
-	  static Simplified solverReduce  (T&, Words::Substitution& s) {return Simplified::JustReduced;}
+	  static Simplified solverReduce  (T&, Words::Substitution&) {return Simplified::JustReduced;}
 	};
 	
 
@@ -232,7 +232,7 @@ namespace Words {
 	
 	class ConstSequenceMismatch : public EquationSimplifier{
 	public:
-	  static Simplified solverReduce  (Words::Equation& eq,Substitution& s, std::vector<Constraints::Constraint_ptr>&) {
+	  static Simplified solverReduce  (Words::Equation& eq,Substitution&, std::vector<Constraints::Constraint_ptr>&) {
 		Words::Word* constSide;
 		Words::Word* variableSide;
 		if(eq.lhs.noVariableWord() && !eq.rhs.noVariableWord()){
@@ -260,7 +260,7 @@ namespace Words {
 
 	class ConstSequenceFolding {
 	public:
-	  static Simplified solverReduce  (Words::Equation& eq,Substitution& s, std::vector<Constraints::Constraint_ptr>&) {
+	  static Simplified solverReduce (Words::Equation& eq, Substitution&, std::vector<Constraints::Constraint_ptr>&) {
 		foldWord (eq.lhs,eq);
 		foldWord (eq.rhs,eq);
 		return Simplified::JustReduced;
@@ -308,10 +308,9 @@ namespace Words {
 		return Inner::solverReduce (eq,subs,cstr);
 	  }
 
-	  static Simplified solverReduce  (Words::Options& opt, Substitution& substitution, std::vector<Constraints::Constraint_ptr>& cstr) {
+	  static Simplified solverReduce  (Words::Options& opt, Substitution& substitution, std::vector<Constraints::Constraint_ptr>&) {
 		//return Simplified::JustReduced;
-		  
-		  
+
 		std::vector<Words::Equation>::iterator it = opt.equations.begin();
 		std::vector<Words::Equation>::iterator end = opt.equations.end();
 		size_t i = 0;
@@ -569,7 +568,7 @@ namespace Words {
               return Simplified::JustReduced;
       }
 
-	  static Simplified solverReduce  (Words::Equation& eq,Substitution&,std::vector<Constraints::Constraint_ptr>& cstr) {
+	  static Simplified solverReduce  (Words::Equation& eq,Substitution&,std::vector<Constraints::Constraint_ptr>&) {
 		  Words::Algorithms::ParikhMatrix lhs_p_pm;
 		  Words::Algorithms::ParikhMatrix lhs_s_pm;
 		  Words::Algorithms::ParikhMatrix rhs_p_pm;

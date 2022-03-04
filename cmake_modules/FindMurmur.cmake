@@ -1,15 +1,14 @@
 FIND_PATH(LIBMURMUR_INCLUDE_DIR NAMES murmurhash.h)
-FIND_LIBRARY(LIBMURMUR_LIBRARY NAMES libmurmurhash.so.2.0.0) 
-
+FIND_LIBRARY(LIBMURMUR_LIBRARY NAMES libmurmurhash.a murmurhash)
 
 INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(LIBMURMUR DEFAULT_MSG LIBMURMUR_LIBRARY LIBMURMUR_INCLUDE_DIR )
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(Murmur DEFAULT_MSG LIBMURMUR_LIBRARY LIBMURMUR_INCLUDE_DIR )
 
-IF(LIBMURMUR_FOUND)
+IF(Murmur_FOUND)
 	SET(MURMUR_LIBRARIES ${LIBMURMUR_LIBRARY} )
 	SET(MURMUR_INCLUDE_DIRS ${LIBMURMUR_INCLUDE_DIR})
 	install (FILES ${MURMUR_LIBRARIES} DESTINATION lib)
-ELSE(LIBMURMUR_FOUND)
+ELSE(Murmur_FOUND)
 	include(ExternalProject)
 	ExternalProject_Add(murmurhash
   	URL "https://github.com/kloetzl/libmurmurhash/releases/download/v1.5/libmurmurhash-1.5.tar.gz"
@@ -22,10 +21,9 @@ ELSE(LIBMURMUR_FOUND)
 
 	add_library(murmur SHARED IMPORTED)	
 	add_dependencies(murmur murmurhash)
- 	set_property(TARGET murmur PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/murmurhash/install/lib/libmurmurhash.so.2.0.0)
-	
+	set_property(TARGET murmur PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/murmurhash/install/lib/libmurmurhash.a)
 
 	SET(MURMUR_LIBRARIES  murmur)
 	SET(MURMUR_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/murmurhash/install/include)
 	install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/murmurhash/install/lib DESTINATION .)
-ENDIF(LIBMURMUR_FOUND)
+ENDIF(Murmur_FOUND)

@@ -18,7 +18,7 @@ namespace Words {
 	//where n1 .. nn and k are integers and X1...Xn are variables
 	class LinearConstraint :public Constraint  {
 	public:
-	  LinearConstraint (std::vector<VarMultiplicity>&& vec, int64_t rhs) : variables(vec),rhs(rhs) {}  
+	  LinearConstraint (std::vector<VarMultiplicity>&& vec, int64_t rhs) : variables(vec),rhs(rhs) {}
 	  auto begin () const {return variables.begin();}
 	  auto end () const {return variables.end();}
 	  const auto& getRHS () const {return rhs;}
@@ -61,8 +61,8 @@ namespace Words {
 	  virtual const Unrestricted* getUnrestricted () const override {return this;}
 	  virtual bool isUnrestricted () const override {return true;}
 	  virtual std::shared_ptr<Constraint> copy() const override {return std::make_shared<Unrestricted>(*this);}
-	  virtual std::ostream& output (std::ostream& os) const {return os << "Unrestrict";  unrestricted->output (os);}
-	  virtual uint32_t hash (uint32_t seed) const  {return Words::Hash::Hash<const IEntry*> (&unrestricted,1,seed);}
+	  virtual std::ostream& output (std::ostream& os) const override {return os << "Unrestrict";  unrestricted->output (os);}
+	  virtual uint32_t hash (uint32_t seed) const override {return Words::Hash::Hash<const IEntry*> (&unrestricted,1,seed);}
 	  const Words::IEntry* getUnrestrictedVar () const {return unrestricted;}
 	private: 
 	  const IEntry* unrestricted;
@@ -70,6 +70,7 @@ namespace Words {
 	
 	class LinearConstraintBuilder {
 	public:
+	  virtual ~LinearConstraintBuilder() = default;
 	  virtual Constraint_ptr  makeConstraint () = 0;
 	  virtual void addLHS (IEntry* e, int64_t) = 0;
 	  virtual void addLHS (int64_t ) = 0;
@@ -81,13 +82,13 @@ namespace Words {
 	
 
 	template<Cmp d>
-	class Helper;
+	struct Helper;
 
 	template<Cmp cc> 
 	class LinConsBuilder : public LinearConstraintBuilder {
 	public:
 	  LinConsBuilder ();
-	  ~LinConsBuilder ();
+	  virtual ~LinConsBuilder ();
 	  Constraint_ptr  makeConstraint ();
 	  void addLHS (IEntry* e, int64_t);
 	  void addLHS (int64_t );

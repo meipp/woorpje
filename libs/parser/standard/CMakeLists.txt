@@ -8,7 +8,7 @@ if (NOT GPERF)
 endif(NOT GPERF)
 
 if (NOT FLEX)
-   	 message(FATAL_ERROR "flex++ is required")
+   message(FATAL_ERROR "flex++ is required")
 endif(NOT FLEX)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-missing-field-initializers")
@@ -36,10 +36,11 @@ gperf_generate_new(${CMAKE_CURRENT_SOURCE_DIR}/keywords.gperf ${CMAKE_CURRENT_BI
 lex_generate_new(${CMAKE_CURRENT_SOURCE_DIR}/lexer.lex ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.cc)
 
 add_library (stdparser parser.cpp ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.cc ${CMAKE_CURRENT_BINARY_DIR}/key.cpp)
-target_include_directories(stdparser PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../pubinclude
-				     						 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-										PRIVATE $<TARGET_PROPERTY:words,INTERFACE_INCLUDE_DIRECTORIES>		
-															 							  PRIVATE $<TARGET_PROPERTY:solvers,INTERFACE_INCLUDE_DIRECTORIES>
-								  		  )
+target_include_directories(stdparser
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../pubinclude
+		PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+		PRIVATE $<TARGET_PROPERTY:words,INTERFACE_INCLUDE_DIRECTORIES>
+        PRIVATE $<TARGET_PROPERTY:solvers,INTERFACE_INCLUDE_DIRECTORIES>
+)
 
-target_compile_options (stdparser PRIVATE -Wall -Wpedantic -Wextra -fPIC)
+target_compile_options (stdparser PRIVATE -Wall -fPIC)

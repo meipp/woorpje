@@ -1,8 +1,7 @@
 #ifndef _HASH__
 #define _HASH__
 
-#include <cstdint>
-
+#include <cstddef>
 
 uint32_t hash_impl (const void *addr, std::size_t len, uint32_t seed);
 

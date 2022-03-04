@@ -14,6 +14,7 @@ namespace Words {
   class JobGenerator {
   public:
 	virtual std::unique_ptr<Job> newJob ()  = 0;
+  virtual ~JobGenerator() = default;
   };
   
   class ParserInterface {
