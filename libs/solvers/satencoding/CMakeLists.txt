@@ -1,5 +1,7 @@
 find_package(OpenMP REQUIRED)
-add_library(satsolver solver.cpp Main.cc regular/commons.h regular/encoder.cpp regular/proplog.cpp regular/rAbs.cpp regular/automaton.cpp regular/util.cpp)
+add_library(satsolver solver.cpp Main.cc 
+        regular/commons.h regular/encoder.cpp regular/proplog.cpp regular/nfa.h 
+        regular/rAbs.cpp regular/nfa.cpp regular/util.cpp)
 
 target_include_directories(satsolver
 	PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../pubinclude ${Boost_INCLUDE_DIR}

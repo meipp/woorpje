@@ -1005,7 +1005,7 @@ namespace RegularEncoding {
 
 
     Automaton::NFA AutomatonEncoder::filledAutomaton(Automaton::NFA &nfa) {
-        Automaton::NFA Mxi(nfa.numStates(), nfa.getDelta(), nfa.getInitialState(), nfa.getFinalStates());
+        Automaton::NFA Mxi(nfa.numStates(), nfa.getDelta(), nfa.getDeltaEpsilon(), nfa.getInitialState(), nfa.getFinalStates());
         for (int q = 0; q < Mxi.numStates(); q++) {
             Mxi.add_transition(q, ctx.getEpsilon(), q);
         }

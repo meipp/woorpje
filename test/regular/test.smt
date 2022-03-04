@@ -1,8 +1,15 @@
 (set-logic QF_S)
+
 (declare-fun A () String)
-(assert (str.in_re A
-    (re.union
-        (re.* (str.to_re ""))
+
+(assert (= A A))
+
+(assert (str.in_re (str.++  A)
+    (re.++
+        (str.to_re "a")
+        (re.union
+            (str.to_re "b")
+            (str.to_re "c")
+        )
     )
-)
-(check-sat)
+) )
