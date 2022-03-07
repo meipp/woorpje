@@ -130,8 +130,10 @@ namespace Words {
 
                 actualbre = (int) std::ceil(std::sqrt(actualbre)) + 1;
 
-                
 
+                if (lowerBound < 0){
+                    lowerBound = 1;
+                }
                 int i = (int) std::ceil(std::sqrt(lowerBound));
 
 
