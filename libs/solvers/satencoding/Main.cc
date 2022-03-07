@@ -44,7 +44,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "solvers/solvers.hpp"
 #include "solvers/timing.hpp"
 #include "words/words.hpp"
-#include "regular/regencoding.h"
+#include "regular/encoding.h"
 
 #include <iostream>
 #include <map>

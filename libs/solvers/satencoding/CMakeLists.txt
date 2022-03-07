@@ -1,6 +1,7 @@
 find_package(OpenMP REQUIRED)
 add_library(satsolver solver.cpp Main.cc 
-        regular/commons.h regular/encoder.cpp regular/proplog.cpp regular/nfa.h 
+        regular/commons.h regular/proplog.cpp regular/nfa.h 
+        regular/encoding.h regular/nfaencoder.cpp regular/wordencoder.cpp
         regular/rAbs.cpp regular/nfa.cpp regular/util.cpp)
 
 target_include_directories(satsolver
