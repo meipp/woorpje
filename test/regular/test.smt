@@ -5,11 +5,10 @@
 (assert (= A A))
 
 (assert (str.in_re (str.++  A)
-    (re.++
-        (str.to_re "a")
+
         (re.union
             (str.to_re "b")
             (str.to_re "c")
         )
-    )
+    
 ) )

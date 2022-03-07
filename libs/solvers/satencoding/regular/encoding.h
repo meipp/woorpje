@@ -120,14 +120,15 @@ class AutomatonEncoder : public Encoder {
    private:
     PropositionalLogic::PLFormula encodeTransition(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat);
 
+    PropositionalLogic::PLFormula encodeEpsTransition(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat);
+
     PropositionalLogic::PLFormula encodePredecessor(Automaton::NFA &nfa, std::vector<FilledPos> filledPat);
 
     PropositionalLogic::PLFormula encodeFinal(Automaton::NFA &nfa, const std::vector<FilledPos> &filledPat);
 
     PropositionalLogic::PLFormula encodeInitial(Automaton::NFA &nfa);
 
-    PropositionalLogic::PLFormula encodePredNew(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat, int q, int i, std::set<std::pair<int, int>> &,
-                                                std::map<int, std::set<std::pair<Words::Terminal *, int>>> &);
+    PropositionalLogic::PLFormula encodePredNew(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat, std::map<int, std::set<std::pair<Words::Terminal *, int>>> &, std::map<int, std::set<int>>&);
 
     Automaton::NFA filledAutomaton(Automaton::NFA &nfa);
 
