@@ -176,7 +176,65 @@ namespace Words {
             return left.noVariableWord() && left.noTerminalWord();
         }
 
-        /**
+	/* HOL functions */
+        virtual void caseStrPrefixOf(StrPrefixOf &cc) override {
+                // lexpr is a prefix of rexpr
+                var = Glucose::lit_Undef;
+                auto lexpr = cc.getExpr(0);
+                auto rexpr = cc.getExpr(1);
+
+                // build prefix string
+                static size_t i = 0;
+                std::stringstream str;
+                str << "_woorpje_tmp_prefix" << i;
+                auto symb_pref = std::make_shared<Symbol>(str.str());
+                symb_pref->setSort(Sort::String);
+                ctxt.addVariable(str.str());
+
+		i++;
+
+                ASTNode_ptr new_var = std::make_shared<Identifier>(*symb_pref);
+                auto lhs  = std::make_shared<StrConcat>(std::initializer_list<ASTNode_ptr>({lexpr, new_var}));
+		auto rhs = std::make_shared<StrConcat>(std::initializer_list<ASTNode_ptr>({rexpr}));
+		auto c = EQ(std::initializer_list<ASTNode_ptr>({lhs,rhs}));
+	
+
+		if (!checkAlreadyIn(c, var)) {
+                // build word equation
+                var = makeEquLit(c);
+
+                Words::Word left;
+                Words::Word right;
+                AutoNull<Words::WordBuilder> nuller(wb);
+                wb = ctxt.makeWordBuilder(left);
+                lhs->accept(*this);
+                wb->flush();
+                wb = ctxt.makeWordBuilder(right);
+                rhs->accept(*this);
+                wb->flush();
+
+                Words::Equation eq(left, right);
+                eq.ctxt = &ctxt;
+                var = makeEquLit(c);
+                eqs.insert(std::make_pair(Glucose::var(var), eq));
+		
+                insert(c, var);
+			
+                if (emptyWord(left) &&
+                    !right.noTerminalWord()) {
+                    solver.addClause(~var);
+                }
+
+                if (emptyWord(right) &&
+                    !left.noTerminalWord()) {
+                    solver.addClause(~var);
+                }
+            }
+    
+        }
+		
+		
+	/**
          * Adds word equations to the job's context.
          */
         virtual void caseEQ(EQ &c) override {
@@ -625,6 +683,8 @@ namespace Words {
 
         virtual void caseEQ(EQ&) {/* Do nothing */}
 
+	virtual void caseStrPrefixOf(StrPrefixOf&){}
+
         void run(ASTNode &node) {
             node.accept(*this);
         }
@@ -713,7 +773,7 @@ namespace Words {
             }
 
 
-            std::shared_ptr<Words::RegularConstraints::RegNode> ex = rcs[0].expr;
+            //std::shared_ptr<Words::RegularConstraints::RegNode> ex = rcs[0].expr;
         
 
 

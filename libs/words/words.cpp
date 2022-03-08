@@ -53,12 +53,13 @@ namespace Words {
       return terminals.back();
 	  
     }
-    
+
     std::unordered_map<std::string,IEntry*> reprToEntry;
     std::unordered_map<size_t,Sequence*> hashToSequence;
     std::vector<Variable*> vars;
     std::vector<Terminal*> terminals;
     std::vector<Sequence*> sequences;
+
   };
   
   Context::Context () {
@@ -69,7 +70,7 @@ namespace Words {
   Context::~Context () {
 	
   }
-  
+
   IEntry* Context::addVariable (const std::string& c) {
     return _internal->addVariable (c,this);
   }
