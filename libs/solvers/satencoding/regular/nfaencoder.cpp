@@ -167,6 +167,7 @@ PLFormula AutomatonEncoder::encodeInitial(Automaton::NFA &Mxi) {
     vector<PLFormula> conj;
 
     set<int> q0closure = Mxi.epsilonClosure(Mxi.getInitialState());
+    q0closure.insert(Mxi.getInitialState());
     for (int q = 0; q < Mxi.numStates(); q++) {
         if (q0closure.count(q) == 1) {
             PLFormula init = PLFormula::lit(stateVars[make_pair(q, 0)]);
