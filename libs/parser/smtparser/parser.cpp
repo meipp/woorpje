@@ -199,38 +199,37 @@ namespace Words {
 		auto c = EQ(std::initializer_list<ASTNode_ptr>({lhs,rhs}));
 	
 
-		if (!checkAlreadyIn(c, var)) {
+		if (!checkAlreadyIn(cc, var)) {
                 // build word equation
-                var = makeEquLit(c);
-
-                Words::Word left;
-                Words::Word right;
-                AutoNull<Words::WordBuilder> nuller(wb);
-                wb = ctxt.makeWordBuilder(left);
-                lhs->accept(*this);
-                wb->flush();
-                wb = ctxt.makeWordBuilder(right);
-                rhs->accept(*this);
-                wb->flush();
-
-                Words::Equation eq(left, right);
-                eq.ctxt = &ctxt;
-                var = makeEquLit(c);
-                eqs.insert(std::make_pair(Glucose::var(var), eq));
+		  var = makeEquLit(cc);
+		  
+		  Words::Word left;
+		  Words::Word right;
+		  AutoNull<Words::WordBuilder> nuller(wb);
+		  wb = ctxt.makeWordBuilder(left);
+		  lhs->accept(*this);
+		  wb->flush();
+		  wb = ctxt.makeWordBuilder(right);
+		  rhs->accept(*this);
+		  wb->flush();
+		  
+		  Words::Equation eq(left, right);
+		  eq.ctxt = &ctxt;
+		  eqs.insert(std::make_pair(Glucose::var(var), eq));
+		  
+		  insert(cc, var);
+		  
+		  if (emptyWord(left) &&
+		      !right.noTerminalWord()) {
+                    solver.addClause(~var);
+		  }
+		  
+		  if (emptyWord(right) &&
+		      !left.noTerminalWord()) {
+                    solver.addClause(~var);
+		  }
+		}
 		
-                insert(c, var);
-			
-                if (emptyWord(left) &&
-                    !right.noTerminalWord()) {
-                    solver.addClause(~var);
-                }
-
-                if (emptyWord(right) &&
-                    !left.noTerminalWord()) {
-                    solver.addClause(~var);
-                }
-            }
-    
         }
 		
 		
@@ -286,13 +285,13 @@ namespace Words {
             }
         }
 
-        Glucose::Lit makeEquLit(EQ c) {
-            if (equalities.count(c)) {
-                return equalities.at(c);
+        Glucose::Lit makeEquLit(ASTNode& c) {
+            if (equalities.count(&c)) {
+                return equalities.at(&c);
             }
             auto v = solver.newVar();
             auto var = Glucose::mkLit(v);
-            equalities.insert(std::make_pair(c, var));
+            equalities.insert(std::make_pair(&c, var));
 
             return var;
         }
@@ -562,7 +561,7 @@ namespace Words {
         std::unordered_map<Glucose::Var, Words::Equation> &eqs;
         std::unordered_map<void *, Glucose::Lit> boolvar;
 
-        std::unordered_map<EQ, Glucose::Lit> equalities;
+        std::unordered_map<ASTNode *, Glucose::Lit> equalities;
 
         bool instrlen = false;
         std::unordered_map<size_t, Glucose::Lit> &alreadyCreated;
