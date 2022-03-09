@@ -133,7 +133,7 @@ namespace Words {
         clause.push(~Glucose::mkLit(l));	  
       }
       else if (res == l_False) {
-		    clause.push(Glucose::mkLit(l));
+	clause.push(Glucose::mkLit(l));
       }
     }
 	
@@ -174,11 +174,15 @@ namespace Words {
     virtual void caseEQ (EQ& c) override {
       visitRedirect(c);
     } 
+
+    virtual void caseStrPrefixOf (StrPrefixOf& c) override {
+      visitRedirect(c);
+    }
     
     virtual void caseNEQ (NEQ& c) override {
       assert(neqmap.count(c.hash()));
       neqmap.at(c.hash())->accept (*this);
-    }
+    } 
 		
     virtual void caseFunctionApplication (FunctionApplication&) override {
       throw UnsupportedFeature ();
@@ -233,7 +237,7 @@ namespace Words {
     Glucose::Solver& solver;
     Glucose::vec<Glucose::Lit> clause;
     std::unordered_map<size_t,ASTNode_ptr>& neqmap;
-	  Glucose::vec<Glucose::Lit>& assumptions;
+    Glucose::vec<Glucose::Lit>& assumptions;
   };
   
 }
