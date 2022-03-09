@@ -286,13 +286,13 @@ namespace Words {
             }
         }
 
-        Glucose::Lit makeEquLit(EQ &c) {
-            if (equalities.count(&c)) {
-                return equalities.at(&c);
+        Glucose::Lit makeEquLit(EQ c) {
+            if (equalities.count(c)) {
+                return equalities.at(c);
             }
             auto v = solver.newVar();
             auto var = Glucose::mkLit(v);
-            equalities.insert(std::make_pair(&c, var));
+            equalities.insert(std::make_pair(c, var));
 
             return var;
         }
@@ -562,7 +562,7 @@ namespace Words {
         std::unordered_map<Glucose::Var, Words::Equation> &eqs;
         std::unordered_map<void *, Glucose::Lit> boolvar;
 
-        std::unordered_map<EQ *, Glucose::Lit> equalities;
+        std::unordered_map<EQ, Glucose::Lit> equalities;
 
         bool instrlen = false;
         std::unordered_map<size_t, Glucose::Lit> &alreadyCreated;
