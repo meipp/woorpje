@@ -37,6 +37,13 @@ namespace Words {
       return vars.back();
     }
 
+    IEntry* addTemporaryVariable (const std::string& c,Context* ctxt) {
+    	auto var = addVariable(c,ctxt);
+	var->setTemporary();
+	return var;
+    
+    }
+
     IEntry* addTerminal (char c,Context* ctxt, bool epsilon) {
       if (reprToEntry.count (std::string(1,c))) {
 		IEntry* e = reprToEntry[std::string(1,c)];
@@ -73,6 +80,10 @@ namespace Words {
 
   IEntry* Context::addVariable (const std::string& c) {
     return _internal->addVariable (c,this);
+  }
+
+  IEntry* Context::addTemporaryVariable (const std::string& c) {
+    return _internal->addTemporaryVariable (c,this);
   }
 
   IEntry* Context::addTerminal (char c) {

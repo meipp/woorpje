@@ -33,6 +33,10 @@ namespace Words {
         virtual size_t getIndex() { return index; }
 
         virtual bool isVariable() const { return false; }
+	
+	virtual bool isTemporary() const { return false; }
+
+	virtual void setTemporary() {}
 
         virtual bool isTerminal() const { return false; }
 
@@ -76,11 +80,19 @@ namespace Words {
 
         virtual const Variable *getVariable() const override { return this; }
 
+	bool isTemporary() const override { return temp_var;}
+
+	void setTemporary() override { temp_var = true; }
+
         virtual char getRepr() const override { return str.at(0); }
 
         virtual std::ostream &output(std::ostream &os) const override {
-            return os << '_' << str << '_';
-        }
+            //if (!temp_var){
+		return os << '_' << str << '_';
+            //} else {
+		//return os;
+	   //}
+	}
 
         virtual std::string getName() const override { return str; }
 
@@ -90,6 +102,7 @@ namespace Words {
 
     private:
         std::string str;
+    	bool temp_var = 0;
     };
 
     class Sequence : public IEntry {
@@ -586,7 +599,11 @@ namespace Words {
 
         IEntry *addVariable(const std::string &);
 
+	IEntry *addTemporaryVariable(const std::string &);
+
         IEntry *addVariable(char c) { return addVariable(std::string(1, c)); }
+	
+	IEntry *addTemporaryVariable(char c) { return addTemporaryVariable(std::string(1, c)); }
 
         IEntry *addTerminal(char c);
 
@@ -623,7 +640,7 @@ namespace Words {
 
     struct Equation {
         enum class EqType {
-            Eq, NEq
+            Eq, NEq, SuffixOf, PrefixOf, Contains
         };
 
         Equation() : type(EqType::Eq) {}
@@ -684,14 +701,23 @@ namespace Words {
     inline std::ostream &operator<<(std::ostream &os, const Equation::EqType &eq) {
         if (eq == Equation::EqType::Eq)
             return os << " == ";
-        else
+        if (eq == Equation::EqType::NEq)
             return os << " != ";
+	if (eq == Equation::EqType::PrefixOf)
+            return os << "(str.prefixof ";
+	if (eq == Equation::EqType::SuffixOf)
+            return os << "(str.suffixof ";
+	if (eq == Equation::EqType::Contains)
+            return os << "(str.contains ";
     }
 
     std::ostream &operator<<(std::ostream &, const Word &w);
 
     inline std::ostream &operator<<(std::ostream &os, const Equation &w) {
-        return os << w.lhs << w.type << w.rhs;
+        if (w.type == Equation::EqType::Eq || w.type == Equation::EqType::NEq)
+		return os << w.lhs << w.type << w.rhs;
+	return os << w.type << w.lhs << w.rhs << " )";
+        
     }
 
     std::ostream &operator<<(std::ostream &os, const Substitution &sub);
