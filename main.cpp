@@ -39,6 +39,9 @@ public:
 	std::cout << "Substitution: " << std::endl;
 	for (size_t var = 0; var < opt.context->nbVars(); var++) {
 	  auto variable = opt.context->getVariable (var);
+	  if (variable->isTemporary())
+		  continue;
+
 	  std::cout << *variable << ": ";
 	  for (auto c : w[variable]) {
 	    c->output (std::cout);
