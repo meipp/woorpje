@@ -1466,6 +1466,7 @@ setupSolverMain(Words::Options &opt) { // std::vector<std::string>& mlhs,
     for (auto &eq: opt.equations) {
         readSymbols(eq.lhs);
         readSymbols(eq.rhs);
+	std::cout << eq.lhs << " == " << eq.rhs << std::endl;
     }
 
     for (auto rc: opt.recons) {

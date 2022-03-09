@@ -72,7 +72,7 @@ namespace Words {
 
 
                 for (auto &eq: opt.equations) {
-                    str.str("");
+		    str.str("");
                     for (auto e: eq.lhs) {
                         str << e->getName();
                     }
