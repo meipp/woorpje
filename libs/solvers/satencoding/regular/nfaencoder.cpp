@@ -1,6 +1,6 @@
 #include <chrono>
 #include <iostream>
-#include <stack>
+#include <queue>
 #include <words/exceptions.hpp>
 
 #include "encoding.h"
@@ -46,6 +46,8 @@ set<set<int>> AutomatonEncoder::encode() {
     }
 
     Automaton::NFA Mxi = filledAutomaton(M);
+
+    cout << Mxi.toString() << "\n";
 
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<milliseconds>(stop - start);
@@ -255,46 +257,144 @@ PLFormula AutomatonEncoder::encodeTransition(Automaton::NFA &Mxi, std::vector<Fi
     return PLFormula::land(vector<PLFormula>{ffalse});
 }
 
+set<pair<Words::Terminal *, int>> predecessorClosure(Automaton::NFA &Mxi, int q, map<int, set<pair<Words::Terminal *, int>>> &pred, map<int, set<int>> &epsPred, set<int> *skipped,
+                                                     Words::Terminal *label = nullptr) {
+    set<pair<Words::Terminal *, int>> closure;
+    // Direct predecessors
+    if (pred.count(q) > 0) {
+        for (auto &pre : pred.at(q)) {
+            if (label == nullptr || pre.first == label) {
+                closure.insert(pre);
+            }
+        }
+    }
+    // Indirect predecessors
+    if (epsPred.count(q) > 0) {
+        for (auto &epsPre : epsPred.at(q)) {
+            auto eClosure = predecessorClosure(Mxi, epsPre, pred, epsPred, skipped, label);
+            skipped->insert(epsPre);
+            closure.insert(eClosure.begin(), eClosure.end());
+        }
+    }
+    cout << "\tskipped.size() = " << skipped->size() << "\n";
+    return closure;
+}
+
 // Encodes: If after [i] transitions in state [q], there must be a state [q'] reachable after [i]-1 transitions and
 // an edge from [q] to [q'] labeled with [filledPat[i-1]]
 PLFormula AutomatonEncoder::encodePredNew(Automaton::NFA &Mxi, std::vector<FilledPos> filledPat, map<int, set<pair<Words::Terminal *, int>>> &pred, map<int, set<int>> &epsPred) {
     vector<PLFormula> conjunctions;
-    for (int i = 1; i <= filledPat.size(); i++) {
-        for (int q = 0; q < Mxi.numStates(); q++) {
-            int minLength = numTerminals(filledPat, 0, i);
-            int maxLength = i;
-            if (maxLength < Mxi.minReachable[q] || minLength > Mxi.maxReachable[q]) {
-                int succVar = -stateVars[make_pair(q, i)];
-                conjunctions.push_back(PLFormula::lit(succVar));
-                continue;
-            }
+    set<pair<int, int>> seen;
+    queue<pair<int, int>> squeue;
 
-            auto svar = -stateVars[make_pair(q, i)];
-            vector<PLFormula> disjunctions = {PLFormula::lit(svar)};
-            if (pred.count(q) != 0) {
-                for (auto &pre : pred[q]) {
-                    auto pvar = stateVars[make_pair(pre.second, i - 1)];
-                    // Index of wordvar
-                    int k = pre.first->isEpsilon() ? sigmaSize : tIndices->at(pre.first);
-                    int wordvar;
-                    if (filledPat.at(i - 1).isTerminal()) {
-                        int ci = filledPat[i - 1].getTerminalIndex();
-                        // TODO: What do if k != ci
-                        wordvar = constantsVars->at(make_pair(ci, k));
-                    } else {
-                        pair<int, int> xij = filledPat[i - 1].getVarIndex();
-                        wordvar = variableVars->at(make_pair(xij, k));
+    for (int qf : Mxi.getFinalStates()) {
+        squeue.push(make_pair(qf, filledPat.size()));
+    }
+
+    while (!squeue.empty()) {
+        auto qipair = squeue.front();
+        squeue.pop();
+        if (seen.count(qipair) > 0) {
+            continue;
+        }
+        seen.insert(qipair);
+
+        int q = qipair.first;
+        int i = qipair.second;
+        cout << "(" << q << ", " << i << "), remaining: " << squeue.size() << " \n";
+        cout.flush();
+
+        auto svar = -stateVars[make_pair(q, i)];
+
+        if (i < Mxi.minReachable[q] || numTerminals(filledPat, 0, i) > Mxi.maxReachable[q]) {
+            conjunctions.push_back(PLFormula::lit(svar));
+            continue;
+        }
+
+        if (numTerminals(filledPat, i) > Mxi.maxrAbs[q] || filledPat.size() - i < Mxi.minrAbs[q]) {
+            conjunctions.push_back(PLFormula::lit(svar));
+            continue;
+        }
+
+        // Rewind until variable in pattern
+        int pos = i - 1;  // position in pattern to match
+        set<pair<Words::Terminal *, int>> predecessors;
+
+        if (filledPat.at(pos).isTerminal()) {
+            cout << "isTerm\n";
+            cout.flush();
+            predecessors = predecessorClosure(Mxi, q, pred, epsPred, new set<int>(), index2t.at(filledPat[pos].getTerminalIndex()));
+            cout << boolalpha << "hier und " << filledPat.at(pos - 1).isTerminal() << "\n";
+            cout.flush();
+            while (filledPat.at(pos - 1).isTerminal() && pos > 0 && predecessors.size() > 0) {
+                set<pair<Words::Terminal *, int>> prepredecessors{};
+
+                cout << "|preds| = " << predecessors.size() << "\n";
+                for (auto &p : predecessors) {
+                    // Find predecessors of predecessor
+                    set<int> *skipped = new set<int>;
+                    cout << "Pre: " << p.second << "\n";
+                    cout << "Address: " << &skipped << "\n";
+                    for (auto &prepred : predecessorClosure(Mxi, p.second, pred, epsPred, skipped, nullptr)) {
+                        // Check if edge from pre-predecessor to predecessor is viable
+                        if (!prepred.first->isEpsilon() && tIndices->at(prepred.first) == filledPat.at(pos - 1).getTerminalIndex()) {
+                            prepredecessors.insert(prepred);
+                        }
                     }
-                    disjunctions.push_back(PLFormula::land({PLFormula::lit(pvar), PLFormula::lit(wordvar)}));
+                    seen.insert(make_pair(p.second, pos));
+                    cout << "Skipped states: " << skipped->size() << "\n";
+                    for (int skip : *skipped) {
+                        seen.insert(make_pair(skip, pos));
+                    }
+                    free(skipped);
                 }
+                predecessors = prepredecessors;
+                pos--;
             }
+        } else {
+            set<int> skipped;
+            predecessors = predecessorClosure(Mxi, q, pred, epsPred, &skipped);
+            for (int skip : skipped) {
+                seen.insert(make_pair(skip, pos));
+            }
+        }
 
-            if (epsPred.count(q) != 0) {
-                for (int epsPre : epsPred[q]) {
-                    disjunctions.push_back(PLFormula::lit(stateVars[make_pair(epsPre, i)]));
+        vector<PLFormula> disjunctions = {PLFormula::lit(svar)};
+        vector<PLFormula> conj;
+
+        for (auto &pre : predecessors) {
+            auto pvar = stateVars[make_pair(pre.second, pos)];
+            int k = pre.first->isEpsilon() ? sigmaSize : tIndices->at(pre.first);
+            int wordvar;
+            if (filledPat.at(pos).isTerminal()) {
+                int ci = filledPat[pos].getTerminalIndex();
+                if (k != ci) {
+                    continue;
+                }
+                wordvar = constantsVars->at(make_pair(ci, k));
+            } else {
+                pair<int, int> xij = filledPat[pos].getVarIndex();
+                wordvar = variableVars->at(make_pair(xij, k));
+            }
+            conj.push_back(PLFormula::land({PLFormula::lit(pvar), PLFormula::lit(wordvar)}));
+        }
+        if (!conj.empty()) {
+            disjunctions.push_back(PLFormula::lor(conj));
+        }
+
+        if (disjunctions.size() == 1) {
+            conjunctions.push_back(disjunctions[0]);
+        } else {
+            conjunctions.push_back(PLFormula::lor(disjunctions));
+        }
+
+        if (pos > 0) {
+            for (auto &pre : predecessors) {
+                auto next = make_pair(pre.second, pos);
+                if (seen.count(next) == 0) {
+                    squeue.push(next);
                 }
             }
-            conjunctions.push_back(PLFormula::lor(disjunctions));
         }
     }
     return PLFormula::land(conjunctions);
