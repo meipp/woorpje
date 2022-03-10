@@ -6,7 +6,7 @@ Woorpje is a string solver for bounded word equations and regular constraints, i
 
 Tested on `gcc (Ubuntu 9.4.0-1ubuntu1~20.04) 9.4.0`.
 Woorpje does not compile on clang.
-Requirements: `cmake, gcc, z3, gperf, flexx`.
+Requirements: `cmake, gcc, z3, boost, gperf, flexx`.
 
 To build an executable that uses  SMT-LIB 2.6 as the input language, run the following steps:
 
@@ -25,6 +25,8 @@ After building, your can use woorpje as follows:
 ```sh
 ./woorpjeSMT --solver 1 <file>
 ```
+
+Where `<file>` is the path to an SMT-LIB 2.6 file.
 
 ## Supported Input Language
 
