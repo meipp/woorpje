@@ -189,7 +189,7 @@ namespace Words {
                 str << "_woorpje_tmp_prefix" << i;
                 auto symb_pref = std::make_shared<Symbol>(str.str());
                 symb_pref->setSort(Sort::String);
-                ctxt.addVariable(str.str());
+                ctxt.addTemporaryVariable(str.str());
 
 		i++;
 
@@ -199,39 +199,144 @@ namespace Words {
 		auto c = EQ(std::initializer_list<ASTNode_ptr>({lhs,rhs}));
 	
 
-		if (!checkAlreadyIn(c, var)) {
+		if (!checkAlreadyIn(cc, var)) {
                 // build word equation
-                var = makeEquLit(c);
-
-                Words::Word left;
-                Words::Word right;
-                AutoNull<Words::WordBuilder> nuller(wb);
-                wb = ctxt.makeWordBuilder(left);
-                lhs->accept(*this);
-                wb->flush();
-                wb = ctxt.makeWordBuilder(right);
-                rhs->accept(*this);
-                wb->flush();
-
-                Words::Equation eq(left, right);
-                eq.ctxt = &ctxt;
-                var = makeEquLit(c);
-                eqs.insert(std::make_pair(Glucose::var(var), eq));
-		
-                insert(c, var);
-			
-                if (emptyWord(left) &&
-                    !right.noTerminalWord()) {
+		  var = makeEquLit(cc);
+		  
+		  Words::Word left;
+		  Words::Word right;
+		  AutoNull<Words::WordBuilder> nuller(wb);
+		  wb = ctxt.makeWordBuilder(left);
+		  lhs->accept(*this);
+		  wb->flush();
+		  wb = ctxt.makeWordBuilder(right);
+		  rhs->accept(*this);
+		  wb->flush();
+		  
+		  Words::Equation eq(left, right);
+		  eq.ctxt = &ctxt;
+		  eqs.insert(std::make_pair(Glucose::var(var), eq));
+		  
+		  insert(cc, var);
+		  
+		  if (emptyWord(left) &&
+		      !right.noTerminalWord()) {
                     solver.addClause(~var);
-                }
-
-                if (emptyWord(right) &&
-                    !left.noTerminalWord()) {
+		  }
+		  
+		  if (emptyWord(right) &&
+		      !left.noTerminalWord()) {
                     solver.addClause(~var);
-                }
-            }
-    
+		  }
+		}
         }
+
+	virtual void caseStrSuffixOf(StrSuffixOf &cc) override {
+                var = Glucose::lit_Undef;
+                auto lexpr = cc.getExpr(0);
+                auto rexpr = cc.getExpr(1);
+                static size_t i = 0;
+                std::stringstream str;
+                str << "_woorpje_tmp_suffix" << i;
+                auto symb_suff = std::make_shared<Symbol>(str.str());
+                symb_suff->setSort(Sort::String);
+                ctxt.addTemporaryVariable(str.str());
+                i++;
+
+                ASTNode_ptr new_var = std::make_shared<Identifier>(*symb_suff);
+                auto lhs  = std::make_shared<StrConcat>(std::initializer_list<ASTNode_ptr>({new_var, lexpr}));
+                auto rhs = std::make_shared<StrConcat>(std::initializer_list<ASTNode_ptr>({rexpr}));
+                auto c = EQ(std::initializer_list<ASTNode_ptr>({lhs,rhs}));
+
+
+                if (!checkAlreadyIn(cc, var)) {
+                // build word equation
+                  var = makeEquLit(cc);
+
+                  Words::Word left;
+                  Words::Word right;
+                  AutoNull<Words::WordBuilder> nuller(wb);
+                  wb = ctxt.makeWordBuilder(left);
+                  lhs->accept(*this);
+                  wb->flush();
+                  wb = ctxt.makeWordBuilder(right);
+                  rhs->accept(*this);
+                  wb->flush();
+
+                  Words::Equation eq(left, right);
+                  eq.ctxt = &ctxt;
+                  eqs.insert(std::make_pair(Glucose::var(var), eq));
+
+                  insert(cc, var);
+
+                  if (emptyWord(left) &&
+                      !right.noTerminalWord()) {
+                    solver.addClause(~var);
+                  }
+
+                  if (emptyWord(right) &&
+                      !left.noTerminalWord()) {
+                    solver.addClause(~var);
+                  }
+                }
+	}
+
+	virtual void caseStrContains(StrContains &cc) override {
+                var = Glucose::lit_Undef;
+                auto lexpr = cc.getExpr(0);
+                auto rexpr = cc.getExpr(1);
+                static size_t i = 0;
+                std::stringstream str;
+                str << "_woorpje_tmp_contains_l" << i;
+                auto symb_contains_l = std::make_shared<Symbol>(str.str());
+                symb_contains_l->setSort(Sort::String);
+                ctxt.addTemporaryVariable(str.str());
+		str.str("");
+		str << "_woorpje_tmp_contains_r" << i;
+                auto symb_contains_r = std::make_shared<Symbol>(str.str());
+                symb_contains_r->setSort(Sort::String);
+                ctxt.addTemporaryVariable(str.str());
+		i++;
+
+                ASTNode_ptr new_var_l = std::make_shared<Identifier>(*symb_contains_l);
+		ASTNode_ptr new_var_r = std::make_shared<Identifier>(*symb_contains_r);
+		auto lhs  = std::make_shared<StrConcat>(std::initializer_list<ASTNode_ptr>({new_var_l, lexpr, new_var_r}));
+                auto rhs = std::make_shared<StrConcat>(std::initializer_list<ASTNode_ptr>({rexpr}));
+                auto c = EQ(std::initializer_list<ASTNode_ptr>({lhs,rhs}));
+
+
+                if (!checkAlreadyIn(cc, var)) {
+                // build word equation
+                  var = makeEquLit(cc);
+
+                  Words::Word left;
+                  Words::Word right;
+                  AutoNull<Words::WordBuilder> nuller(wb);
+                  wb = ctxt.makeWordBuilder(left);
+                  lhs->accept(*this);
+                  wb->flush();
+                  wb = ctxt.makeWordBuilder(right);
+                  rhs->accept(*this);
+                  wb->flush();
+
+                  Words::Equation eq(left, right);
+                  eq.ctxt = &ctxt;
+                  eqs.insert(std::make_pair(Glucose::var(var), eq));
+
+                  insert(cc, var);
+
+                  if (emptyWord(left) &&
+                      !right.noTerminalWord()) {
+                    solver.addClause(~var);
+                  }
+
+                  if (emptyWord(right) &&
+                      !left.noTerminalWord()) {
+                    solver.addClause(~var);
+                  }
+                }
+        }
+
 		
 		
 	/**
@@ -286,7 +391,7 @@ namespace Words {
             }
         }
 
-        Glucose::Lit makeEquLit(EQ &c) {
+        Glucose::Lit makeEquLit(ASTNode& c) {
             if (equalities.count(&c)) {
                 return equalities.at(&c);
             }
@@ -562,7 +667,7 @@ namespace Words {
         std::unordered_map<Glucose::Var, Words::Equation> &eqs;
         std::unordered_map<void *, Glucose::Lit> boolvar;
 
-        std::unordered_map<EQ *, Glucose::Lit> equalities;
+        std::unordered_map<ASTNode *, Glucose::Lit> equalities;
 
         bool instrlen = false;
         std::unordered_map<size_t, Glucose::Lit> &alreadyCreated;
@@ -682,8 +787,9 @@ namespace Words {
         }
 
         virtual void caseEQ(EQ&) {/* Do nothing */}
-
 	virtual void caseStrPrefixOf(StrPrefixOf&){}
+	virtual void caseStrSuffixOf(StrSuffixOf &){}
+	virtual void caseStrContains(StrContains &){}
 
         void run(ASTNode &node) {
             node.accept(*this);
