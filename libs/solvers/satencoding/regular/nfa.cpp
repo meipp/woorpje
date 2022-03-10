@@ -94,11 +94,6 @@ void NFA::add_eps_transition(int src_q, int target_q) {
     }
 }
 
-set<int> NFA::epsilonClosure(int q) {
-    set<int> tmp;
-    return epsilonClosure(q, tmp);
-}
-
 set<int> NFA::epsilonClosure(int q, set<int> &ignoreStates) {
     set<int> closure{};
     if (delta.count(q) == 0 && deltaEpsilon.count(q) == 0) {

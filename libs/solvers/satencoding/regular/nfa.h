@@ -42,8 +42,6 @@ class NFA {
 
     bool accept(const Words::Word &);
 
-    std::set<int> epsilonClosure(int);
-
     void removeEpsilonTransitions();
 
     void get_reachable_states();
