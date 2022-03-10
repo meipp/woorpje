@@ -78,8 +78,7 @@ class NFA {
     }
 
     std::map<int, std::set<std::pair<Words::Terminal *, int>>> getDelta() {
-        return std::map<int, std::set<std::pair<Words::Terminal *, int>>>(
-            delta);
+        return delta;
     }
     std::unordered_map<int, int> minReachable{};
     std::unordered_map<int, int> maxReachable{};

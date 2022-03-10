@@ -107,12 +107,14 @@ set<int> NFA::epsilonClosure(int q, set<int> &ignoreStates) {
     }
     // Don't follow self transitions
     ignoreStates.insert(q);
-    for (auto qtarget : deltaEpsilon[q]) {
-        if (ignoreStates.count(qtarget) == 0) {
-            closure.insert(qtarget);
-            ignoreStates.insert(qtarget);
-            set<int> rec = epsilonClosure(qtarget, ignoreStates);
-            closure.insert(rec.begin(), rec.end());
+    if(deltaEpsilon.count(q) > 0) {
+        for (auto qtarget : deltaEpsilon[q]) {
+            if (ignoreStates.count(qtarget) == 0) {
+                closure.insert(qtarget);
+                ignoreStates.insert(qtarget);
+                set<int> rec = epsilonClosure(qtarget, ignoreStates);
+                closure.insert(rec.begin(), rec.end());
+            }
         }
     }
     return closure;
@@ -155,6 +157,8 @@ NFA NFA::reduceToReachableState() {
     queue.push_back(getInitialState());
     M.minReachable[q0] = this->minReachable[getInitialState()];
     M.maxReachable[q0] = this->maxReachable[getInitialState()];
+    M.maxrAbs[q0] = this->maxrAbs[getInitialState()];
+    M.minrAbs[q0] = this->minrAbs[getInitialState()];
 
     while (!queue.empty()) {
         int current = queue.front();
@@ -169,6 +173,8 @@ NFA NFA::reduceToReachableState() {
                     visited[trans.second] = qn;
                     M.minReachable[qn] = this->minReachable[trans.second];
                     M.maxReachable[qn] = this->maxReachable[trans.second];
+                    M.maxrAbs[qn] = this->maxrAbs[trans.second];
+                    M.minrAbs[qn] = this->minrAbs[trans.second];
                     queue.push_back(trans.second);
                 }
                 M.add_transition(visited[current], trans.first, visited[trans.second]);
@@ -181,6 +187,8 @@ NFA NFA::reduceToReachableState() {
                     visited[trans] = qn;
                     M.minReachable[qn] = this->minReachable[trans];
                     M.maxReachable[qn] = this->maxReachable[trans];
+                    M.maxrAbs[qn] = this->maxrAbs[trans];
+                    M.minrAbs[qn] = this->minrAbs[trans];
                     queue.push_back(trans);
                 }
                 M.add_eps_transition(visited[current], visited[trans]);
@@ -275,8 +283,8 @@ NFA regexToNfa(Words::RegularConstraints::RegNode &regExpr, Words::Context &ctx)
         int numTrans = 0;
         M.minReachable[q0] = numTrans;
         M.maxReachable[q0] = numTrans;
-        M.maxrAbs[q0] = N - numTrans;
-        M.minrAbs[q0] = N - numTrans;
+        M.maxrAbs[q0] = N;
+        M.minrAbs[q0] = N;
         numTrans++;
         int q_src = q0;
         for (auto c : word.word) {
@@ -290,8 +298,8 @@ NFA regexToNfa(Words::RegularConstraints::RegNode &regExpr, Words::Context &ctx)
             q_src = q_target;
         }
         M.add_final_state(q_src);
+        assert(M.maxrAbs[q0] == M.minrAbs[q0] && M.minrAbs[q0] == N);
         return M;
-
     } catch (bad_cast &) {
     }
 
@@ -308,7 +316,6 @@ NFA regexToNfa(Words::RegularConstraints::RegNode &regExpr, Words::Context &ctx)
                 set<int> qFs{q0};
                 for (const auto &sub : opr.getChildren()) {
                     NFA subM = regexToNfa(*sub, ctx);
-
                     if (subM.getDelta().empty()) {
                         continue;
                     }
@@ -341,12 +348,16 @@ NFA regexToNfa(Words::RegularConstraints::RegNode &regExpr, Words::Context &ctx)
                         int q = i + off;
                         if (subM.getInitialState() == i) {
                             for (int qf : qFs) {
+                                // From last final states to current initial state
                                 M.add_eps_transition(qf, q);
                             }
                         }
                         if (subM.getFinalStates().count(i) > 0) {
+                            // Save new final statess
                             newqFs.insert(q);
                         }
+                        M.minrAbs[q] = subM.minrAbs[i];
+                        M.maxrAbs[q] = subM.maxrAbs[i];
                     }
 
                     // Update reachability and rAbs information
@@ -371,10 +382,18 @@ NFA regexToNfa(Words::RegularConstraints::RegNode &regExpr, Words::Context &ctx)
                         maxMaxrAbs = std::max(maxMaxrAbs, subM.maxrAbs[s]);
                         minMinrAbs = std::min(minMinrAbs, subM.minrAbs[s]);
                         assert(M.maxReachable[s + off] > -1);
+                        
                     }
+                    // Update old rabs
+                    assert(maxMaxrAbs > 0);
                     for (int s = 0; s < off; s++) {
-                        M.minrAbs[s] = M.minrAbs[s] + minMinrAbs;
                         M.maxrAbs[s] = M.maxrAbs[s] + maxMaxrAbs;
+                        if (M.maxrAbs[s] < 0) {
+                            // Detect overflow
+                            M.maxrAbs[s] = INT_MAX;
+                        }
+                        M.minrAbs[s] = M.minrAbs[s] + minMinrAbs;
+                        
                     }
                     qFs = newqFs;
                 }
@@ -388,8 +407,11 @@ NFA regexToNfa(Words::RegularConstraints::RegNode &regExpr, Words::Context &ctx)
                     maxMaxReachable = std::max(maxMaxReachable, M.maxReachable[q]);
                     M.add_eps_transition(q, qf);
                 }
+                M.minReachable[qf] = minMinReachable;
+                M.maxReachable[qf] = maxMaxReachable;
                 assert(minMinReachable > -1);
                 assert(maxMaxReachable > -1);
+                opr.toString(cout);
                 M.minReachable[qf] = minMinReachable;
                 M.maxReachable[qf] = maxMaxReachable;
                 return M;
@@ -501,6 +523,8 @@ NFA regexToNfa(Words::RegularConstraints::RegNode &regExpr, Words::Context &ctx)
                         int q = i + off;
                         if (subM.getInitialState() == i) {
                             M.add_eps_transition(q0, q);
+                            M.maxrAbs[q0] = max(M.maxrAbs[q0], subM.maxrAbs[i]);
+                            M.minrAbs[q0] = max(M.minrAbs[q0], subM.minrAbs[i]);
                         }
                         if (subM.getFinalStates().count(i) > 0) {
                             oldQfs.push_back(q);
