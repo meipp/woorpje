@@ -26,6 +26,8 @@ After building, your can use woorpje as follows:
 ./woorpjeSMT --solver 1 <file>
 ```
 
+Where `<file>` is the path to an SMT-LIB 2.6 file.
+
 ## Supported Input Language
 
 Woorpje does currently not understand the full SMT-LIB 2.6 standard.
