@@ -176,7 +176,7 @@ namespace Words {
             return left.noVariableWord() && left.noTerminalWord();
         }
 
-	/* HOL functions */
+	/* HOL functions */ /*
         virtual void caseStrPrefixOf(StrPrefixOf &cc) override {
                 // lexpr is a prefix of rexpr
                 var = Glucose::lit_Undef;
@@ -337,6 +337,7 @@ namespace Words {
                 }
         }
 
+    */
 		
 		
 	/**
@@ -713,7 +714,6 @@ namespace Words {
             reconstraints.push_back(constraint);
         }
 
-
         virtual void caseStringLiteral(StringLiteral &s) {
             for (auto c: s.getVal()) {
                 assert (wordBuilder != nullptr);
@@ -722,8 +722,6 @@ namespace Words {
         }
 
         // Pattern
-
-
         virtual void caseStrConcat(StrConcat &c) {
             for (auto &cc: c) {
                 cc->accept(*this);
@@ -738,8 +736,6 @@ namespace Words {
 
 
         // Re
-
-
         virtual void caseReTo(ReTo &c) {
             Words::Word w;
             wordBuilder = ctxt.makeWordBuilder(w);
@@ -757,6 +753,50 @@ namespace Words {
             }
 
             // No need to set parent, is leaf.
+
+        }
+
+        virtual void caseReLoop(ReLoop& s) {
+            // Inline to finite union of concatenations
+            int lower = s.lower->getVal();
+            int upper = s.upper->getVal();
+            if (lower > upper) {
+                // <=> re.none
+                auto none = std::make_shared<Words::RegularConstraints::RegEmpty>();
+                if (root == nullptr) {
+                    root = none;
+                } else {
+                    parent->addChild(none);
+                }
+            } else if (lower == upper) {
+                // <=> e^n            
+                std::shared_ptr<Words::RegularConstraints::RegOperation> concat(new Words::RegularConstraints::RegOperation(Words::RegularConstraints::RegularOperator::CONCAT));
+                if (root == nullptr) {
+                    root = concat;
+                } else {
+                    parent->addChild(concat);
+                }
+                for (int i = 0; i<lower;i++) {
+                    parent = concat;
+                    s.getExpr(0)->accept(*this);
+                }
+            } else {
+                std::shared_ptr<Words::RegularConstraints::RegOperation> tlunion(new Words::RegularConstraints::RegOperation(Words::RegularConstraints::RegularOperator::UNION));
+                if (root == nullptr) {
+                    root = tlunion;
+                } else {
+                    parent->addChild(tlunion);
+                }
+                for (int i = lower; i <= upper; i++) {
+                    parent = tlunion;
+                    std::shared_ptr<Words::RegularConstraints::RegOperation> concat(new Words::RegularConstraints::RegOperation(Words::RegularConstraints::RegularOperator::CONCAT));
+                    parent->addChild(concat);
+                    for(int j = 0; j <i; j++) {
+                        parent = concat;
+                        s.getExpr(0)->accept(*this);
+                    }
+                }
+            }
 
         }
 
@@ -787,10 +827,11 @@ namespace Words {
         }
 
         virtual void caseEQ(EQ&) {/* Do nothing */}
-	virtual void caseStrPrefixOf(StrPrefixOf&){}
+	/*
+    virtual void caseStrPrefixOf(StrPrefixOf&){}
 	virtual void caseStrSuffixOf(StrSuffixOf &){}
 	virtual void caseStrContains(StrContains &){}
-
+    */
         void run(ASTNode &node) {
             node.accept(*this);
         }
