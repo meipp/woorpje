@@ -175,7 +175,7 @@ namespace Words {
       visitRedirect(c);
     } 
 
-/*
+
     virtual void caseStrPrefixOf (StrPrefixOf& c) override {
       visitRedirect(c);
     }
@@ -187,7 +187,7 @@ namespace Words {
     virtual void caseStrContains (StrContains& c) override {
       visitRedirect(c);
     }
-    */
+    
     
     virtual void caseNEQ (NEQ& c) override {
       assert(neqmap.count(c.hash()));

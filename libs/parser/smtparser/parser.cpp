@@ -176,7 +176,7 @@ namespace Words {
             return left.noVariableWord() && left.noTerminalWord();
         }
 
-	/* HOL functions */ /*
+	/* HOL functions */ 
         virtual void caseStrPrefixOf(StrPrefixOf &cc) override {
                 // lexpr is a prefix of rexpr
                 var = Glucose::lit_Undef;
@@ -337,7 +337,7 @@ namespace Words {
                 }
         }
 
-    */
+    
 		
 		
 	/**
@@ -827,11 +827,11 @@ namespace Words {
         }
 
         virtual void caseEQ(EQ&) {/* Do nothing */}
-	/*
+	
     virtual void caseStrPrefixOf(StrPrefixOf&){}
 	virtual void caseStrSuffixOf(StrSuffixOf &){}
 	virtual void caseStrContains(StrContains &){}
-    */
+    
         void run(ASTNode &node) {
             node.accept(*this);
         }
