@@ -812,6 +812,77 @@ namespace Words {
             processRegOp(c, Words::RegularConstraints::RegularOperator::STAR);
         }
 
+        virtual void caseReRange(ReRange& c){
+            // Rewrite as union
+            Words::Word from, to;
+            wordBuilder = ctxt.makeWordBuilder(from);
+            c.getExpr(0)->accept(*this);
+            wordBuilder->flush();
+            wordBuilder = ctxt.makeWordBuilder(to);
+            c.getExpr(1)->accept(*this);
+            wordBuilder->flush();
+
+            if (!from.noVariableWord() || !to.noVariableWord()) {
+                throw UnsupportedFeature("Only constants allowed in re.range");
+            }
+
+            if (from.characters() == 1 && to.characters() == 1) {
+                // Range between from and to
+                // Workaroud, cannot access entries in word other than with iterator
+                char cfrom, cto;
+                for(const auto& e: from) {
+                    cfrom = e->getTerminal()->getChar();
+                }
+                for(const auto& e: to) {
+                    cto = e->getTerminal()->getChar();
+                }
+                if (cfrom > cto) {
+                    // Empty set
+                    std::shared_ptr<Words::RegularConstraints::RegEmpty> empty(new Words::RegularConstraints::RegEmpty);
+                    if (root == nullptr) {
+                        root = empty;
+                    } else {
+                        parent->addChild(empty);
+                    }
+                } else {
+                    // Union of all character between from and to
+                    std::shared_ptr<Words::RegularConstraints::RegOperation> reunion(new Words::RegularConstraints::RegOperation(Words::RegularConstraints::RegularOperator::UNION));
+                    for(auto f = cfrom; f <= cto; f++) {
+                        // Add to context if not present
+                        try {
+                            ctxt.findSymbol(f);
+                        }
+                        catch (Words::WordException &e) {
+                            ctxt.addTerminal(f);
+                        }
+                        Word chr;
+                        auto builder = ctxt.makeWordBuilder(chr);
+                        *builder << f;
+                        builder->flush();
+                        std::shared_ptr<Words::RegularConstraints::RegWord> rword(new Words::RegularConstraints::RegWord(chr));
+                        reunion->addChild(rword);                
+                    }
+                    if (root == nullptr) {
+                        root = reunion;
+                    } else {
+                        parent->addChild(reunion);
+                    }
+                }
+            } else {
+                // Empty set by defintion
+                std::shared_ptr<Words::RegularConstraints::RegEmpty> empty(new Words::RegularConstraints::RegEmpty);
+                if (root == nullptr) {
+                    root = empty;
+                } else {
+                    parent->addChild(empty);
+                }
+                
+            }
+            
+
+            
+        }
+
         virtual void caseReNone(ReNone&) {
             std::shared_ptr<Words::RegularConstraints::RegEmpty> empty(new Words::RegularConstraints::RegEmpty);
             if (root == nullptr) {

@@ -17,6 +17,7 @@ namespace Words {
   class UnsupportedFeature : public WordException  {
   public:
 	UnsupportedFeature () : WordException ("A feature is unsupported by Woorpje") {}
+  UnsupportedFeature(const std::string& str) : WordException (str) {}
   };
 
   class UsingEpsilonAsNonEpsilon : public WordException  {

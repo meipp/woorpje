@@ -175,7 +175,6 @@ namespace Words {
       visitRedirect(c);
     } 
 
-
     virtual void caseStrPrefixOf (StrPrefixOf& c) override {
       visitRedirect(c);
     }
