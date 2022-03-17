@@ -1,12 +1,34 @@
 # Woorpje
 
-Woorpje is a string solver for bounded word equations and regular constraints, i.e., the length of the strings substituting each variable is upper bounded by a given integer. Woorpje translates the string constraint problems into a satisfiability problem of propositional logic, and uses the award-winning SAT-solver Glucose as its SAT-Solving backend.
+Woorpje is a string solver for bounded word equations and regular constraints, i.e., the length of the strings substituting each variable is upper bounded by a given integer. 
+Woorpje translates the string constraint problems into a satisfiability problem of propositional logic, and uses the award-winning SAT-solver Glucose as its SAT-Solving backend.
+
+## Running with Docker
+
+### Building an image
+
+To create a docker image, run
+
+```
+docker build . -t woorpje
+```
+
+### Running Woorpje in a Container
+
+To start Woorjpe in a container, run
+
+```
+docker run woorpje <file>
+```
+
+where `<file>` is the path to an SMT-LIB 2.6 file.
+
 
 ## Building
 
 Tested on `gcc (Ubuntu 9.4.0-1ubuntu1~20.04) 9.4.0`.
 Woorpje does not compile on clang.
-Requirements: `cmake, gcc, z3, lib-z3, boost, gperf, flexx, autoconf, libtool, libz-dev`.
+Requirements: `cmake, gcc, boost, gperf, flexx, autoconf, libtool, libz-dev`.
 
 To build an executable that uses  SMT-LIB 2.6 as the input language, run the following steps:
 
@@ -14,13 +36,12 @@ To build an executable that uses  SMT-LIB 2.6 as the input language, run the fol
 mkdir build
 cd build
 cmake ..
-ccmake . # Set ENABLE_Z3 to ON and save
 cmake --build . --target woorpjeSMT
 ```
 
 ## Usage
 
-After building, your can use woorpje as follows:
+After building, your can use Woorpje as follows:
 
 ```sh
 ./woorpjeSMT --solver 1 <file>
