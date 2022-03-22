@@ -21,11 +21,6 @@ namespace RegularEncoding {
     
 
 
-
-    Words::RegularConstraints::RegConstraint stripPrefix(Words::RegularConstraints::RegConstraint);
-
-    Words::RegularConstraints::RegConstraint stripSuffix(Words::RegularConstraints::RegConstraint);
-
     std::shared_ptr<Words::RegularConstraints::RegOperation>
     makeNodeBinary(std::shared_ptr<Words::RegularConstraints::RegOperation> concat);
 

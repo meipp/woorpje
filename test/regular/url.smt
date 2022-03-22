@@ -6,7 +6,8 @@
 (declare-fun D () String)
 
 
-(assert (= C (str.++ D ".com" )))
+
+(assert (str.in_re C (str.to_re "com")))
 
 (assert (str.in_re (str.++  "http://www." B "." C )
 

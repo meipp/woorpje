@@ -67,3 +67,7 @@ Supported features are
 
 Assertions containing boolean connectives (`or`, `and`, `not`) are not supported.
 However, multiple assertions can be stated in a single input file.
+
+## Known Issues
+
+- The alphabets of terminals and variables must be disjunct. In particular, variables can't be named after terminals occurring in the constraints.

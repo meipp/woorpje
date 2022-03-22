@@ -366,22 +366,41 @@ int main(int argc, char **argv) {
                         Words::Substitution sub;
                         std::vector <Words::Constraints::Constraint_ptr> cstr;
                         auto res = Words::Solvers::CoreSimplifier::solverReduce(job->options, sub, cstr);
-                        std::cout << "Equation System after simplification" << std::endl << job->options << std::endl;;
+                        
 
                         switch (res) {
                             case ::Words::Solvers::Simplified::JustReduced:
                                 break;
                             case ::Words::Solvers::Simplified::ReducedNsatis:
-                                //Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
+                                Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
                                 DefinitelyNoSolutionCount++;
                                 break;
                             case ::Words::Solvers::Simplified::ReducedSatis:
                                 gatherer.setSubstitution(sub);
-                                Words::Host::Terminate(Words::Host::ExitCode::GotSolution, std::cout);
+                                //Words::Host::Terminate(Words::Host::ExitCode::GotSolution, std::cout);
                         }
+
                         if (DefinitelyNoSolutionCount == totalcount) {
                             Words::Host::Terminate(Words::Host::ExitCode::DefinitelyNoSolution, std::cout);
                         }
+
+
+                        // Regular constrains
+                        res = Words::Solvers::RegexFullSimplifier::solverReduce(job->options, sub);
+                        switch (res) {
+                            case ::Words::Solvers::Simplified::JustReduced:
+                                gatherer.setSubstitution(sub);
+                                break;
+                            case ::Words::Solvers::Simplified::ReducedNsatis:
+                                Words::Host::Terminate (Words::Host::ExitCode::DefinitelyNoSolution,std::cout);
+                                DefinitelyNoSolutionCount++;
+                                break;
+                            case ::Words::Solvers::Simplified::ReducedSatis:
+                                gatherer.setSubstitution(sub);
+                                //Words::Host::Terminate(Words::Host::ExitCode::GotSolution, std::cout);
+                        }
+                        std::cout.flush();
+                
                     }
 
                     if (diagnostic)
@@ -391,6 +410,7 @@ int main(int argc, char **argv) {
                         Words::Solvers::StreamRelay relay(std::cout);
                         Words::Solvers::Result ret;
 
+                        std::cout << "Equation System after simplification" << std::endl << job->options << std::endl;;
 
                         ret = solver->Solve(job->options, relay);
 

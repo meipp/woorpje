@@ -722,11 +722,7 @@ namespace Words {
 
     std::ostream &operator<<(std::ostream &os, const Substitution &sub);
 
-    inline std::ostream &operator<<(std::ostream &os, const Options &opt) {
-        for (auto &eq: opt.equations) os << eq << std::endl;
-        for (auto &c: opt.constraints) os << *c << std::endl;
-        return os;
-    }
+    std::ostream &operator<<(std::ostream &os, const Options &opt);
 
     void outputSMT(std::ostream &, const Options &opt);
 

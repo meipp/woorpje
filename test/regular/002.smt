@@ -3,9 +3,11 @@
 (declare-fun A () String)
 (declare-fun B () String)
 
-(assert (= A A))
+(assert (str.in_re A (re.union (str.to_re "com") (str.to_re "de"))))
 
-(assert (str.in_re (str.++  A "p://www" B)
+(assert (str.in_re B  (str.to_re "example")))
+
+(assert (str.in_re (str.++   "http://www." B  )
 
     (re.++ 
         (re.union (str.to_re "ht") (str.to_re "f"))

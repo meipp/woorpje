@@ -1,4 +1,4 @@
-add_library (words words.cpp linconstraint.cpp algorithms.cpp outputsmt.cpp)
+add_library (words words.cpp linconstraint.cpp algorithms.cpp outputsmt.cpp regconstraint.cpp)
 target_include_directories (words PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/pubinclude
 			   	  PUBLIC $<TARGET_PROPERTY:host,INTERFACE_INCLUDE_DIRECTORIES>	
 )

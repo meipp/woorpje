@@ -1451,6 +1451,7 @@ setupSolverMain(Words::Options &opt) { // std::vector<std::string>& mlhs,
     vector<std::string> input_equations_rhs_tmp;
 
     // Preprocess regular constraints
+    /*
     std::vector<std::shared_ptr<Words::RegularConstraints::RegConstraint>> preprocessed;
     for (auto &recon: opt.recons) {
         recon->expr->flatten();
@@ -1458,6 +1459,7 @@ setupSolverMain(Words::Options &opt) { // std::vector<std::string>& mlhs,
         preprocessed.push_back(std::make_shared<Words::RegularConstraints::RegConstraint>(strippedRecon));
     }
     opt.recons = preprocessed;
+    */
 
     input_options = opt;
 
@@ -1667,7 +1669,9 @@ template<bool newencode = true>
 
 
         for (const auto &recon: input_options.recons) {
-
+            if (recon->triviallySat) {
+                continue;
+            }
             //auto strippedRecon = RegularEncoding::stripSuffix(RegularEncoding::stripPrefix(*recon));
             profiler->exprComplexity = (int) recon->expr->complexity();
             profiler->starHeight = recon->expr->starHeight();
