@@ -18,10 +18,18 @@ docker build . -t woorpje
 To start Woorjpe in a container, run
 
 ```
-docker run woorpje <file>
+docker run -v "<file>:/instance.smt" woorpje [--simplify]
 ```
 
-where `<file>` is the path to an SMT-LIB 2.6 file.
+where `<file>` is the **absolute** path to an SMT-LIB 2.6 file. Adding `--simplify` is optional and enables preprocessing.
+
+For example
+
+```
+docker run -v "$PWD/test/regular/url.smt:/instance.smt" woorpje --simplify
+```
+
+
 
 
 ## Building
@@ -44,10 +52,11 @@ cmake --build . --target woorpjeSMT
 After building, your can use Woorpje as follows:
 
 ```sh
-./woorpjeSMT --solver 1 <file>
+./woorpjeSMT --solver 1  [--simplify] <file>
 ```
 
 Where `<file>` is the path to an SMT-LIB 2.6 file.
+Adding `--simplify` is optional and enables preprocessing.
 
 ## Supported Input Language
 
@@ -63,11 +72,14 @@ Supported features are
   - Empty set (`re.none`)
   - Loop (`re.loop`)
   - Range (`re.range`)
+  - Plus (`re.+`)
+  - Optional (`re.opt`)
   - Constant strings (`str.to_re`)
 
-Assertions containing boolean connectives (`or`, `and`, `not`) are not supported.
+Assertions containing boolean connectives (`or`, `and`, and `not`) are not supported.
 However, multiple assertions can be stated in a single input file.
 
 ## Known Issues
 
 - The alphabets of terminals and variables must be disjunct. In particular, variables can't be named after terminals occurring in the constraints.
+- The docker container might freeze if the mount failed (e.g. if the specified file does not exist), in this case the container needs to be killed by hand (`docker kill`)

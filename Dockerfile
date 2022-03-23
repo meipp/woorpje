@@ -14,4 +14,4 @@ WORKDIR /woorpje/build
 RUN cmake ..
 RUN cmake  --build . --target woorpjeSMT
 
-ENTRYPOINT ["./woorpjeSMT", "--solver", "1"]
+ENTRYPOINT ["./woorpjeSMT", "--solver", "1", "/instance.smt"]
