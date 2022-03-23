@@ -553,6 +553,14 @@ namespace Words {
 
         bool operator!=(Word const &rhs) const { return !(*this == rhs); }
 
+        Word concat(Word& other) {
+            Word concatted;
+            concatted.insert(begin(), end());
+            concatted.insert(other.begin(), other.end());
+            return concatted;
+            
+        }
+
     protected:
         void append(IEntry *e) { word.push_back(e); }
 

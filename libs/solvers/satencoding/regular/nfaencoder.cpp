@@ -15,9 +15,11 @@ namespace RegularEncoding {
     set<set<int>> AutomatonEncoder::encode() {
 
         auto total_start = high_resolution_clock::now();
+        
+        /*
         cout << "\n[*] Encoding ";
         constraint.toString(cout);
-        cout << "\n";
+        cout << "\n";*/
 
 
         Words::Word pattern = constraint.pattern;

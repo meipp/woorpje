@@ -109,6 +109,59 @@ class TrivialSimplifier : public RegularConstraintSimplifier {
     }
 };
 
+class IndependentVarSimplifier : public RegularConstraintSimplifier {
+	public:
+    static Simplified solverReduce(Words::Options& opt, Words::Substitution& s) {
+        bool wasreduced = true;
+        for (int i = 0; i < opt.recons.size(); i++) {
+            auto& recon = opt.recons.at(i);
+            wasreduced = false;
+            if (recon->pattern.characters() == 1) {
+                std::vector<IEntry*> vars;
+                recon->pattern.getVariables(vars);
+                // Always going to be the case after using derivate simplifier first
+                if (vars.size() == 1) {
+                    // Check if that var appears in any other constraint
+                    auto var = vars.at(0);
+                    bool isIndependent = true;
+                    for (int j = 0; j < opt.recons.size(); j++) {
+                        if (j == i) {
+                            continue;
+                        }
+                        auto& other = opt.recons.at(j);
+                        if(other->pattern.containsVariable(var)) {
+                            isIndependent = false;
+                            break;
+                        }
+                    }
+                    // Check equations
+                    if (isIndependent) {
+                        for(auto& eq: opt.equations) {
+                            if (eq.lhs.containsVariable(var) || eq.rhs.containsVariable(var)) {
+                                isIndependent = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (isIndependent) {
+                        // Pick any word in the expression and assign in to var
+                        recon->triviallySat = true;
+                        try {
+                            auto word = recon->expr->any();
+                            s[var] = word;
+                        } catch(Words::WordException e) {
+                            std::cout << e.what() << "\n";
+                            return Simplified::ReducedNsatis;
+                        }
+
+                    }
+                }
+            }
+        }
+        return Simplified::JustReduced;
+    }
+};
+
 class RegexFullSimplifier : public RegularConstraintSimplifier {
 	public:
     static Simplified solverReduce(Words::Options& opt, Words::Substitution& s) {
@@ -122,6 +175,9 @@ class RegexFullSimplifier : public RegularConstraintSimplifier {
 		if(TrivialSimplifier::solverReduce(opt, s) == Simplified::ReducedNsatis) {
 			res = Simplified::ReducedNsatis;
 		}
+        if(IndependentVarSimplifier::solverReduce(opt, s) == Simplified::ReducedNsatis) {
+            res = Simplified::ReducedNsatis;
+        }
 		return res;
     }
 };

@@ -5,6 +5,7 @@
 
 #include "smtparser/ast.hpp"
 #include "words/words.hpp"
+#include "words/exceptions.hpp"
 
 namespace Words {
 namespace RegularConstraints {
@@ -58,6 +59,8 @@ class RegNode {
 
     virtual bool acceptsEpsilon() = 0;
 
+    virtual Words::Word any() = 0;
+
     virtual long complexity() { return 0; };
 
    private:
@@ -84,6 +87,10 @@ class RegEmpty : public RegNode {
     void toString(std::ostream &os) override { os << "</>"; }
 
     long complexity() override { return 1; }
+
+    Words::Word any() override {
+        throw Words::WordException("Empty regex contains no word");
+    }
 
     void getAlphabet(Words::WordBuilder) override {}
 
@@ -114,6 +121,10 @@ class RegWord : public RegNode {
     int shortestLiteral() override { return characters(); }
 
     bool acceptsEpsilon() override { return word.characters() == 0; }
+
+    Words::Word any() override {
+        return word;
+    }
 
     std::shared_ptr<RegNode> derivative(std::string d) override {
         if (d.empty()) {
@@ -228,6 +239,33 @@ class RegOperation : public RegNode {
             }
         }
     };
+
+    Words::Word any() override {
+        switch (op) {
+            case RegularOperator::UNION: {
+                for (auto ch : getChildren()) {
+                    try {
+                        auto chWord = ch->any();
+                        return chWord;
+                    } catch(Words::WordException ex) {
+                    }    
+                }
+                // No nonempty child
+                throw Words::WordException("Does not contain a word");
+            }
+            case RegularOperator::CONCAT: {
+                Words::Word word;
+                for (auto ch : getChildren()) {
+                    auto chWord = ch->any();
+                    word = word.concat(chWord);
+                }
+                return word;
+            }
+            case RegularOperator::STAR: {
+                return Words::Word(); // Empty
+            }
+        }
+    }
 
     virtual void flatten() override {
         for (const auto &ch : children) {
