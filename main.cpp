@@ -38,7 +38,7 @@ public:
                                                                                                  smtmodelfile(
                                                                                                          smtmodelfile) {}
 
-    void setSubstitution(Words::Substitution &w) override {
+    void printSubstitution() {
         std::cout << "Substitution: " << std::endl;
         for (size_t var = 0; var < opt.context->nbVars(); var++) {
             auto variable = opt.context->getVariable(var);
@@ -46,7 +46,7 @@ public:
                 continue;
 
             std::cout << *variable << ": ";
-            for (auto c: w[variable]) {
+            for (auto c: substitution[variable]) {
                 c->output(std::cout);
             }
             std::cout << std::endl;
@@ -55,9 +55,9 @@ public:
 
         std::cout << "Equations after substition" << std::endl;
         for (auto &eq: opt.equations) {
-            printWordWithSubstitution(eq.lhs, w);
+            printWordWithSubstitution(eq.lhs, substitution);
             std::cout << eq.type;
-            printWordWithSubstitution(eq.rhs, w);
+            printWordWithSubstitution(eq.rhs, substitution);
             std::cout << std::endl;
         }
         std::cout << std::endl;
@@ -70,7 +70,7 @@ public:
             for (size_t var = 0; var < opt.context->nbVars(); var++) {
                 auto variable = opt.context->getVariable(var);
                 str << "(define-fun " << *variable << "() String \"";
-                for (auto c: w[variable]) {
+                for (auto c: substitution[variable]) {
                     c->output(str);
                 }
                 str << "\")\n";
@@ -88,7 +88,12 @@ public:
             Words::outputSMT(str, opt);
             str.close();
         }
+    }
 
+    void setSubstitution(Words::Substitution &w) override {
+        for (auto sub: w) {
+            substitution.insert(sub);
+        }
     }
 
     void diagnosticString(const std::string &s) override {
@@ -117,7 +122,7 @@ private:
             }
         }
     }
-
+    Words::Substitution substitution;
     const Words::Options &opt;
     std::string &outputfile;
     std::string &smtmodelfile;
@@ -376,7 +381,9 @@ int main(int argc, char **argv) {
                                 DefinitelyNoSolutionCount++;
                                 break;
                             case ::Words::Solvers::Simplified::ReducedSatis:
-                                gatherer.setSubstitution(sub);
+                                break;
+                                // Find solutions that may not be solutions to other constraints!
+                                //gatherer.setSubstitution(sub);
                                 //Words::Host::Terminate(Words::Host::ExitCode::GotSolution, std::cout);
                         }
 
@@ -386,6 +393,7 @@ int main(int argc, char **argv) {
 
 
                         // Regular constrains
+                        sub.clear();
                         res = Words::Solvers::RegexFullSimplifier::solverReduce(job->options, sub);
                         switch (res) {
                             case ::Words::Solvers::Simplified::JustReduced:
@@ -397,11 +405,12 @@ int main(int argc, char **argv) {
                                 break;
                             case ::Words::Solvers::Simplified::ReducedSatis:
                                 gatherer.setSubstitution(sub);
-                                //Words::Host::Terminate(Words::Host::ExitCode::GotSolution, std::cout);
+                                Words::Host::Terminate(Words::Host::ExitCode::GotSolution, std::cout);
                         }
                         std::cout.flush();
                 
                     }
+
 
                     if (diagnostic)
                         solver->enableDiagnosticOutput();
@@ -422,6 +431,7 @@ int main(int argc, char **argv) {
 
                             case Words::Solvers::Result::HasSolution: {
                                 solver->getResults(gatherer);
+                                gatherer.printSubstitution();
                                 Words::Host::Terminate(Words::Host::ExitCode::GotSolution, std::cout);
                             }
                             case Words::Solvers::Result::NoSolution: {
