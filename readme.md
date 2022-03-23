@@ -83,3 +83,4 @@ However, multiple assertions can be stated in a single input file.
 
 - The alphabets of terminals and variables must be disjunct. In particular, variables can't be named after terminals occurring in the constraints.
 - The docker container might freeze if the mount failed (e.g. if the specified file does not exist), in this case the container needs to be killed by hand (`docker kill`)
+- For some combinations of constraints, preprocessing is unstable. On error, try without `--simplify`.
