@@ -812,6 +812,42 @@ namespace Words {
             processRegOp(c, Words::RegularConstraints::RegularOperator::STAR);
         }
 
+        virtual void caseReOpt(ReOpt &c) override {
+            // (re.opt E) <=> (re.union E "")
+            std::shared_ptr<Words::RegularConstraints::RegOperation> reunion(new Words::RegularConstraints::RegOperation(Words::RegularConstraints::RegularOperator::UNION));
+            auto eps = std::make_shared<Words::RegularConstraints::RegWord>(Words::Word());
+            reunion->addChild(eps);
+            if (root == nullptr) {
+                root = reunion;
+            } else {
+                parent->addChild(reunion);
+            }
+            parent = reunion;
+            for (auto& cc: c) {
+                cc->accept(*this);
+            }
+        }
+
+        virtual void caseRePlus (RePlus &c) override {
+            // (re.+ E) <=> (re.++ E (re.* E))
+            std::shared_ptr<Words::RegularConstraints::RegOperation> reconcat(new Words::RegularConstraints::RegOperation(Words::RegularConstraints::RegularOperator::CONCAT));
+            if (root == nullptr) {
+                root = reconcat;
+            } else {
+                parent->addChild(reconcat);
+            }
+            parent = reconcat;
+            for (auto& cc: c) {
+                cc->accept(*this);
+            }
+            std::shared_ptr<Words::RegularConstraints::RegOperation> restar(new Words::RegularConstraints::RegOperation(Words::RegularConstraints::RegularOperator::STAR));
+            reconcat->addChild(restar);
+            parent = restar;
+            for (auto& cc: c) {
+                cc->accept(*this);
+            }
+        }
+
         virtual void caseReRange(ReRange& c){
             // Rewrite as union
             Words::Word from, to;
