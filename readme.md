@@ -1,3 +1,5 @@
+Fix of the [woorpje](https://git.zs.informatik.uni-kiel.de/dbp/wordsolve/-/tree/spin22) string solver pinned at tag `spin22`. Fixes the linker error when compiling with `ENABLE_CVC4=on`.
+
 # Woorpje
 
 Woorpje is a string solver for bounded word equations and regular constraints, i.e., the length of the strings substituting each variable is upper bounded by a given integer. 

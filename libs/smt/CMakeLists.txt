@@ -16,7 +16,7 @@ if (ENABLE_CVC4)
    find_package(CVC4)
    add_definitions (-DENABLECVC4)
    target_sources (smtsolver PRIVATE cvc4.cpp)
-   target_link_Libraries (smtsolver ${CVC4_LIBRARIES})
+   target_link_Libraries (smtsolver ${CVC4_LIBRARIES} gmp)
    target_include_directories(smtsolver PRIVATE ${CVC4_INCLUDE_DIRS})
 endif(ENABLE_CVC4)
 
